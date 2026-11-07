@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   summary: {
     flex: 1,
     fontSize: 15,
-    lineHeight: 18,
+    lineHeight: 22,
     color: THEME.colors.textSecondary,
   },
 });

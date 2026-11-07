@@ -24,7 +24,7 @@ export const COMPACT_COMPOSER_STYLES = StyleSheet.create({
     paddingHorizontal: 4,
     paddingVertical: 9,
     fontSize: 16,
-    lineHeight: 20,
+    lineHeight: 22,
     textAlignVertical: "center",
     color: THEME.colors.text,
   },

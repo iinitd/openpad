@@ -102,6 +102,7 @@ const styles = StyleSheet.create({
   userText: {
     color: THEME.colors.text,
     fontSize: 16,
+    lineHeight: 24,
   },
   assistantMessage: {
     alignSelf: "flex-start",
@@ -113,7 +114,7 @@ const styles = StyleSheet.create({
   assistantText: {
     color: THEME.colors.text,
     fontSize: 16,
-    lineHeight: 20,
+    lineHeight: 24,
   },
   thoughtMessage: {
     alignSelf: "flex-start",
@@ -125,7 +126,7 @@ const styles = StyleSheet.create({
     color: THEME.colors.textMuted,
     fontSize: 14,
     fontStyle: "italic",
-    lineHeight: 17,
+    lineHeight: 20,
   },
   toolMessage: {
     alignSelf: "flex-start",
@@ -158,5 +159,6 @@ const styles = StyleSheet.create({
   errorText: {
     color: THEME.colors.error,
     fontSize: 15,
+    lineHeight: 22,
   },
 });

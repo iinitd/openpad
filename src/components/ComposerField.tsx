@@ -129,8 +129,8 @@ export function ComposerField({
   // The field grows with the text up to four lines, then scrolls. Below the
   // threshold the composer stays a pill; past it, the pill becomes a rounded
   // rectangle so the text has a straight edge to live against.
-  const minInputHeight = variant === "embedded" ? 38 : 34;
-  const maxInputHeight = variant === "embedded" ? 98 : 88;
+  const minInputHeight = variant === "embedded" ? 40 : 36;
+  const maxInputHeight = variant === "embedded" ? 106 : 96;
   const verticalPadding = variant === "embedded" ? 18 : 8;
   const horizontalPadding = variant === "embedded" ? 8 : 14;
   // A hidden copy of the text measures the wrapped height. `contentSize` on the
@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
     left: -10000,
     top: 0,
     fontSize: 16,
-    lineHeight: 20,
+    lineHeight: 22,
     fontFamily: THEME.fonts.sans,
   },
   input: {
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 7,
     paddingVertical: 4,
     fontSize: 16,
-    lineHeight: 20,
+    lineHeight: 22,
     color: THEME.colors.text,
     ...(isWeb ? { outlineStyle: "none" as unknown as undefined } : null),
   },
