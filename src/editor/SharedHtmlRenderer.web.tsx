@@ -1,3 +1,4 @@
+import type { BackendAttachment } from "../backend";
 import { createPluginContext } from "../content/plugin-context";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { View, StyleSheet } from "react-native";
@@ -230,12 +231,12 @@ export function SharedHtmlRendererWeb({
   }, [isStreaming, revising]);
 
   const handleBarSend = useCallback(
-    async (barComment: string) => {
+    async (barComment: string, attachments?: BackendAttachment[]) => {
       if (imageRef) {
         const ref = imageRef;
         setImageRef(null);
         setRevising(true);
-        await sendImageComment({ path: ref.path, kind: ref.kind }, barComment.trim());
+        await sendImageComment({ path: ref.path, kind: ref.kind }, barComment.trim(), attachments);
         return;
       }
       const sel = selectionText;
@@ -252,10 +253,10 @@ export function SharedHtmlRendererWeb({
           blockIds: selectionBlockIds,
           comment: barComment.trim(),
           status: "pending",
-        });
+        }, attachments);
         return;
       }
-      await sendComment(barComment.trim(), null);
+      await sendComment(barComment.trim(), null, attachments);
     },
     [imageRef, polishAnnotation, selectionBlockIds, selectionText, sendComment, sendImageComment],
   );

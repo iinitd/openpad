@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import type { Annotation } from "../types/annotation";
+import type { BackendAttachment } from "../backend";
 import { useSessionStore } from "./session-store";
 import { useEditorStore } from "./editor-store";
 import { useFilesStore } from "./files-store";
@@ -17,12 +18,16 @@ interface AnnotationStore {
 
   // Send one annotation (file + highlighted text + comment) to the agent. The
   // agent edits the file on disk itself; we don't post-process its reply.
-  polishAnnotation: (annotation: Annotation) => Promise<void>;
+  polishAnnotation: (annotation: Annotation, attachments?: BackendAttachment[]) => Promise<void>;
 
   // Send a free-form comment from the persistent document bar. `selectionText`
   // is optional: when the user has highlighted a passage it's attached as
   // context, otherwise the comment applies to the document as a whole.
-  sendComment: (comment: string, selectionText: string | null) => Promise<void>;
+  sendComment: (
+    comment: string,
+    selectionText: string | null,
+    attachments?: BackendAttachment[],
+  ) => Promise<void>;
 
   // Send a comment that references an embedded asset (an image or an exported
   // whiteboard) rather than a text passage. The document records the asset's
@@ -31,6 +36,7 @@ interface AnnotationStore {
   sendImageComment: (
     ref: { path: string; kind: "image" | "whiteboard" },
     comment: string,
+    attachments?: BackendAttachment[],
   ) => Promise<void>;
 }
 
@@ -128,7 +134,7 @@ export const useAnnotationStore = create<AnnotationStore>()(
         ),
       })),
 
-    polishAnnotation: async (annotation) => {
+    polishAnnotation: async (annotation, attachments) => {
       set((state) => {
         const exists = state.pendingAnnotations.some((a) => a.id === annotation.id);
         const list = exists
@@ -144,21 +150,21 @@ export const useAnnotationStore = create<AnnotationStore>()(
       // Send through the chat so the exchange shows up in the conversation
       // panel; the agent edits the file itself.
       markReviseTarget("selection");
-      await useSessionStore.getState().sendMessage(buildAnnotationMessage(annotation));
+      await useSessionStore.getState().sendMessage(buildAnnotationMessage(annotation), attachments);
     },
 
-    sendComment: async (comment, selectionText) => {
+    sendComment: async (comment, selectionText, attachments) => {
       markReviseTarget(selectionText && selectionText.trim() ? "selection" : "document");
       await useSessionStore
         .getState()
-        .sendMessage(buildMessage(selectionText ?? "", comment));
+        .sendMessage(buildMessage(selectionText ?? "", comment), attachments);
     },
 
-    sendImageComment: async (ref, comment) => {
+    sendImageComment: async (ref, comment, attachments) => {
       // A referenced asset is a specific target, so treat it like a selection
       // revise (the banner shows the exact document being worked on).
       markReviseTarget("selection");
-      await useSessionStore.getState().sendMessage(buildImageMessage(ref, comment));
+      await useSessionStore.getState().sendMessage(buildImageMessage(ref, comment), attachments);
     },
   })),
 );

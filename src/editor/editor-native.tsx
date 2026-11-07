@@ -1,3 +1,4 @@
+import type { BackendAttachment } from "../backend";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
@@ -458,14 +459,14 @@ export function EditorNative({
   // with no selection it's a document-scoped comment. On native we don't track
   // ProseMirror offsets, so the annotation carries only the highlighted text.
   const handleBarSend = useCallback(
-    async (barComment: string) => {
+    async (barComment: string, attachments?: BackendAttachment[]) => {
       // An image / whiteboard reference takes priority: route it as an asset
       // comment (the document records the path; the agent opens the file).
       if (imageRef) {
         const ref = imageRef;
         setImageRef(null);
         setRevising(true);
-        await sendImageComment({ path: ref.path, kind: ref.kind }, barComment.trim());
+        await sendImageComment({ path: ref.path, kind: ref.kind }, barComment.trim(), attachments);
         return;
       }
       const sel = selectionText;
@@ -485,10 +486,10 @@ export function EditorNative({
           blockIds: selectionBlockIds,
           comment: barComment.trim(),
           status: "pending",
-        });
+        }, attachments);
         return;
       }
-      await sendComment(barComment.trim(), null);
+      await sendComment(barComment.trim(), null, attachments);
     },
     [imageRef, selectionText, selectionBlockIds, polishAnnotation, sendComment, sendImageComment],
   );

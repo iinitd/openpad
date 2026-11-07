@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 import type { ActiveSelection } from "../types/annotation";
 import type { DocumentAssetPatch } from "../editor/resolve-doc-images";
+import type { BackendAttachment } from "../backend";
 
 const EMPTY_DOCUMENT_HTML =
   '<div class="kel-empty-document">Select a file from Files to preview it.</div>';
@@ -16,10 +17,10 @@ export interface CommentBarBridge {
   // An embedded asset (image / whiteboard) the user tapped as the comment
   // reference, if any. Mutually exclusive with a text selection in practice.
   imageRef?: { path: string; kind: "image" | "whiteboard"; label: string } | null;
-  onSend: (comment: string) => void | Promise<void>;
+  onSend: (comment: string, attachments?: BackendAttachment[]) => void | Promise<void>;
   secondaryAction?: {
     label: string;
-    onSend: (comment: string) => void | Promise<void>;
+    onSend: (comment: string, attachments?: BackendAttachment[]) => void | Promise<void>;
   };
   onClearSelection?: () => void;
 }

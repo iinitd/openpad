@@ -1,12 +1,11 @@
 import { memo } from "react";
-import { View, Text, TextInput, StyleSheet } from "react-native";
-import { Icon } from "../components/Icon";
+import { View, Text, StyleSheet } from "react-native";
 import { PressableRow } from "../components/PressableRow";
-import {
-  COMPACT_COMPOSER_ICON_SIZE,
-  COMPACT_COMPOSER_STYLES,
-} from "../components/compact-composer-styles";
+import { ComposerField, toBackendAttachments, usePendingImages } from "../components/ComposerField";
 import { useEditorStore } from "../stores/editor-store";
+import { useConnectionStore } from "../stores/connection-store";
+import { useSessionStore } from "../stores/session-store";
+import type { BackendAttachment } from "../backend";
 import { THEME } from "../styles/theme";
 import { isWeb } from "../constants/platform";
 
@@ -20,9 +19,12 @@ interface DocumentCommentBarProps {
   // asset reference by the caller.
   imageRef?: { label: string; kind: "image" | "whiteboard" } | null;
   // Send the comment to the agent. `selectionText` (or null) is attached by the
-  // caller. Return once dispatched/queued.
-  onSend: (comment: string) => void | Promise<void>;
-  secondaryAction?: { label: string; onSend: (comment: string) => void | Promise<void> };
+  // caller, together with any images picked in the bar.
+  onSend: (comment: string, attachments?: BackendAttachment[]) => void | Promise<void>;
+  secondaryAction?: {
+    label: string;
+    onSend: (comment: string, attachments?: BackendAttachment[]) => void | Promise<void>;
+  };
   // Clear the active selection (dismiss the context chip without sending).
   onClearSelection?: () => void;
   // "standalone" (default) draws its own padded footer for the desktop editor.
@@ -34,7 +36,8 @@ interface DocumentCommentBarProps {
 // A persistent bar for commenting on the document. It's always available: with
 // a selection it carries the highlighted passage as context, without one it
 // sends a document-scoped comment. Typing here never spawns a separate popover —
-// the input is inline.
+// the input is inline. It shares its field with the chat composer; the
+// difference is the document context wrapped around whatever it sends.
 export const DocumentCommentBar = memo(function DocumentCommentBar({
   selectionText,
   imageRef,
@@ -48,33 +51,32 @@ export const DocumentCommentBar = memo(function DocumentCommentBar({
   // case the highlighted reference clears; the text stays put.
   const comment = useEditorStore((s) => s.commentDraft);
   const setComment = useEditorStore((s) => s.setCommentDraft);
+  const pending = usePendingImages();
+  const backendKind = useConnectionStore((state) => state.client?.kind);
+  const isStreaming = useSessionStore((state) => state.isStreaming);
+  const canAttach = backendKind === "opencode" && !isStreaming;
   const hasSelection = !!selectionText && selectionText.trim().length > 0;
   const hasImageRef = !!imageRef;
-  // Either kind of reference (text or asset) lets an empty comment through with
-  // a default instruction.
-  const hasRef = hasSelection || hasImageRef;
+  // Either kind of reference (text, asset, or an attached image) lets an empty
+  // comment through with a default instruction.
+  const hasRef = hasSelection || hasImageRef || pending.images.length > 0;
+  const sendDisabled = !comment.trim() && !hasRef;
 
   const submit = async () => {
+    if (sendDisabled) return;
     const trimmed = comment.trim();
-    // Allow an empty comment only when there's a reference (defaults to a
-    // "polish this" instruction); a doc-scoped send needs some text.
-    if (!trimmed && !hasRef) return;
-    setComment("");
-    await onSend(trimmed);
+    const attachments = toBackendAttachments(pending.images);
+    try {
+      await onSend(trimmed, attachments);
+      setComment("");
+      pending.clear();
+    } catch {
+      // Keep the draft and the images when the send fails.
+    }
   };
 
-  const submitSecondary = async () => {
-    const trimmed = comment.trim();
-    if (!trimmed && !hasRef) return;
-    if (!secondaryAction) return;
-    setComment("");
-    await secondaryAction.onSend(trimmed);
-  };
-
-  // Enter sends; it never inserts a newline. On web we intercept the keydown
-  // before react-native-web's textarea inserts "\n" (and bail while an IME
-  // composition is active so committing candidates doesn't send). Shift+Enter
-  // still adds a newline. Native gets the same via submitBehavior="submit".
+  // Same Enter-to-send behaviour as the chat composer: intercept before the
+  // web textarea inserts a newline, and leave IME composition alone.
   const handleKeyPress = (e: {
     nativeEvent: { key?: string; shiftKey?: boolean; isComposing?: boolean; keyCode?: number };
     preventDefault?: () => void;
@@ -84,6 +86,19 @@ export const DocumentCommentBar = memo(function DocumentCommentBar({
     if (ne.key === "Enter" && !ne.shiftKey && !ne.isComposing && ne.keyCode !== 229) {
       e.preventDefault?.();
       void submit();
+    }
+  };
+
+  const submitSecondary = async () => {
+    if (sendDisabled || !secondaryAction) return;
+    const trimmed = comment.trim();
+    const attachments = toBackendAttachments(pending.images);
+    try {
+      await secondaryAction.onSend(trimmed, attachments);
+      setComment("");
+      pending.clear();
+    } catch {
+      // Keep the draft and the images when the send fails.
     }
   };
 
@@ -116,61 +131,32 @@ export const DocumentCommentBar = memo(function DocumentCommentBar({
           ) : null}
         </View>
       ) : null}
-      <View style={variant === "embedded" ? COMPACT_COMPOSER_STYLES.pill : styles.pill}>
-        <TextInput
-          style={variant === "embedded"
-            ? [COMPACT_COMPOSER_STYLES.input, styles.inputWeb]
-            : styles.input}
-          value={comment}
-          onChangeText={setComment}
-          placeholder={
-            hasImageRef
-              ? imageRef!.kind === "whiteboard"
-                ? "对这块白板说点什么…"
-                : "对这张图片说点什么…"
-              : hasSelection
-                ? "对选中内容说点什么…"
-                : "点击输入，评论这篇文档…"
-          }
-          placeholderTextColor={THEME.colors.textMuted}
-          returnKeyType="send"
-          onSubmitEditing={submit}
-          onKeyPress={handleKeyPress}
-          submitBehavior="submit"
-          multiline
-        />
-        <PressableRow
-          style={[
-            variant === "embedded" ? COMPACT_COMPOSER_STYLES.send : styles.send,
-            !comment.trim() && !hasRef && (
-              variant === "embedded" ? COMPACT_COMPOSER_STYLES.sendDisabled : styles.sendDisabled
-            ),
-          ]}
-          onPress={submit}
-          disabled={!comment.trim() && !hasRef}
-          haptic="medium"
-          scale={0.92}
-        >
-          <View style={variant === "embedded" ? COMPACT_COMPOSER_STYLES.sendInner : styles.sendInner}>
-            <Icon
-              name="send"
-              size={variant === "embedded" ? COMPACT_COMPOSER_ICON_SIZE : 16}
-              color="#fff"
-            />
-          </View>
-        </PressableRow>
-        {secondaryAction ? (
-          <PressableRow
-            style={[styles.secondaryAction, !comment.trim() && !hasRef && styles.secondaryActionDisabled]}
-            onPress={submitSecondary}
-            disabled={!comment.trim() && !hasRef}
-            haptic="light"
-            scale={0.95}
-          >
-            <Text style={styles.secondaryActionText}>{secondaryAction.label}</Text>
-          </PressableRow>
-        ) : null}
-      </View>
+      <ComposerField
+        variant={variant}
+        value={comment}
+        onChangeText={setComment}
+        onSend={() => void submit()}
+        onKeyPress={handleKeyPress}
+        placeholder={
+          hasImageRef
+            ? imageRef!.kind === "whiteboard"
+              ? "对这块白板说点什么…"
+              : "对这张图片说点什么…"
+            : hasSelection
+              ? "对选中内容说点什么…"
+              : "点击输入，评论这篇文档…"
+        }
+        sendDisabled={sendDisabled}
+        images={pending.images}
+        onRemoveImage={pending.remove}
+        onPickImage={canAttach ? pending.pick : undefined}
+        pickingImage={pending.picking}
+        secondaryAction={
+          secondaryAction
+            ? { label: secondaryAction.label, onPress: () => void submitSecondary(), disabled: sendDisabled }
+            : undefined
+        }
+      />
     </View>
   );
 });
@@ -230,66 +216,5 @@ const styles = StyleSheet.create({
   },
   chipClearAsset: {
     color: "#475569",
-  },
-  pill: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#ffffff",
-    borderRadius: THEME.radii.full,
-    paddingLeft: THEME.spacing.md,
-    paddingRight: 6,
-    paddingVertical: 6,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(148,163,184,0.35)",
-    // Soft floating shadow to lift the pill off the document.
-    shadowColor: "#0f172a",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-  input: {
-    flex: 1,
-    paddingHorizontal: THEME.spacing.sm,
-    paddingVertical: 6,
-    fontSize: 15,
-    color: THEME.colors.text,
-    maxHeight: 100,
-    // Kill react-native-web's native focus outline on the underlying textarea.
-    ...(isWeb ? { outlineStyle: "none" as unknown as undefined } : null),
-  },
-  inputWeb: {
-    ...(isWeb ? { outlineStyle: "none" as unknown as undefined } : null),
-  },
-  send: {
-    width: 34,
-    height: 34,
-    borderRadius: THEME.radii.full,
-    backgroundColor: THEME.colors.primary,
-    overflow: "hidden",
-  },
-  sendInner: {
-    width: 34,
-    height: 34,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sendDisabled: {
-    backgroundColor: "rgba(148,163,184,0.4)",
-  },
-  secondaryAction: {
-    marginLeft: 4,
-    paddingHorizontal: 9,
-    paddingVertical: 7,
-    borderRadius: THEME.radii.full,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: THEME.colors.border,
-    backgroundColor: THEME.colors.background,
-  },
-  secondaryActionDisabled: { opacity: 0.45 },
-  secondaryActionText: {
-    color: THEME.colors.textSecondary,
-    fontSize: 11,
-    fontWeight: "600",
   },
 });

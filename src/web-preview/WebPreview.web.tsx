@@ -1,3 +1,4 @@
+import type { BackendAttachment } from "../backend";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { useWebPreviewStore } from "./web-preview-store";
@@ -27,8 +28,8 @@ export function WebPreview({ onRequestFiles, onRequestAgent, hideInlineCommentBa
     setSelectionText(null);
     iframeRef.current?.contentWindow?.postMessage({ type: "kel-preview-command", command: "clear-selection" }, "*");
   }, []);
-  const send = useCallback(async (comment: string) => {
-    await sendPreviewComment(comment, selectionText);
+  const send = useCallback(async (comment: string, attachments?: BackendAttachment[]) => {
+    await sendPreviewComment(comment, selectionText, attachments);
     clearSelection();
   }, [clearSelection, selectionText]);
   useEffect(() => {

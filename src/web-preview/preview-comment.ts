@@ -1,7 +1,12 @@
 import { useSessionStore } from "../stores/session-store";
 import { useWebPreviewStore } from "./web-preview-store";
+import type { BackendAttachment } from "../backend";
 
-export async function sendPreviewComment(comment: string, selectionText: string | null) {
+export async function sendPreviewComment(
+  comment: string,
+  selectionText: string | null,
+  attachments?: BackendAttachment[],
+) {
   const preview = useWebPreviewStore.getState();
   const previewRoot = preview.snapshot?.previewPath || "preview";
   const projectRoot = preview.snapshot?.rootPath || "";
@@ -19,5 +24,5 @@ export async function sendPreviewComment(comment: string, selectionText: string 
   ];
   if (selected) lines.push("Rendered selection:", '"""', selected, '"""', "");
   lines.push(`Instruction: ${instruction}`);
-  await useSessionStore.getState().sendMessage(lines.join("\n"));
+  await useSessionStore.getState().sendMessage(lines.join("\n"), attachments);
 }
