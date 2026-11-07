@@ -17,7 +17,6 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { THEME } from "../../src/styles/theme";
 import { AgentChatPanel } from "../../src/agent/AgentChatPanel";
-import { ChatInput } from "../../src/agent/ChatInput";
 import { ContentPreview } from "../../src/content/ContentPreview";
 import { DocumentCommentBar } from "../../src/editor/DocumentCommentBar";
 import { FileTree, openWorkspaceDocument } from "../../src/editor/FileTree";
@@ -422,9 +421,12 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   const [filesOpen, setFilesOpen] = useState(false);
   const [filesMounted, setFilesMounted] = useState(false);
   const slideX = useRef(new Animated.Value(-drawerWidth)).current;
-  // The agent is a pane in the middle column, not a drawer: the document and
-  // conversation swap in place while the bottom composer stays anchored.
-  const [agentPaneOpen, setAgentPaneOpen] = useState(false);
+  // The agent conversation is a full-page layer that slides in from the right
+  // and covers the document. `agentMounted` keeps it rendered through the
+  // slide-out so closing animates instead of popping away.
+  const [agentOpen, setAgentOpen] = useState(false);
+  const [agentMounted, setAgentMounted] = useState(false);
+  const agentX = useRef(new Animated.Value(screenWidth)).current;
 
   const openFiles = useCallback(() => {
     setFilesMounted(true);
@@ -433,15 +435,25 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   const closeFiles = useCallback(() => {
     setFilesOpen(false);
   }, []);
+  const openAgent = useCallback(() => {
+    Keyboard.dismiss();
+    setFilesOpen(false);
+    setAgentMounted(true);
+    setAgentOpen(true);
+  }, []);
+  const closeAgent = useCallback(() => {
+    Keyboard.dismiss();
+    setAgentOpen(false);
+  }, []);
   const showDocument = useCallback(() => {
     Keyboard.dismiss();
     setFilesOpen(false);
-    setAgentPaneOpen(false);
+    setAgentOpen(false);
   }, []);
   const toggleAgentPane = useCallback(() => {
-    Keyboard.dismiss();
-    setAgentPaneOpen((open) => !open);
-  }, []);
+    if (agentOpen) closeAgent();
+    else openAgent();
+  }, [agentOpen, closeAgent, openAgent]);
 
   useEffect(() => {
     if (filesOpen) {
@@ -465,6 +477,84 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
       });
     }
   }, [drawerWidth, filesOpen, slideX]);
+
+  useEffect(() => {
+    if (agentOpen) {
+      Animated.spring(agentX, {
+        toValue: 0,
+        useNativeDriver: Platform.OS !== "web",
+        stiffness: 260,
+        damping: 28,
+        mass: 0.9,
+      }).start();
+    } else if (agentMounted) {
+      Animated.timing(agentX, {
+        toValue: screenWidth,
+        duration: 220,
+        easing: Easing.bezier(0.32, 0.72, 0, 1),
+        useNativeDriver: Platform.OS !== "web",
+      }).start(({ finished }) => {
+        if (finished) setAgentMounted(false);
+      });
+    }
+  }, [agentMounted, agentOpen, agentX, screenWidth]);
+
+  // Right-edge swipe opens the conversation; a left-to-right drag on the panel
+  // closes it. Both track the finger and settle on release, matching the files
+  // drawer's feel.
+  const agentOpenRef = useRef(agentOpen);
+  agentOpenRef.current = agentOpen;
+  const agentMountedRef = useRef(agentMounted);
+  agentMountedRef.current = agentMounted;
+  const screenWidthRef = useRef(screenWidth);
+  screenWidthRef.current = screenWidth;
+
+  const shouldClaimAgentEdge = (_evt: unknown, g: { dx: number; dy: number; moveX: number }) => {
+    if (agentOpenRef.current || agentMountedRef.current) return false;
+    if (filesMountedRef.current) return false;
+    const horizontal = Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6;
+    if (!horizontal) return false;
+    const startX = g.moveX - g.dx;
+    return g.dx < 0 && startX >= screenWidthRef.current - SWIPE_EDGE_ZONE;
+  };
+
+
+  const shouldClaimAgentClose = (_evt: unknown, g: { dx: number; dy: number }) =>
+    g.dx > 8 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6;
+
+  const agentCloseResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: shouldClaimAgentClose,
+      onMoveShouldSetPanResponderCapture: shouldClaimAgentClose,
+      onPanResponderMove: (_evt, g) => {
+        agentX.setValue(Math.max(0, Math.min(screenWidthRef.current, g.dx)));
+      },
+      onPanResponderRelease: (_evt, g) => {
+        const width = screenWidthRef.current;
+        if (g.dx >= width * 0.25 || g.vx > 0.4) {
+          setAgentOpen(false);
+          return;
+        }
+        Animated.spring(agentX, {
+          toValue: 0,
+          useNativeDriver: Platform.OS !== "web",
+          stiffness: 260,
+          damping: 28,
+          mass: 0.9,
+        }).start();
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(agentX, {
+          toValue: 0,
+          useNativeDriver: Platform.OS !== "web",
+          stiffness: 260,
+          damping: 28,
+          mass: 0.9,
+        }).start();
+      },
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  ).current;
 
   // Backdrop dims in step with the slide (0 when off-screen → 1 when open).
   const backdropOpacity = slideX.interpolate({
@@ -523,19 +613,72 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
     return g.dx > 0 && startX <= SWIPE_EDGE_ZONE;
   };
 
+  // One responder owns both edges: a rightward drag from the left edge opens the
+  // files drawer, a leftward drag from the right edge opens the conversation.
+  // Sharing it avoids a second transparent view stealing taps from the content.
+  const activeSwipeRef = useRef<"files" | "agent" | null>(null);
+
   const swipeResponder = useRef(
     PanResponder.create({
-      onMoveShouldSetPanResponder: shouldClaimEdgeSwipe,
-      onMoveShouldSetPanResponderCapture: shouldClaimEdgeSwipe,
+      onMoveShouldSetPanResponder: (evt, g) => {
+        if (shouldClaimEdgeSwipe(evt, g)) {
+          activeSwipeRef.current = "files";
+          return true;
+        }
+        if (shouldClaimAgentEdge(evt, g)) {
+          activeSwipeRef.current = "agent";
+          return true;
+        }
+        return false;
+      },
+      onMoveShouldSetPanResponderCapture: (evt, g) => {
+        if (shouldClaimEdgeSwipe(evt, g)) {
+          activeSwipeRef.current = "files";
+          return true;
+        }
+        if (shouldClaimAgentEdge(evt, g)) {
+          activeSwipeRef.current = "agent";
+          return true;
+        }
+        return false;
+      },
       onPanResponderGrant: () => {
+        if (activeSwipeRef.current === "agent") {
+          setAgentMounted(true);
+          agentX.setValue(screenWidthRef.current);
+          return;
+        }
         setFilesMounted(true);
         slideX.setValue(-drawerWidthRef.current);
       },
       onPanResponderMove: (_evt, g) => {
+        if (activeSwipeRef.current === "agent") {
+          const width = screenWidthRef.current;
+          agentX.setValue(Math.max(0, width + Math.min(0, g.dx)));
+          return;
+        }
         const dw = drawerWidthRef.current;
         setDragPosition(Math.min(0, -dw + Math.max(0, g.dx)));
       },
       onPanResponderRelease: (_evt, g) => {
+        if (activeSwipeRef.current === "agent") {
+          activeSwipeRef.current = null;
+          const width = screenWidthRef.current;
+          if (-g.dx >= width * 0.28 || g.vx < -0.4) {
+            setAgentOpen(true);
+            return;
+          }
+          Animated.timing(agentX, {
+            toValue: width,
+            duration: 180,
+            easing: Easing.bezier(0.32, 0.72, 0, 1),
+            useNativeDriver: Platform.OS !== "web",
+          }).start(({ finished }) => {
+            if (finished) setAgentMounted(false);
+          });
+          return;
+        }
+        activeSwipeRef.current = null;
         flushDragPosition();
         const dw = drawerWidthRef.current;
         const shouldOpen = g.dx >= dw * 0.3 || g.vx > 0.4;
@@ -556,6 +699,18 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         }
       },
       onPanResponderTerminate: () => {
+        if (activeSwipeRef.current === "agent") {
+          activeSwipeRef.current = null;
+          Animated.timing(agentX, {
+            toValue: screenWidthRef.current,
+            duration: 160,
+            useNativeDriver: Platform.OS !== "web",
+          }).start(({ finished }) => {
+            if (finished) setAgentMounted(false);
+          });
+          return;
+        }
+        activeSwipeRef.current = null;
         flushDragPosition();
         Animated.timing(slideX, {
           toValue: -drawerWidthRef.current,
@@ -598,7 +753,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         styles.mobileContainer,
         {
           paddingTop: topInset,
-          paddingBottom: agentPaneOpen || hasInput ? 0 : insets.bottom,
+          paddingBottom: hasInput ? 0 : insets.bottom,
         },
       ]}
       {...swipeResponder.panHandlers}
@@ -612,45 +767,51 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
             active
           />
         </View>
-        {agentPaneOpen ? (
-          <View style={[styles.pane, styles.agentPane]}>
-            <AgentChatPanel
-              showInput={false}
-              avoidKeyboard={false}
-              showHeader={false}
-              onRequestClose={toggleAgentPane}
-            />
-          </View>
-        ) : null}
       </View>
 
-      {/* One dock, two composers. The document comment bar and the agent input
-          keep their own state while the middle pane switches. */}
-      {agentPaneOpen || hasInput ? (
+      {/* Document comment dock. The agent conversation owns its own composer
+          inside the sliding page, so this dock never swaps contents. */}
+      {hasInput ? (
         <View
-          nativeID={agentPaneOpen ? "kel-agent-composer" : "kel-document-composer"}
+          nativeID="kel-document-composer"
           style={[
             styles.composerDock,
             { paddingBottom: dockPadBottom, paddingRight: THEME.spacing.xl },
           ]}
         >
-          <View style={agentPaneOpen ? styles.paneHidden : undefined}>
-            {hasInput ? (
-              <DocumentCommentBar
-                variant="embedded"
-                selectionText={commentBridge?.selectionText ?? null}
-                imageRef={commentBridge?.imageRef ?? null}
-                onSend={commentBridge?.onSend ?? NOOP_COMMENT_SEND}
-                onClearSelection={commentBridge?.onClearSelection}
-                secondaryAction={commentBridge?.secondaryAction}
-              />
-            ) : null}
-          </View>
-          <View style={agentPaneOpen ? undefined : styles.paneHidden}>
-            <ChatInput variant="embedded" />
-          </View>
+          <DocumentCommentBar
+            variant="embedded"
+            selectionText={commentBridge?.selectionText ?? null}
+            imageRef={commentBridge?.imageRef ?? null}
+            onSend={commentBridge?.onSend ?? NOOP_COMMENT_SEND}
+            onClearSelection={commentBridge?.onClearSelection}
+            secondaryAction={commentBridge?.secondaryAction}
+          />
         </View>
       ) : null}
+
+      {/* Full-page conversation layer, opened from the header button or a
+          right-edge swipe, dismissed by dragging it back to the right. */}
+      {agentMounted ? (
+        <Animated.View
+          style={[
+            styles.agentOverlay,
+            {
+              transform: [{ translateX: agentX }],
+              paddingBottom: keyboardOpen ? 0 : insets.bottom,
+            },
+          ]}
+          {...agentCloseResponder.panHandlers}
+        >
+          <AgentChatPanel
+            showInput
+            avoidKeyboard
+            showHeader={false}
+            onRequestClose={closeAgent}
+          />
+        </Animated.View>
+      ) : null}
+
 
       {/* Left-anchored Files drawer. Sits above the document header, which
           carries zIndex 30 of its own, so the drawer layer needs a higher one. */}
@@ -741,11 +902,19 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
-  paneHidden: {
-    display: "none",
-  },
-  agentPane: {
-    backgroundColor: THEME.colors.backgroundSecondary,
+  agentOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 90,
+    backgroundColor: THEME.colors.background,
+    shadowColor: "#18181b",
+    shadowOffset: { width: -4, height: 0 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 10,
   },
   // Flat IM-style composer bar flush with the screen bottom: a tinted surface
   // band with a thin top divider. The input pill inside is the only rounded

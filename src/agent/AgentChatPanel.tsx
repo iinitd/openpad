@@ -422,10 +422,10 @@ export const AgentChatPanel = memo(function AgentChatPanel({
               style={styles.mobileHeaderAction}
               activeOpacity={0.6}
               accessibilityRole="button"
-              accessibilityLabel="Back to document"
+              accessibilityLabel="Close conversation"
               onPress={onRequestClose}
             >
-              <Icon name="chat" size={20} color={THEME.colors.primary} />
+              <Icon name="close" size={20} color={THEME.colors.textSecondary} />
             </TouchableOpacity>
           </View>
         </>
