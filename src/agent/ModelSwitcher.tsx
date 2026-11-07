@@ -308,12 +308,12 @@ const styles = StyleSheet.create({
     maxWidth: 220,
   },
   triggerText: {
-    fontSize: 13,
+    fontSize: 14,
     color: THEME.colors.textSecondary,
     flexShrink: 1,
   },
   triggerChevron: {
-    fontSize: 11,
+    fontSize: 12,
     color: THEME.colors.textMuted,
   },
   backdrop: {
@@ -339,17 +339,17 @@ const styles = StyleSheet.create({
     marginBottom: THEME.spacing.xs,
   },
   dialogTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "600",
     color: THEME.colors.text,
   },
   closeButton: {
-    fontSize: 25,
+    fontSize: 26,
     lineHeight: 24,
     color: THEME.colors.textMuted,
   },
   sectionLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "600",
     color: THEME.colors.textSecondary,
     marginTop: THEME.spacing.sm,
@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   chipText: {
-    fontSize: 14,
+    fontSize: 15,
     color: THEME.colors.text,
   },
   chipTextActive: {
@@ -397,12 +397,12 @@ const styles = StyleSheet.create({
     gap: THEME.spacing.md,
   },
   lockedProviderText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "500",
     color: THEME.colors.text,
   },
   lockedHint: {
-    fontSize: 12,
+    fontSize: 13,
     color: THEME.colors.textMuted,
   },
   modelScroll: {
@@ -421,12 +421,12 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.backgroundSecondary,
   },
   modelLabel: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "500",
     color: THEME.colors.text,
   },
   modelDesc: {
-    fontSize: 13,
+    fontSize: 14,
     color: THEME.colors.textMuted,
     marginTop: 2,
   },
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: THEME.spacing.md,
   },
   cancelButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     color: THEME.colors.textSecondary,
   },
   confirmButton: {
@@ -459,12 +459,12 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   confirmButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
     color: "#fff",
   },
   error: {
-    fontSize: 14,
+    fontSize: 15,
     color: THEME.colors.error,
   },
 });

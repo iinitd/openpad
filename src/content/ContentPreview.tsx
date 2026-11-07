@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     maxWidth: "100%",
     paddingHorizontal: THEME.spacing.sm,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "500",
     letterSpacing: 0.15,
     color: THEME.colors.textSecondary,

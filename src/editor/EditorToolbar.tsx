@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.primary,
   },
   buttonText: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "600",
     color: THEME.colors.textSecondary,
   },

@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     maxWidth: 220,
   },
   pillLabel: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "600",
     color: THEME.colors.text,
     flexShrink: 1,
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     gap: THEME.spacing.sm,
   },
   sheetTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
     color: THEME.colors.textSecondary,
     textTransform: "uppercase",
@@ -194,12 +194,12 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   rowLabel: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "600",
     color: THEME.colors.text,
   },
   rowSubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     color: THEME.colors.textMuted,
   },
   busyDot: {

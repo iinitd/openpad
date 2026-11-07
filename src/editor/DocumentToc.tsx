@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   },
   titleText: {
     flex: 1,
-    fontSize: 16,
+    fontSize: 17,
     color: THEME.colors.textSecondary,
   },
   // Keep the title bar in the document flow, but float the outline over the
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     paddingRight: THEME.spacing.lg,
   },
   tocText: {
-    fontSize: 14,
+    fontSize: 15,
     color: THEME.colors.textSecondary,
   },
   tocTextTop: {

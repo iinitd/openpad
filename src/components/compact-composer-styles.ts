@@ -23,7 +23,7 @@ export const COMPACT_COMPOSER_STYLES = StyleSheet.create({
     minHeight: 38,
     paddingHorizontal: 4,
     paddingVertical: 9,
-    fontSize: 15,
+    fontSize: 16,
     lineHeight: 20,
     textAlignVertical: "center",
     color: THEME.colors.text,

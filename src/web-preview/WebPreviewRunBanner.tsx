@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
   },
   summary: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     lineHeight: 18,
     color: THEME.colors.textSecondary,
   },

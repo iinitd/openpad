@@ -699,9 +699,9 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.backgroundSecondary,
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: THEME.colors.border,
   },
-  openingText: { flex: 1, fontSize: 14, color: THEME.colors.textSecondary },
+  openingText: { flex: 1, fontSize: 15, color: THEME.colors.textSecondary },
   openingError: { color: THEME.colors.error },
-  openingAction: { fontSize: 14, color: THEME.colors.primary },
+  openingAction: { fontSize: 15, color: THEME.colors.primary },
   splitContainer: {
     flex: 1,
     flexDirection: "row",
@@ -797,7 +797,7 @@ const styles = StyleSheet.create({
     borderBottomColor: THEME.colors.border,
   },
   sheetTitle: {
-    fontSize: 19,
+    fontSize: 20,
     fontWeight: "600",
     color: THEME.colors.text,
   },

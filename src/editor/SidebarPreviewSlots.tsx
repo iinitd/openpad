@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     marginBottom: THEME.spacing.xs,
   },
   sectionTitle: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "700",
     color: THEME.colors.textMuted,
     textTransform: "uppercase",
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     marginBottom: THEME.spacing.sm,
   },
   groupTitle: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "700",
     color: THEME.colors.textSecondary,
     textTransform: "uppercase",
@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.72 }],
   },
   label: {
-    fontSize: 14,
+    fontSize: 15,
     color: THEME.colors.text,
     fontWeight: "500",
     flexShrink: 1,
