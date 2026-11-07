@@ -45,6 +45,18 @@ EXPO_PACKAGER_HOSTNAME=<reachable-host> npx expo start --dev-client
 
 If the QR code cannot be scanned across networks, enter `http://<reachable-host>:8081` manually from the dev client's launcher screen.
 
+## Building on GitHub Actions
+
+Workflow: `.github/workflows/ios-dev-client.yml`
+
+Trigger it from Actions → **iOS Dev Client** → Run workflow. It runs `eas build --local` on a `macos-26` runner, so the build itself does not consume the EAS build quota; it uses GitHub Actions minutes, which are free for public repositories.
+
+When the build succeeds, the job publishes the IPA and an `itms-services` manifest to the `gh-pages` branch. The run summary contains the install link.
+
+One-time setup in the repository: **Settings → Pages → Source: Deploy from a branch → `gh-pages` / root**. The site is then `https://<owner>.github.io/<repo>/`.
+
+The published site is public. The IPA can be downloaded by anyone, but an ad-hoc install only works on devices whose UDID is in the provisioning profile used for that build.
+
 ## Notes
 
 - The development build uses its own bundle identifier, URL scheme, and display name, set by `app.config.js` when `APP_VARIANT=dev`. It can coexist with the TestFlight build instead of replacing it.

@@ -1,0 +1,101 @@
+name: iOS Dev Client
+
+# Builds the ad-hoc development client on a GitHub runner with
+# `eas build --local`, then publishes it to GitHub Pages so a phone can install
+# it over the air. Local builds do not consume the EAS build quota; this only
+# uses GitHub Actions minutes (free for public repositories).
+
+on:
+  workflow_dispatch:
+    inputs:
+      message:
+        description: Build message
+        required: false
+        default: Manual dev client build
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ios-dev-client
+  cancel-in-progress: true
+
+jobs:
+  build:
+    # SDK 57 needs Xcode 26.4+. GitHub's macOS 26 image ships Xcode 26.x;
+    # the version check below fails early if the image is older.
+    runs-on: macos-26
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Check Xcode version
+        run: |
+          xcodebuild -version
+          version="$(xcodebuild -version | awk '/^Xcode/{print $2}')"
+          major="${version%%.*}"
+          rest="${version#*.}"
+          minor="${rest%%.*}"
+          if [ "$major" -lt 26 ] || { [ "$major" -eq 26 ] && [ "$minor" -lt 4 ]; }; then
+            echo "OpenPad SDK 57 requires Xcode 26.4 or newer; this runner has Xcode $version."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci --include=dev
+
+      - name: Build dev client IPA
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          npx eas-cli@latest build \
+            --local \
+            --platform ios \
+            --profile development \
+            --non-interactive \
+            --message "${{ inputs.message }}" \
+            --output build/OpenPadDev.ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openpad-dev-client
+          path: build/OpenPadDev.ipa
+          if-no-files-found: error
+
+      - name: Build install page
+        id: page
+        run: |
+          chmod +x scripts/publish-dev-client.sh
+          scripts/publish-dev-client.sh build/OpenPadDev.ipa public | tee publish.env
+          install_url="$(sed -n 's/^install_url=//p' publish.env)"
+          {
+            echo "### OpenPad Dev"
+            echo
+            echo "Open this on a registered iOS device in Safari:"
+            echo
+            echo "[Install ${install_url}](${install_url})"
+            echo
+            echo "Or open the page: https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # gh-pages only ever holds generated build output, so each run replaces it
+      # wholesale instead of accumulating history.
+      - name: Publish to gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd public
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -q -b gh-pages
+          git add -A
+          git commit -q -m "Dev client ${GITHUB_RUN_NUMBER}: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push --force "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
