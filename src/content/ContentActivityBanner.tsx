@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
   },
   summary: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 18,
     color: THEME.colors.textSecondary,
   },

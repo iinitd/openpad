@@ -102,7 +102,7 @@ export function WebPreview({ onRequestFiles, onRequestAgent, hideInlineCommentBa
 }
 const styles = StyleSheet.create({
   container: { flex: 1, minHeight: 0, backgroundColor: "#fff" },
-  muted: { fontSize: 12, color: THEME.colors.textMuted, textAlign: "center" },
-  error: { padding: 6, color: THEME.colors.error, backgroundColor: "#fff1f2", fontSize: 11 },
+  muted: { fontSize: 13, color: THEME.colors.textMuted, textAlign: "center" },
+  error: { padding: 6, color: THEME.colors.error, backgroundColor: "#fff1f2", fontSize: 12 },
   empty: { flex: 1, alignItems: "center", justifyContent: "center" },
 });

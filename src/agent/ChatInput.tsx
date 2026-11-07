@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     marginBottom: THEME.spacing.xs,
   },
   queueHint: {
-    fontSize: 11,
+    fontSize: 12,
     color: THEME.colors.textSecondary,
     paddingHorizontal: THEME.spacing.xs,
   },
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
   },
   queueChipText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     color: THEME.colors.text,
   },
   queueRemove: {
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(148,163,184,0.2)",
   },
   queueRemoveText: {
-    fontSize: 15,
+    fontSize: 16,
     lineHeight: 17,
     color: THEME.colors.textSecondary,
     fontWeight: "600",

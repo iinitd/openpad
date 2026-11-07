@@ -187,17 +187,17 @@ const styles = StyleSheet.create({
     marginLeft: THEME.spacing.xs,
   },
   chipQuote: {
-    fontSize: 13,
+    fontSize: 14,
     color: "#a16207",
     fontWeight: "700",
   },
   chipText: {
     flexShrink: 1,
-    fontSize: 12,
+    fontSize: 13,
     color: "#713f12",
   },
   chipClear: {
-    fontSize: 12,
+    fontSize: 13,
     color: "#92400e",
     fontWeight: "700",
     paddingLeft: 4,
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#e2e8f0",
   },
   chipAssetIcon: {
-    fontSize: 13,
+    fontSize: 14,
     color: "#475569",
   },
   chipTextAsset: {

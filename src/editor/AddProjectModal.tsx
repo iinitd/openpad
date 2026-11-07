@@ -278,16 +278,16 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   title: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: "700",
     color: THEME.colors.text,
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: 13,
     color: THEME.colors.textSecondary,
   },
   rootPath: {
-    fontSize: 12,
+    fontSize: 13,
     color: THEME.colors.textMuted,
     fontFamily: THEME.fonts.mono,
   },
@@ -300,7 +300,7 @@ const styles = StyleSheet.create({
     paddingVertical: THEME.spacing.sm,
   },
   breadcrumbText: {
-    fontSize: 12,
+    fontSize: 13,
     color: THEME.colors.textSecondary,
     fontFamily: THEME.fonts.mono,
   },
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
   rowText: {
     flex: 1,
     minWidth: 0,
-    fontSize: 14,
+    fontSize: 15,
     color: THEME.colors.text,
   },
   stateRow: {
@@ -336,12 +336,12 @@ const styles = StyleSheet.create({
     padding: THEME.spacing.md,
   },
   stateText: {
-    fontSize: 13,
+    fontSize: 14,
     color: THEME.colors.textSecondary,
     padding: THEME.spacing.md,
   },
   error: {
-    fontSize: 13,
+    fontSize: 14,
     color: THEME.colors.error,
     padding: THEME.spacing.md,
   },
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
     paddingTop: THEME.spacing.md,
   },
   selection: {
-    fontSize: 12,
+    fontSize: 13,
     color: THEME.colors.textSecondary,
   },
   selectButton: {
@@ -368,7 +368,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   selectButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
     color: "#fff",
   },

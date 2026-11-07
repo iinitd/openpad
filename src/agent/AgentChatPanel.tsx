@@ -608,7 +608,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   mobileHeaderTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "500",
     color: THEME.colors.text,
     maxWidth: 220,
@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: THEME.spacing.xs,
   },
   switcherHeadingText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "600",
     color: THEME.colors.textSecondary,
   },
@@ -661,19 +661,19 @@ const styles = StyleSheet.create({
   switcherSourceLabel: {
     flex: 1,
     minWidth: 0,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "600",
     color: THEME.colors.textSecondary,
   },
   switcherSourceStatus: {
-    fontSize: 11,
+    fontSize: 12,
     color: THEME.colors.textMuted,
   },
   switcherRefresh: {
     padding: THEME.spacing.xs,
   },
   switcherError: {
-    fontSize: 12,
+    fontSize: 13,
     color: THEME.colors.error,
     paddingVertical: THEME.spacing.xs,
   },
@@ -686,7 +686,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   switcherTitle: {
-    fontSize: 13,
+    fontSize: 14,
     color: THEME.colors.text,
   },
   switcherTitleActive: {
@@ -701,7 +701,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   switcherWorkspace: {
-    fontSize: 11,
+    fontSize: 12,
     color: THEME.colors.textMuted,
   },
   switcherDot: {
@@ -716,11 +716,11 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.border,
   },
   switcherLoadingText: {
-    fontSize: 13,
+    fontSize: 14,
     color: THEME.colors.textSecondary,
   },
   switcherEmpty: {
-    fontSize: 13,
+    fontSize: 14,
     color: THEME.colors.textMuted,
     paddingVertical: THEME.spacing.sm,
   },
@@ -729,7 +729,7 @@ const styles = StyleSheet.create({
   },
   switcherNewLabel: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "500",
     color: THEME.colors.textSecondary,
   },
@@ -746,7 +746,7 @@ const styles = StyleSheet.create({
     borderTopColor: "rgba(15, 23, 42, 0.07)",
   },
   switcherModelLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: THEME.colors.textMuted,
   },
   headerLeft: {
@@ -765,12 +765,12 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     flexShrink: 1,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "600",
     color: THEME.colors.text,
   },
   streamingBadge: {
-    fontSize: 12,
+    fontSize: 13,
     color: THEME.colors.primary,
     fontWeight: "500",
     backgroundColor: THEME.colors.surface,
@@ -779,7 +779,7 @@ const styles = StyleSheet.create({
     borderRadius: THEME.radii.full,
   },
   idleBadge: {
-    fontSize: 12,
+    fontSize: 13,
     color: THEME.colors.textMuted,
     backgroundColor: THEME.colors.backgroundSecondary,
     paddingHorizontal: THEME.spacing.sm,

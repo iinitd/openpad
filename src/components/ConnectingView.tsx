@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   },
   brand: {
     marginTop: 14,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "600",
     letterSpacing: 0.5,
     color: THEME.colors.textSecondary,
@@ -121,13 +121,13 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "500",
     color: THEME.colors.text,
   },
   subtitle: {
     maxWidth: 280,
-    fontSize: 12,
+    fontSize: 13,
     lineHeight: 17,
     color: THEME.colors.textMuted,
     textAlign: "center",

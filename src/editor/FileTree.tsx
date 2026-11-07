@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     borderBottomColor: THEME.colors.border,
   },
   headerTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "700",
     color: THEME.colors.textSecondary,
     textTransform: "uppercase",
@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   tabLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "600",
     color: THEME.colors.textSecondary,
   },
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: THEME.spacing.sm,
   },
   sectionLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "700",
     letterSpacing: 0.7,
     textTransform: "uppercase",
@@ -440,14 +440,14 @@ const styles = StyleSheet.create({
     gap: 1,
   },
   agentEditingLabel: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "700",
     letterSpacing: 0.6,
     textTransform: "uppercase",
     color: THEME.colors.textSecondary,
   },
   agentEditingTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "600",
     color: THEME.colors.text,
   },
@@ -480,7 +480,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   name: {
-    fontSize: 13,
+    fontSize: 14,
     color: THEME.colors.textSecondary,
     flexShrink: 1,
   },
@@ -496,12 +496,12 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   error: {
-    fontSize: 13,
+    fontSize: 14,
     color: THEME.colors.error,
     padding: THEME.spacing.lg,
   },
   empty: {
-    fontSize: 14,
+    fontSize: 15,
     color: THEME.colors.textMuted,
     padding: THEME.spacing.lg,
   },
@@ -518,7 +518,7 @@ const styles = StyleSheet.create({
     gap: THEME.spacing.sm,
   },
   settingsFooterLabel: {
-    fontSize: 15,
+    fontSize: 16,
     color: THEME.colors.text,
     fontWeight: "500",
   },

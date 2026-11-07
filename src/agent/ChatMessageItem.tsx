@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
   },
   userText: {
     color: THEME.colors.text,
-    fontSize: 14,
+    fontSize: 15,
   },
   assistantMessage: {
     alignSelf: "flex-start",
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   },
   assistantText: {
     color: THEME.colors.text,
-    fontSize: 14,
+    fontSize: 15,
     lineHeight: 20,
   },
   thoughtMessage: {
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   },
   thoughtText: {
     color: THEME.colors.textMuted,
-    fontSize: 12,
+    fontSize: 13,
     fontStyle: "italic",
     lineHeight: 17,
   },
@@ -143,12 +143,12 @@ const styles = StyleSheet.create({
   },
   toolGlyph: {
     color: THEME.colors.textMuted,
-    fontSize: 11,
+    fontSize: 12,
     opacity: 0.8,
   },
   toolText: {
     color: THEME.colors.textMuted,
-    fontSize: 11,
+    fontSize: 12,
     opacity: 0.8,
   },
   errorMessage: {
@@ -157,6 +157,6 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: THEME.colors.error,
-    fontSize: 13,
+    fontSize: 14,
   },
 });

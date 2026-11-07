@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   sourceLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "600",
     color: THEME.colors.textSecondary,
   },
@@ -379,14 +379,14 @@ const styles = StyleSheet.create({
     gap: 1,
   },
   rowTitle: {
-    fontSize: 13,
+    fontSize: 14,
     color: THEME.colors.text,
   },
   rowTitleActive: {
     fontWeight: "600",
   },
   rowAlias: {
-    fontSize: 11,
+    fontSize: 12,
     color: THEME.colors.textMuted,
   },
   dot: {
@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   addRowText: {
-    fontSize: 13,
+    fontSize: 14,
     color: THEME.colors.textSecondary,
   },
   addRowDisabled: {
@@ -432,17 +432,17 @@ const styles = StyleSheet.create({
     padding: THEME.spacing.md,
   },
   loadingText: {
-    fontSize: 13,
+    fontSize: 14,
     color: THEME.colors.textSecondary,
   },
   error: {
-    fontSize: 13,
+    fontSize: 14,
     color: THEME.colors.error,
     paddingHorizontal: THEME.spacing.md,
     paddingVertical: THEME.spacing.sm,
   },
   empty: {
-    fontSize: 13,
+    fontSize: 14,
     color: THEME.colors.textMuted,
     padding: THEME.spacing.md,
   },

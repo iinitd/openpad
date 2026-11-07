@@ -46,20 +46,20 @@ const styles = StyleSheet.create({
     gap: THEME.spacing.md,
   },
   heading: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: "700",
     color: THEME.colors.text,
     marginBottom: THEME.spacing.sm,
   },
   sectionLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "700",
     color: THEME.colors.textSecondary,
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginTop: THEME.spacing.sm,
   },
-  hint: { fontSize: 14, color: THEME.colors.textSecondary },
+  hint: { fontSize: 15, color: THEME.colors.textSecondary },
   button: {
     alignSelf: "flex-start",
     paddingHorizontal: THEME.spacing.lg,
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     marginTop: THEME.spacing.xs,
   },
   buttonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
     color: THEME.colors.text,
   },

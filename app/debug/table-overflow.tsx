@@ -58,12 +58,12 @@ const styles = StyleSheet.create({
     gap: THEME.spacing.xs,
   },
   title: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: "700",
     color: THEME.colors.text,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: THEME.colors.textSecondary,
   },
   previewPane: {
@@ -78,14 +78,14 @@ const styles = StyleSheet.create({
   },
   notesTitle: {
     marginTop: THEME.spacing.md,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "700",
     color: THEME.colors.text,
   },
   notesBody: {
     marginTop: THEME.spacing.xs,
     marginBottom: THEME.spacing.md,
-    fontSize: 12,
+    fontSize: 13,
     color: THEME.colors.textSecondary,
   },
 });

@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   backGlyph: {
-    fontSize: 28,
+    fontSize: 29,
     lineHeight: 28,
     color: THEME.colors.text,
     marginTop: -2,
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     gap: THEME.spacing.sm,
   },
   title: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: "600",
     color: THEME.colors.text,
   },

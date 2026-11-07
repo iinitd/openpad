@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   label: {
-    fontSize: 12,
+    fontSize: 13,
     color: THEME.colors.text,
     lineHeight: 16,
   },

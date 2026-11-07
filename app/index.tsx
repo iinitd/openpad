@@ -403,13 +403,13 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   title: {
-    fontSize: 32,
+    fontSize: 33,
     fontWeight: "700",
     color: THEME.colors.text,
     marginBottom: THEME.spacing.xs,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 17,
     color: THEME.colors.textSecondary,
     marginBottom: THEME.spacing.xxl,
   },
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
     marginBottom: THEME.spacing.xl,
   },
   sectionLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "700",
     color: THEME.colors.textSecondary,
     textTransform: "uppercase",
@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.primary,
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
     color: THEME.colors.textSecondary,
   },
@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
     gap: THEME.spacing.md,
   },
   label: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "500",
     color: THEME.colors.textSecondary,
     marginBottom: -THEME.spacing.xs,
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
     borderRadius: THEME.radii.md,
     paddingHorizontal: THEME.spacing.lg,
     paddingVertical: THEME.spacing.md,
-    fontSize: 16,
+    fontSize: 17,
     color: THEME.colors.text,
     backgroundColor: THEME.colors.backgroundSecondary,
   },
@@ -473,7 +473,7 @@ const styles = StyleSheet.create({
     paddingTop: THEME.spacing.md,
   },
   hint: {
-    fontSize: 13,
+    fontSize: 14,
     color: THEME.colors.textSecondary,
     marginTop: -THEME.spacing.xs,
   },
@@ -492,12 +492,12 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "#fff",
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: "600",
   },
   error: {
     color: THEME.colors.error,
-    fontSize: 14,
+    fontSize: 15,
     marginTop: THEME.spacing.xs,
     textAlign: "center",
   },
