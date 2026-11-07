@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
   },
   sourceHeader: {
     alignSelf: "stretch",
-    minHeight: 44,
+    minHeight: 40,
     flexDirection: "row",
     alignItems: "center",
     gap: THEME.spacing.sm,
@@ -363,8 +363,7 @@ const styles = StyleSheet.create({
     borderColor: "transparent",
   },
   rowActive: {
-    backgroundColor: "rgba(255, 255, 255, 0.62)",
-    borderColor: "rgba(148, 163, 184, 0.28)",
+    backgroundColor: THEME.colors.surface,
   },
   rowInner: {
     flexDirection: "row",

@@ -327,7 +327,7 @@ export const FileTree = memo(function FileTree({
           accessibilityLabel="Settings"
         >
           <View style={styles.settingsFooterInner}>
-            <Icon name="settings" size={18} color={THEME.colors.textSecondary} />
+            <Icon name="settings" size={17} color={THEME.colors.textSecondary} />
             <Text style={styles.settingsFooterLabel}>Settings</Text>
           </View>
         </PressableRow>
@@ -366,29 +366,26 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: "row",
     marginHorizontal: THEME.spacing.md,
-    marginVertical: THEME.spacing.sm,
-    padding: 3,
+    marginVertical: THEME.spacing.xs,
+    padding: 2,
     gap: 2,
-    borderRadius: 10,
-    backgroundColor: "#e9eef3",
+    borderRadius: 9,
+    backgroundColor: THEME.colors.surface,
   },
   tab: {
     flex: 1,
     alignItems: "center",
     paddingHorizontal: THEME.spacing.md,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingVertical: 5,
+    borderRadius: 7,
   },
   tabActive: {
     backgroundColor: THEME.colors.background,
-    shadowColor: "#0f172a",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    elevation: 1,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: THEME.colors.border,
   },
   tabLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
     color: THEME.colors.textSecondary,
   },
@@ -404,9 +401,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: THEME.spacing.sm,
   },
   sectionLabel: {
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 0.7,
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.09,
     textTransform: "uppercase",
     color: THEME.colors.textMuted,
     paddingHorizontal: THEME.spacing.md,
@@ -518,7 +515,7 @@ const styles = StyleSheet.create({
     gap: THEME.spacing.sm,
   },
   settingsFooterLabel: {
-    fontSize: 17,
+    fontSize: 15,
     color: THEME.colors.text,
     fontWeight: "500",
   },
