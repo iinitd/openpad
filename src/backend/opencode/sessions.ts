@@ -27,7 +27,10 @@ function clampLimit(value: number | undefined, fallback: number): number {
 
 function locationQuery(cwd: string | undefined): string {
   if (!cwd) return "";
-  return `location[directory]=${encodeURIComponent(cwd)}`;
+  // Sent unencoded on purpose. The native fetch layer percent-encodes the URL
+  // once on the way out, so pre-encoding here reached the server as a literal
+  // "%2FUsers%2F..." path and every request failed with LocationNotFoundError.
+  return `location[directory]=${cwd}`;
 }
 
 /**

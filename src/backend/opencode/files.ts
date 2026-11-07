@@ -35,10 +35,6 @@ function normalizePath(cwd: string, path: string): { relative: string; absolute:
   return { relative, absolute };
 }
 
-function encodePath(path: string): string {
-  return path.split("/").map((part) => encodeURIComponent(part)).join("/");
-}
-
 function mimeKind(mime: string, path: string): BackendFile["kind"] {
   if (mime.startsWith("image/")) return "image";
   if (mime.startsWith("text/") || mime === "application/json" || mime === "application/xml" ||
@@ -55,8 +51,10 @@ export class OpenCodeFiles {
 
   async listDirectory(cwd: string, path: string): Promise<BackendDirectory> {
     const target = normalizePath(cwd, path);
-    const params = [`location[directory]=${encodeURIComponent(cwd)}`];
-    if (target.relative) params.push(`path=${encodeURIComponent(target.relative)}`);
+    // See locationQuery in sessions.ts: the native fetch layer encodes the URL
+    // once, so path values are passed through unencoded.
+    const params = [`location[directory]=${cwd}`];
+    if (target.relative) params.push(`path=${target.relative}`);
     const response = await this.transport.requestJson<Record<string, unknown>>(`/api/fs/list?${params.join("&")}`);
     const rows = Array.isArray(response.data) ? response.data : [];
     const entries: BackendDirectoryEntry[] = [];
@@ -78,8 +76,8 @@ export class OpenCodeFiles {
     if (!target.relative) {
       throw new OpenCodeRequestError("PROTOCOL_ERROR", "OpenCode file reads require a file path.");
     }
-    const params = `location[directory]=${encodeURIComponent(cwd)}`;
-    const result = await this.transport.requestBytes(`/api/fs/read/${encodePath(target.relative)}?${params}`);
+    const params = `location[directory]=${cwd}`;
+    const result = await this.transport.requestBytes(`/api/fs/read/${target.relative}?${params}`);
     if (result.bytes.length > MAX_FILE_BYTES) {
       throw new OpenCodeRequestError("PROTOCOL_ERROR", "OpenCode file exceeds the 24 MiB preview limit.");
     }
