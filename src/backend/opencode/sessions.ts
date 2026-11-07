@@ -30,6 +30,19 @@ function locationQuery(cwd: string | undefined): string {
   return `location[directory]=${encodeURIComponent(cwd)}`;
 }
 
+/**
+ * `/api/project` accumulates records for paths that earlier clients sent already
+ * URL-encoded, so the server stored paths such as
+ * `/Users/name/%2FUsers%2Fname%2Fproject`. They never resolve; `/api/fs` answers
+ * them with LocationNotFoundError, and listing one as a workspace gives the user
+ * a project whose file tree cannot load. Drop them before any check: the
+ * reachability probe can also time out instead of returning 404, which would let
+ * these records through.
+ */
+function looksDoubleEncoded(directory: string): boolean {
+  return /%(?:2f|25)/i.test(directory);
+}
+
 function query(params: Array<string | null | undefined>): string {
   const parts = params.filter((entry): entry is string => Boolean(entry));
   return parts.length ? `?${parts.join("&")}` : "";
@@ -108,7 +121,7 @@ export class OpenCodeSessions {
   async fetchWorkspaces(): Promise<BackendWorkspacesResult> {
     const response = await this.transport.requestJson<unknown>("/api/project");
     const rows = Array.isArray(response) ? response : asRecord(response).data;
-    const entries: BackendWorkspaceEntry[] = [];
+    const candidates: Array<{ directory: string; id: string }> = [];
     const seen = new Set<string>();
     if (Array.isArray(rows)) {
       for (const rowValue of rows) {
@@ -116,32 +129,45 @@ export class OpenCodeSessions {
         const directory = asString(row.canonical) ?? asString(row.directory);
         const id = asString(row.id);
         if (!directory || !id || seen.has(directory)) continue;
+        if (looksDoubleEncoded(directory)) continue;
         seen.add(directory);
-        const name = basename(directory) || directory;
-        entries.push({
-          id,
-          title: name,
-          name,
-          workspaceDirectory: directory,
-          projectRootPath: directory,
-          projectDisplayName: name,
-        });
+        candidates.push({ directory, id });
       }
     }
     // A session can point at a location the project list has not surfaced yet.
     for (const agent of this.agents.values()) {
-      if (!agent.cwd || seen.has(agent.cwd)) continue;
+      if (!agent.cwd || seen.has(agent.cwd) || looksDoubleEncoded(agent.cwd)) continue;
       seen.add(agent.cwd);
-      const name = basename(agent.cwd) || agent.cwd;
+      candidates.push({ directory: agent.cwd, id: agent.workspaceId ?? `opencode:${agent.cwd}` });
+    }
+    // `/api/project` keeps stale records for locations that no longer resolve:
+    // URL-encoded paths left by earlier clients, directories that were removed,
+    // and paths that were only ever requested once. `/api/fs` rejects them with
+    // LocationNotFoundError, and opening one as a project breaks the file tree
+    // with "location not found". Re-encoding such a path as `location[directory]`
+    // also makes the server record an even more deeply encoded one, so never
+    // surface a location without verifying it first.
+    const reachable = await Promise.all(candidates.map(async ({ directory }) => {
+      try {
+        await this.transport.requestJson(`/api/fs/list?${locationQuery(directory)}`);
+        return true;
+      } catch (error) {
+        return !(error instanceof OpenCodeRequestError && error.status === 404);
+      }
+    }));
+    const entries: BackendWorkspaceEntry[] = [];
+    candidates.forEach(({ directory, id }, index) => {
+      if (!reachable[index]) return;
+      const name = basename(directory) || directory;
       entries.push({
-        id: agent.workspaceId ?? `opencode:${agent.cwd}`,
+        id,
         title: name,
         name,
-        workspaceDirectory: agent.cwd,
-        projectRootPath: agent.cwd,
+        workspaceDirectory: directory,
+        projectRootPath: directory,
         projectDisplayName: name,
       });
-    }
+    });
     return { entries, pageInfo: { hasMore: false, nextCursor: null } };
   }
 

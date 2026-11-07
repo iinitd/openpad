@@ -11,7 +11,11 @@
       "bundleIdentifier": "lol.milio.openpad",
       "appleTeamId": "CH854588A4",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSAllowsLocalNetworking": true
+        }
       },
       "supportsTablet": true
     },

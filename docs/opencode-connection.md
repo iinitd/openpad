@@ -30,7 +30,7 @@ opencode pair
 
 OpenPad redeems the link once through `/auth/connect/<code>` (asking for JSON), receives the session token, and stores that token as the server password. The link itself is not saved. Pair links are single-use and expire in five minutes; the resulting session token is long-lived (about 30 days). When it expires, generate another pair link.
 
-Use an HTTPS pair link for iOS. The local `http://...` links are blocked by App Transport Security in native apps. The OpenCode server must also allow the OpenPad page's origin for the redemption request, same as the normal CORS requirement.
+Pair links work over both HTTP and HTTPS: the iOS app declares an App Transport Security exception for plain HTTP, because user-hosted OpenCode servers often run without a TLS certificate. Prefer HTTPS anyway — the link carries the one-time code, and a session token travels in the `Authorization` header afterwards. The OpenCode server must also allow the OpenPad page's origin for the redemption request, same as the normal CORS requirement.
 
 Treat the session token like the server password: it grants API access.
 

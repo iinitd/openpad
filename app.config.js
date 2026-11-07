@@ -15,17 +15,6 @@ module.exports = ({ config }) => {
     ios: {
       ...config.ios,
       bundleIdentifier: "lol.milio.openpad.dev",
-      // The dev client reaches Metro over a Tailscale address (100.64.0.0/10),
-      // which iOS does not treat as a local network, so the default ATS policy
-      // rejects the plain HTTP dev server. Only the development variant opts
-      // out; the production build keeps the secure default.
-      infoPlist: {
-        ...config.ios?.infoPlist,
-        NSAppTransportSecurity: {
-          NSAllowsArbitraryLoads: true,
-          NSAllowsLocalNetworking: true,
-        },
-      },
     },
   };
 };
