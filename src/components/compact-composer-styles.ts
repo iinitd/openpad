@@ -14,9 +14,9 @@ export const COMPACT_COMPOSER_STYLES = StyleSheet.create({
     paddingRight: 4,
     paddingVertical: 2,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: THEME.colors.border,
+    borderColor: "transparent",
     borderRadius: THEME.radii.full,
-    backgroundColor: THEME.colors.background,
+    backgroundColor: THEME.colors.surface,
   },
   input: {
     flex: 1,
@@ -34,7 +34,7 @@ export const COMPACT_COMPOSER_STYLES = StyleSheet.create({
     marginLeft: 6,
     borderRadius: 15,
     overflow: "hidden",
-    backgroundColor: THEME.colors.primary,
+    backgroundColor: THEME.colors.accent,
   },
   sendInner: {
     width: 30,
@@ -43,6 +43,6 @@ export const COMPACT_COMPOSER_STYLES = StyleSheet.create({
     justifyContent: "center",
   },
   sendDisabled: {
-    backgroundColor: "rgba(148,163,184,0.4)",
+    backgroundColor: "rgba(24,24,27,0.06)",
   },
 });

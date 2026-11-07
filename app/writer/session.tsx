@@ -752,9 +752,9 @@ const styles = StyleSheet.create({
   // affordance. Horizontal padding keeps the pill inset from the edges; the
   // band's background extends to the screen edge so there's no "card" gap.
   composerDock: {
-    backgroundColor: THEME.colors.backgroundSecondary,
+    backgroundColor: THEME.colors.background,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: THEME.colors.border,
+    borderTopColor: "#f0f0f2",
     paddingHorizontal: THEME.spacing.xl,
     paddingTop: THEME.spacing.sm,
   },

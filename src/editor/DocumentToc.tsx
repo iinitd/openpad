@@ -99,9 +99,9 @@ const styles = StyleSheet.create({
   wrap: {
     position: "relative",
     zIndex: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: THEME.colors.border,
-    backgroundColor: THEME.colors.backgroundSecondary,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#f0f0f2",
+    backgroundColor: THEME.colors.background,
   },
   titleBar: {
     flexDirection: "row",
@@ -113,8 +113,10 @@ const styles = StyleSheet.create({
   },
   titleText: {
     flex: 1,
-    fontSize: 17,
-    color: THEME.colors.textSecondary,
+    fontSize: 16,
+    fontWeight: "600",
+    letterSpacing: -0.01,
+    color: THEME.colors.text,
   },
   // Keep the title bar in the document flow, but float the outline over the
   // document so opening it never shifts the rendered Markdown.

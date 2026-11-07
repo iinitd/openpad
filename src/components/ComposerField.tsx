@@ -235,7 +235,7 @@ export function ComposerField({
               <Icon
                 name="send"
                 size={variant === "embedded" ? COMPACT_COMPOSER_ICON_SIZE : 16}
-                color="#fff"
+                color={disabled ? THEME.colors.textMuted : "#ffffff"}
               />
             </View>
           </PressableRow>
@@ -282,18 +282,11 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#ffffff",
+    backgroundColor: THEME.colors.surface,
     borderRadius: THEME.radii.full,
     paddingLeft: THEME.spacing.md,
     paddingRight: 6,
     paddingVertical: 6,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(148,163,184,0.35)",
-    shadowColor: "#0f172a",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
   },
   pillFill: {
     flex: 1,
@@ -331,7 +324,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: THEME.radii.full,
-    backgroundColor: THEME.colors.primary,
+    backgroundColor: THEME.colors.accent,
     overflow: "hidden",
   },
   sendInner: {
@@ -341,7 +334,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   sendDisabled: {
-    backgroundColor: "rgba(148,163,184,0.4)",
+    backgroundColor: "rgba(24,24,27,0.06)",
   },
   secondaryAction: {
     height: 32,
@@ -349,16 +342,16 @@ const styles = StyleSheet.create({
     borderRadius: THEME.radii.full,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: THEME.colors.surface,
+    backgroundColor: THEME.colors.accentSoft,
     marginLeft: 6,
   },
   secondaryActionDisabled: {
     opacity: 0.5,
   },
   secondaryActionText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
-    color: THEME.colors.textSecondary,
+    color: THEME.colors.accent,
   },
   cancelButton: {
     width: 32,

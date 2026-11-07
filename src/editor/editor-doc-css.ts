@@ -18,7 +18,7 @@ export const EDITOR_DOC_CSS = `
     width: 100%;
     max-width: 820px;
     margin: 0 auto;
-    color: #1f2329;
+    color: #18181b;
   }
   .tiptap[contenteditable="false"] { cursor: default; }
   .tiptap p,
@@ -36,14 +36,15 @@ export const EDITOR_DOC_CSS = `
     overflow-wrap: anywhere;
     word-break: break-word;
   }
-  .tiptap p { margin: 0.45em 0; }
-  .tiptap h1 { font-size: 1.9em; font-weight: 750; line-height: 1.35; margin-top: 0.9em; margin-bottom: 0.65em; }
-  .tiptap h1.kel-document-title { font-size: 2em; margin-top: 0; margin-bottom: 1em; }
-  .tiptap h2 { font-size: 1.45em; font-weight: 650; margin-top: 1.35em; margin-bottom: 0.55em; }
-  .tiptap h3 { font-size: 1.2em; font-weight: 650; margin-top: 1.15em; margin-bottom: 0.45em; }
-  .tiptap h4, .tiptap h5, .tiptap h6 { font-size: 1.05em; font-weight: 650; margin-top: 1em; margin-bottom: 0.35em; }
-  .tiptap ul, .tiptap ol { padding-left: 1.5em; margin-bottom: 0.5em; }
-  .tiptap blockquote { border-left: 3px solid #e2e8f0; padding-left: 1em; color: #64748b; margin-bottom: 0.5em; }
+  .tiptap p { margin: 0.7em 0; line-height: 1.65; }
+  .tiptap h1 { font-size: 1.85em; font-weight: 720; letter-spacing: -0.022em; line-height: 1.3; margin-top: 1.1em; margin-bottom: 0.6em; }
+  .tiptap h1.kel-document-title { font-size: 2.1em; margin-top: 0; margin-bottom: 0.9em; }
+  .tiptap h2 { font-size: 1.4em; font-weight: 660; letter-spacing: -0.018em; line-height: 1.35; margin-top: 1.6em; margin-bottom: 0.5em; }
+  .tiptap h3 { font-size: 1.18em; font-weight: 640; letter-spacing: -0.012em; margin-top: 1.3em; margin-bottom: 0.4em; }
+  .tiptap h4, .tiptap h5, .tiptap h6 { font-size: 1.04em; font-weight: 640; margin-top: 1.1em; margin-bottom: 0.3em; }
+  .tiptap ul, .tiptap ol { padding-left: 1.4em; margin-bottom: 0.6em; }
+  .tiptap li { margin: 0.25em 0; }
+  .tiptap blockquote { border-left: 2px solid #e9e9ec; padding-left: 1.1em; color: #52525b; margin: 1em 0; }
   /* Lark callout → highlight block. Tint + accent come from the document's own
      background-color / border-color (exposed as CSS variables in
      file-content.ts), falling back to a neutral grey. The emoji is drawn as a
@@ -95,20 +96,29 @@ export const EDITOR_DOC_CSS = `
   .tiptap .kel-embed-card strong, .tiptap .kel-embed-card small { display: block; }
   .tiptap .kel-embed-card small { margin-top: 2px; color: #8f959e; font-size: 12px; }
   .tiptap code {
-    background-color: #f1f5f9;
-    border-radius: 3px;
-    padding: 1px 4px;
-    font-size: 0.9em;
+    background-color: #f4f4f5;
+    border-radius: 6px;
+    padding: 2px 6px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    font-size: 0.88em;
     white-space: break-spaces;
     overflow-wrap: anywhere;
     word-break: break-word;
   }
   .tiptap mark { background-color: #fef08a; border-radius: 2px; padding: 1px 0; }
   .tiptap a {
-    color: #1f2937;
+    color: #5b5bd6;
     text-decoration: underline;
+    text-decoration-color: rgba(91, 91, 214, 0.35);
+    text-underline-offset: 2px;
     overflow-wrap: anywhere;
     word-break: break-word;
+  }
+  .tiptap hr {
+    border: none;
+    height: 1px;
+    background: #efeff1;
+    margin: 2em 0;
   }
   .tiptap img { max-width: 100%; height: auto; }
   /* A resolved Lark image / whiteboard, wrapped so a corner badge can label
@@ -237,8 +247,9 @@ export const EDITOR_DOC_CSS = `
     margin: 0;
   }
   .tiptap th, .tiptap td {
-    border: 1px solid #d7dce5;
-    padding: 6px 8px;
+    border: none;
+    border-bottom: 1px solid #efeff1;
+    padding: 10px 12px;
     vertical-align: top;
     text-align: left;
     overflow-wrap: anywhere;
@@ -249,17 +260,29 @@ export const EDITOR_DOC_CSS = `
     /* Hard cap per cell so a long paragraph can't inflate its column. */
     max-width: 28em;
   }
-  .tiptap th { background-color: #f1f5f9; font-weight: 600; }
+  .tiptap th {
+    background-color: transparent;
+    font-size: 0.78em;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #71717a;
+    border-bottom-color: #e4e4e7;
+  }
+  .tiptap tr:last-child td { border-bottom: none; }
   @media (max-width: 680px) {
     .tiptap .kel-grid { gap: 8px; }
     .tiptap h1.kel-document-title { font-size: 1.65em; }
   }
   .tiptap pre {
-    background-color: #f1f5f9;
-    color: #0f172a;
-    border: 1px solid #e2e8f0;
-    border-radius: 6px;
-    padding: 10px 12px;
+    background-color: #fafafa;
+    color: #18181b;
+    border: 1px solid #ececef;
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    font-size: 0.88em;
+    line-height: 1.55;
     overflow-x: hidden;
     white-space: pre-wrap;
     overflow-wrap: anywhere;

@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
     gap: 4,
     alignSelf: "flex-start",
     maxWidth: "100%",
-    backgroundColor: "#fef9c3",
+    backgroundColor: THEME.colors.accentSoft,
     borderRadius: THEME.radii.full,
     paddingHorizontal: THEME.spacing.md,
     paddingVertical: 5,
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   // Asset (image / whiteboard) reference chip — a cool slate tint to read
   // distinctly from the yellow text-selection chip.
   chipRowAsset: {
-    backgroundColor: "#e2e8f0",
+    backgroundColor: THEME.colors.surface,
   },
   chipAssetIcon: {
     fontSize: 15,

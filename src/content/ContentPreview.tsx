@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: THEME.colors.background,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: THEME.colors.border,
+    borderBottomColor: "#f0f0f2",
     zIndex: 30,
   },
   headerSide: {
@@ -136,10 +136,11 @@ const styles = StyleSheet.create({
   headerTitle: {
     maxWidth: "100%",
     paddingHorizontal: THEME.spacing.sm,
-    fontSize: 14,
-    fontWeight: "500",
-    letterSpacing: 0.15,
-    color: THEME.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 0.1,
+    textTransform: "uppercase",
+    color: THEME.colors.textMuted,
   },
   agentDot: {
     position: "absolute",

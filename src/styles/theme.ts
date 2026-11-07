@@ -2,16 +2,18 @@ import { Platform } from "react-native";
 
 export const THEME = {
   colors: {
-    // Neutral charcoal accent — a clean grey/white palette, no color.
-    primary: "#1f2937",
-    primaryLight: "#4b5563",
+    // Ink and paper, with a single indigo accent reserved for interaction.
+    primary: "#18181b",
+    primaryLight: "#3f3f46",
+    accent: "#5b5bd6",
+    accentSoft: "#eeeefe",
     background: "#ffffff",
-    backgroundSecondary: "#f8fafc",
-    surface: "#f1f5f9",
-    border: "#e2e8f0",
-    text: "#0f172a",
-    textSecondary: "#64748b",
-    textMuted: "#94a3b8",
+    backgroundSecondary: "#fafafa",
+    surface: "#f4f4f5",
+    border: "#e9e9ec",
+    text: "#18181b",
+    textSecondary: "#71717a",
+    textMuted: "#a1a1aa",
     annotation: "#fef08a",
     annotationBorder: "#eab308",
     success: "#22c55e",
