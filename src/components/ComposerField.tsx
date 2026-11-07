@@ -131,19 +131,33 @@ export function ComposerField({
   // rectangle so the text has a straight edge to live against.
   const minInputHeight = variant === "embedded" ? 38 : 34;
   const maxInputHeight = variant === "embedded" ? 98 : 88;
-  const [inputHeight, setInputHeight] = useState(minInputHeight);
-  const expanded = inputHeight > minInputHeight + 1;
-
-  const handleContentSizeChange = useCallback(
-    (event: { nativeEvent: { contentSize: { height: number } } }) => {
-      const height = Math.ceil(event.nativeEvent.contentSize.height);
-      setInputHeight(Math.min(maxInputHeight, Math.max(minInputHeight, height)));
-    },
-    [maxInputHeight, minInputHeight],
+  const verticalPadding = variant === "embedded" ? 18 : 8;
+  const horizontalPadding = variant === "embedded" ? 8 : 14;
+  // A hidden copy of the text measures the wrapped height. `contentSize` on the
+  // input itself only tracks explicit newlines reliably once the field has a
+  // fixed height, so long single lines that wrap visually were never counted.
+  const [fieldWidth, setFieldWidth] = useState(0);
+  const [contentHeight, setContentHeight] = useState(0);
+  const inputHeight = Math.min(
+    maxInputHeight,
+    Math.max(minInputHeight, contentHeight + verticalPadding),
   );
+  const expanded = inputHeight > minInputHeight + 1;
 
   return (
     <View style={variant === "embedded" ? styles.embeddedRow : styles.row}>
+      {fieldWidth > 0 ? (
+        <Text
+          pointerEvents="none"
+          style={[styles.measure, { width: Math.max(1, fieldWidth - horizontalPadding) }]}
+          onLayout={(event) => {
+            const height = Math.ceil(event.nativeEvent.layout.height);
+            if (height !== contentHeight) setContentHeight(height);
+          }}
+        >
+          {value || " "}
+        </Text>
+      ) : null}
       {images.length > 0 ? (
         <View style={styles.attachmentRow}>
           {images.map((image) => (
@@ -189,7 +203,10 @@ export function ComposerField({
                 : styles.input,
               { height: inputHeight, maxHeight: maxInputHeight },
             ]}
-            onContentSizeChange={handleContentSizeChange}
+            onLayout={(event) => {
+              const width = Math.ceil(event.nativeEvent.layout.width);
+              if (width > 0 && width !== fieldWidth) setFieldWidth(width);
+            }}
             scrollEnabled={inputHeight >= maxInputHeight}
             value={value}
             onChangeText={onChangeText}
@@ -283,6 +300,14 @@ const styles = StyleSheet.create({
   },
   pillExpanded: {
     borderRadius: THEME.radii.xl,
+  },
+  measure: {
+    position: "absolute",
+    left: -10000,
+    top: 0,
+    fontSize: 14,
+    lineHeight: 20,
+    fontFamily: THEME.fonts.sans,
   },
   input: {
     flex: 1,
