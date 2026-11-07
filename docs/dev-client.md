@@ -48,7 +48,7 @@ If the QR code cannot be scanned across networks, enter `http://<reachable-host>
 ## Notes
 
 - The development build uses its own bundle identifier, URL scheme, and display name, set by `app.config.js` when `APP_VARIANT=dev`. It can coexist with the TestFlight build instead of replacing it.
-- Metro serves plain HTTP. iOS normally exempts only local network addresses from App Transport Security, and a Tailscale address (`100.64.0.0/10`) is not local, so the app declares `NSAllowsArbitraryLoads` in `app.json` for every build. The same exception lets the app reach user-hosted OpenCode servers that have no TLS certificate. It is a native setting: changing it requires a new build.
+- Metro serves plain HTTP. iOS normally exempts only local network addresses from App Transport Security, and a Tailscale address (`100.64.0.0/10`) is not local, so the app declares `NSAllowsArbitraryLoads` in `app.json` for every build. Keep `NSAllowsLocalNetworking` out of that dictionary: on iOS 10 and later it makes the system ignore `NSAllowsArbitraryLoads` and fall back to local-network rules, which reject the tailnet address again. The same exception lets the app reach user-hosted OpenCode servers that have no TLS certificate. It is a native setting: changing it requires a new build.
 - Dev-signed apps need Developer Mode enabled on the device (Settings → Privacy & Security → Developer Mode) and a reboot.
 - The first connection asks for Local Network access. Denying it silently blocks Metro, and the permission has to be re-enabled in Settings.
 - While Metro is the only JS source, keep the host machine awake; if it sleeps, the app loses its bundle and shows a blank screen or a spinner.
