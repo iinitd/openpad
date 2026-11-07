@@ -10,6 +10,10 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v56.0.0/ before 
 - If a bug is unclear, keeps regressing, or needs confirmation, it is acceptable to build a minimal local repro or run targeted verification.
 - By default, modify the code directly and let the user verify changes manually.
 
+# Iteration Focus
+
+- The current center of gravity is the **OpenCode backend on iOS**. Implement new work against OpenCode and verify it in the iOS development client first; treat the web build as the quick-iteration surface and the other backends as secondary.
+
 # Backend Priorities
 
 - **OpenCode is the primary backend for feature work.** Implement and verify new capabilities against the OpenCode adapter first.

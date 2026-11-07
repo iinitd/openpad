@@ -39,7 +39,6 @@ import { measureStartupTrace, noteStartupTrace } from "../../src/utils/startup-t
 
 const COMPACT_BREAKPOINT = 576;
 const PHONE_PORTRAIT_MAX_SHORT_SIDE = 700;
-const MOBILE_RIGHT_GUTTER = 32;
 const MOBILE_DRAWER_SCREEN_RATIO = 0.85;
 const MOBILE_DRAWER_MAX_WIDTH = 380;
 
@@ -592,10 +591,6 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   const showBubble = activeScope === "file";
   const showPreviewChat = activeScope === "project" || activeScope === "workspace";
   const hasInput = showBubble || showPreviewChat;
-  // Duo-style devices need an asymmetric gutter: the left edge is usable,
-  // while the right edge carries the cutout/hinge or system chrome. Prefer the
-  // device's right safe-area inset when it reports one, with a visible fallback.
-  const rightGutter = Math.max(MOBILE_RIGHT_GUTTER, insets.right);
 
   return (
     <View
@@ -608,7 +603,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
       ]}
       {...swipeResponder.panHandlers}
     >
-      <View style={[styles.mobileContent, { marginRight: rightGutter }]}>
+      <View style={styles.mobileContent}>
         <View style={styles.pane}>
           <ContentPreview
             hideInlineCommentBar
@@ -636,7 +631,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
           nativeID={agentPaneOpen ? "kel-agent-composer" : "kel-document-composer"}
           style={[
             styles.composerDock,
-            { paddingBottom: dockPadBottom, paddingRight: Math.max(THEME.spacing.xl, rightGutter) },
+            { paddingBottom: dockPadBottom, paddingRight: THEME.spacing.xl },
           ]}
         >
           <View style={agentPaneOpen ? styles.paneHidden : undefined}>
