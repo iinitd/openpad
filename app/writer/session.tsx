@@ -17,6 +17,8 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { THEME } from "../../src/styles/theme";
 import { AgentChatPanel } from "../../src/agent/AgentChatPanel";
+import { Icon } from "../../src/components/Icon";
+import { PressableRow } from "../../src/components/PressableRow";
 import { ContentPreview } from "../../src/content/ContentPreview";
 import { DocumentCommentBar } from "../../src/editor/DocumentCommentBar";
 import { FileTree, openWorkspaceDocument } from "../../src/editor/FileTree";
@@ -421,12 +423,13 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   const [filesOpen, setFilesOpen] = useState(false);
   const [filesMounted, setFilesMounted] = useState(false);
   const slideX = useRef(new Animated.Value(-drawerWidth)).current;
-  // The agent conversation is a full-page layer that slides in from the right
-  // and covers the document. `agentMounted` keeps it rendered through the
-  // slide-out so closing animates instead of popping away.
-  const [agentOpen, setAgentOpen] = useState(false);
-  const [agentMounted, setAgentMounted] = useState(false);
-  const agentX = useRef(new Animated.Value(screenWidth)).current;
+  // Two full-width pages — document and conversation — live side by side in a
+  // pager. The header tabs and a horizontal swipe both slide between them, and
+  // both stay mounted so a switch never reloads the document or the transcript.
+  const [page, setPage] = useState(0);
+  const pageX = useRef(new Animated.Value(0)).current;
+  const pageRef = useRef(page);
+  pageRef.current = page;
 
   const openFiles = useCallback(() => {
     setFilesMounted(true);
@@ -435,25 +438,31 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   const closeFiles = useCallback(() => {
     setFilesOpen(false);
   }, []);
+  const goToPage = useCallback((next: number) => {
+    const clamped = Math.max(0, Math.min(1, next));
+    setPage(clamped);
+    Animated.timing(pageX, {
+      toValue: -clamped * screenWidth,
+      duration: 240,
+      easing: Easing.bezier(0.32, 0.72, 0, 1),
+      useNativeDriver: Platform.OS !== "web",
+    }).start();
+  }, [pageX, screenWidth]);
+
   const openAgent = useCallback(() => {
     Keyboard.dismiss();
     setFilesOpen(false);
-    setAgentMounted(true);
-    setAgentOpen(true);
-  }, []);
+    goToPage(1);
+  }, [goToPage]);
   const closeAgent = useCallback(() => {
     Keyboard.dismiss();
-    setAgentOpen(false);
-  }, []);
+    goToPage(0);
+  }, [goToPage]);
   const showDocument = useCallback(() => {
     Keyboard.dismiss();
     setFilesOpen(false);
-    setAgentOpen(false);
-  }, []);
-  const toggleAgentPane = useCallback(() => {
-    if (agentOpen) closeAgent();
-    else openAgent();
-  }, [agentOpen, closeAgent, openAgent]);
+    goToPage(0);
+  }, [goToPage]);
 
   useEffect(() => {
     if (filesOpen) {
@@ -478,83 +487,17 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
     }
   }, [drawerWidth, filesOpen, slideX]);
 
-  useEffect(() => {
-    if (agentOpen) {
-      Animated.spring(agentX, {
-        toValue: 0,
-        useNativeDriver: Platform.OS !== "web",
-        stiffness: 260,
-        damping: 28,
-        mass: 0.9,
-      }).start();
-    } else if (agentMounted) {
-      Animated.timing(agentX, {
-        toValue: screenWidth,
-        duration: 220,
-        easing: Easing.bezier(0.32, 0.72, 0, 1),
-        useNativeDriver: Platform.OS !== "web",
-      }).start(({ finished }) => {
-        if (finished) setAgentMounted(false);
-      });
-    }
-  }, [agentMounted, agentOpen, agentX, screenWidth]);
-
-  // Right-edge swipe opens the conversation; a left-to-right drag on the panel
-  // closes it. Both track the finger and settle on release, matching the files
-  // drawer's feel.
-  const agentOpenRef = useRef(agentOpen);
-  agentOpenRef.current = agentOpen;
-  const agentMountedRef = useRef(agentMounted);
-  agentMountedRef.current = agentMounted;
-  const screenWidthRef = useRef(screenWidth);
-  screenWidthRef.current = screenWidth;
-
-  const shouldClaimAgentEdge = (_evt: unknown, g: { dx: number; dy: number; moveX: number }) => {
-    if (agentOpenRef.current || agentMountedRef.current) return false;
+  // A horizontal drag moves the pager. Starting on the left edge belongs to the
+  // files drawer while the document page is showing, so the page swipe leaves
+  // that gesture alone.
+  const shouldClaimPageSwipe = (_evt: unknown, g: { dx: number; dy: number; moveX: number }) => {
     if (filesMountedRef.current) return false;
-    const horizontal = Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6;
+    const horizontal = Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5;
     if (!horizontal) return false;
     const startX = g.moveX - g.dx;
-    return g.dx < 0 && startX >= screenWidthRef.current - SWIPE_EDGE_ZONE;
+    if (pageRef.current === 0 && g.dx > 0 && startX <= SWIPE_EDGE_ZONE) return false;
+    return true;
   };
-
-
-  const shouldClaimAgentClose = (_evt: unknown, g: { dx: number; dy: number }) =>
-    g.dx > 8 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6;
-
-  const agentCloseResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: shouldClaimAgentClose,
-      onMoveShouldSetPanResponderCapture: shouldClaimAgentClose,
-      onPanResponderMove: (_evt, g) => {
-        agentX.setValue(Math.max(0, Math.min(screenWidthRef.current, g.dx)));
-      },
-      onPanResponderRelease: (_evt, g) => {
-        const width = screenWidthRef.current;
-        if (g.dx >= width * 0.25 || g.vx > 0.4) {
-          setAgentOpen(false);
-          return;
-        }
-        Animated.spring(agentX, {
-          toValue: 0,
-          useNativeDriver: Platform.OS !== "web",
-          stiffness: 260,
-          damping: 28,
-          mass: 0.9,
-        }).start();
-      },
-      onPanResponderTerminate: () => {
-        Animated.spring(agentX, {
-          toValue: 0,
-          useNativeDriver: Platform.OS !== "web",
-          stiffness: 260,
-          damping: 28,
-          mass: 0.9,
-        }).start();
-      },
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  ).current;
 
   // Backdrop dims in step with the slide (0 when off-screen → 1 when open).
   const backdropOpacity = slideX.interpolate({
@@ -607,6 +550,9 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
 
   const shouldClaimEdgeSwipe = (_evt: unknown, g: { dx: number; dy: number; moveX: number }) => {
     if (filesMountedRef.current) return false;
+    // The left edge is only the drawer edge while the document page is showing;
+    // on the chat page it pages back instead.
+    if (pageRef.current !== 0) return false;
     const horizontal = Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6;
     if (!horizontal) return false;
     const startX = g.moveX - g.dx;
@@ -616,66 +562,56 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   // One responder owns both edges: a rightward drag from the left edge opens the
   // files drawer, a leftward drag from the right edge opens the conversation.
   // Sharing it avoids a second transparent view stealing taps from the content.
-  const activeSwipeRef = useRef<"files" | "agent" | null>(null);
+  const activeSwipeRef = useRef<"files" | "page" | null>(null);
+  const screenWidthRef = useRef(screenWidth);
+  screenWidthRef.current = screenWidth;
+  const dragPageStartRef = useRef(0);
+  const goToPageRef = useRef(goToPage);
+  goToPageRef.current = goToPage;
+
+  const claimSwipe = (evt: unknown, g: { dx: number; dy: number; moveX: number }) => {
+    if (shouldClaimEdgeSwipe(evt, g)) {
+      activeSwipeRef.current = "files";
+      return true;
+    }
+    if (shouldClaimPageSwipe(evt, g)) {
+      activeSwipeRef.current = "page";
+      return true;
+    }
+    return false;
+  };
 
   const swipeResponder = useRef(
     PanResponder.create({
-      onMoveShouldSetPanResponder: (evt, g) => {
-        if (shouldClaimEdgeSwipe(evt, g)) {
-          activeSwipeRef.current = "files";
-          return true;
-        }
-        if (shouldClaimAgentEdge(evt, g)) {
-          activeSwipeRef.current = "agent";
-          return true;
-        }
-        return false;
-      },
-      onMoveShouldSetPanResponderCapture: (evt, g) => {
-        if (shouldClaimEdgeSwipe(evt, g)) {
-          activeSwipeRef.current = "files";
-          return true;
-        }
-        if (shouldClaimAgentEdge(evt, g)) {
-          activeSwipeRef.current = "agent";
-          return true;
-        }
-        return false;
-      },
+      onMoveShouldSetPanResponder: claimSwipe,
+      onMoveShouldSetPanResponderCapture: claimSwipe,
       onPanResponderGrant: () => {
-        if (activeSwipeRef.current === "agent") {
-          setAgentMounted(true);
-          agentX.setValue(screenWidthRef.current);
+        if (activeSwipeRef.current === "page") {
+          dragPageStartRef.current = -pageRef.current * screenWidthRef.current;
           return;
         }
         setFilesMounted(true);
         slideX.setValue(-drawerWidthRef.current);
       },
       onPanResponderMove: (_evt, g) => {
-        if (activeSwipeRef.current === "agent") {
+        if (activeSwipeRef.current === "page") {
           const width = screenWidthRef.current;
-          agentX.setValue(Math.max(0, width + Math.min(0, g.dx)));
+          const next = Math.min(0, Math.max(-width, dragPageStartRef.current + g.dx));
+          pageX.setValue(next);
           return;
         }
         const dw = drawerWidthRef.current;
         setDragPosition(Math.min(0, -dw + Math.max(0, g.dx)));
       },
       onPanResponderRelease: (_evt, g) => {
-        if (activeSwipeRef.current === "agent") {
+        if (activeSwipeRef.current === "page") {
           activeSwipeRef.current = null;
           const width = screenWidthRef.current;
-          if (-g.dx >= width * 0.28 || g.vx < -0.4) {
-            setAgentOpen(true);
-            return;
-          }
-          Animated.timing(agentX, {
-            toValue: width,
-            duration: 180,
-            easing: Easing.bezier(0.32, 0.72, 0, 1),
-            useNativeDriver: Platform.OS !== "web",
-          }).start(({ finished }) => {
-            if (finished) setAgentMounted(false);
-          });
+          const from = pageRef.current;
+          let next = from;
+          if (g.dx <= -width * 0.22 || g.vx <= -0.45) next = Math.min(1, from + 1);
+          else if (g.dx >= width * 0.22 || g.vx >= 0.45) next = Math.max(0, from - 1);
+          goToPageRef.current(next);
           return;
         }
         activeSwipeRef.current = null;
@@ -699,15 +635,9 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         }
       },
       onPanResponderTerminate: () => {
-        if (activeSwipeRef.current === "agent") {
+        if (activeSwipeRef.current === "page") {
           activeSwipeRef.current = null;
-          Animated.timing(agentX, {
-            toValue: screenWidthRef.current,
-            duration: 160,
-            useNativeDriver: Platform.OS !== "web",
-          }).start(({ finished }) => {
-            if (finished) setAgentMounted(false);
-          });
+          goToPageRef.current(pageRef.current);
           return;
         }
         activeSwipeRef.current = null;
@@ -753,55 +683,81 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         styles.mobileContainer,
         {
           paddingTop: topInset,
-          paddingBottom: hasInput ? 0 : insets.bottom,
         },
       ]}
       {...swipeResponder.panHandlers}
     >
-      <View style={styles.mobileContent}>
-        <View style={styles.pane}>
-          <ContentPreview
-            hideInlineCommentBar
-            onRequestFiles={openFiles}
-            onRequestAgent={toggleAgentPane}
-            active
-          />
+      <View style={styles.mobileTabBar}>
+        <PressableRow
+          style={styles.mobileTabAction}
+          onPress={openFiles}
+          haptic="light"
+          accessibilityLabel="Open files"
+        >
+          <Icon name="folder" size={20} color={THEME.colors.textSecondary} />
+        </PressableRow>
+        <View style={styles.mobileTabSegments}>
+          <PressableRow
+            style={[styles.mobileTab, page === 0 && styles.mobileTabActive]}
+            onPress={() => goToPage(0)}
+            haptic="light"
+            accessibilityLabel="Show document"
+          >
+            <Text style={[styles.mobileTabLabel, page === 0 && styles.mobileTabLabelActive]}>
+              Document
+            </Text>
+          </PressableRow>
+          <PressableRow
+            style={[styles.mobileTab, page === 1 && styles.mobileTabActive]}
+            onPress={() => goToPage(1)}
+            haptic="light"
+            accessibilityLabel="Show conversation"
+          >
+            <Text style={[styles.mobileTabLabel, page === 1 && styles.mobileTabLabelActive]}>
+              Chat
+            </Text>
+          </PressableRow>
         </View>
+        <View style={styles.mobileTabAction} />
       </View>
 
-      {/* Document comment dock. The agent conversation owns its own composer
-          inside the sliding page, so this dock never swaps contents. */}
-      {hasInput ? (
-        <View
-          nativeID="kel-document-composer"
-          style={[
-            styles.composerDock,
-            { paddingBottom: dockPadBottom, paddingRight: THEME.spacing.xl },
-          ]}
-        >
-          <DocumentCommentBar
-            variant="embedded"
-            selectionText={commentBridge?.selectionText ?? null}
-            imageRef={commentBridge?.imageRef ?? null}
-            onSend={commentBridge?.onSend ?? NOOP_COMMENT_SEND}
-            onClearSelection={commentBridge?.onClearSelection}
-            secondaryAction={commentBridge?.secondaryAction}
-          />
+      <Animated.View
+        style={[styles.pager, { width: screenWidth * 2, transform: [{ translateX: pageX }] }]}
+      >
+        <View style={[styles.page, { width: screenWidth }]}>
+          <View style={styles.pageFill}>
+            <ContentPreview
+              hideHeader
+              hideInlineCommentBar
+              onRequestFiles={openFiles}
+              onRequestAgent={openAgent}
+              active
+            />
+          </View>
+          {hasInput ? (
+            <View
+              nativeID="kel-document-composer"
+              style={[
+                styles.composerDock,
+                { paddingBottom: dockPadBottom, paddingRight: THEME.spacing.xl },
+              ]}
+            >
+              <DocumentCommentBar
+                variant="embedded"
+                selectionText={commentBridge?.selectionText ?? null}
+                imageRef={commentBridge?.imageRef ?? null}
+                onSend={commentBridge?.onSend ?? NOOP_COMMENT_SEND}
+                onClearSelection={commentBridge?.onClearSelection}
+                secondaryAction={commentBridge?.secondaryAction}
+              />
+            </View>
+          ) : null}
         </View>
-      ) : null}
-
-      {/* Full-page conversation layer, opened from the header button or a
-          right-edge swipe, dismissed by dragging it back to the right. */}
-      {agentMounted ? (
-        <Animated.View
+        <View
           style={[
-            styles.agentOverlay,
-            {
-              transform: [{ translateX: agentX }],
-              paddingBottom: keyboardOpen ? 0 : insets.bottom,
-            },
+            styles.page,
+            { width: screenWidth, paddingBottom: keyboardOpen ? 0 : insets.bottom },
           ]}
-          {...agentCloseResponder.panHandlers}
         >
           <AgentChatPanel
             showInput
@@ -809,9 +765,8 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
             showHeader={false}
             onRequestClose={closeAgent}
           />
-        </Animated.View>
-      ) : null}
-
+        </View>
+      </Animated.View>
 
       {/* Left-anchored Files drawer. Sits above the document header, which
           carries zIndex 30 of its own, so the drawer layer needs a higher one. */}
@@ -890,31 +845,62 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: THEME.colors.background,
   },
-  mobileContent: {
+  mobileTabBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 44,
+    paddingHorizontal: THEME.spacing.xs,
+    backgroundColor: THEME.colors.background,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#f0f0f2",
+    zIndex: 40,
+  },
+  mobileTabAction: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  mobileTabSegments: {
+    flex: 1,
+    maxWidth: 240,
+    alignSelf: "center",
+    flexDirection: "row",
+    gap: 2,
+    padding: 2,
+    borderRadius: 9,
+    backgroundColor: THEME.colors.surface,
+  },
+  mobileTab: {
+    flex: 1,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 7,
+  },
+  mobileTabActive: {
+    backgroundColor: THEME.colors.background,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: THEME.colors.border,
+  },
+  mobileTabLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: THEME.colors.textSecondary,
+  },
+  mobileTabLabelActive: {
+    color: THEME.colors.text,
+  },
+  pager: {
+    flex: 1,
+    flexDirection: "row",
+  },
+  page: {
+    minWidth: 0,
+  },
+  pageFill: {
     flex: 1,
     minHeight: 0,
-    position: "relative",
-  },
-  pane: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  agentOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 90,
-    backgroundColor: THEME.colors.background,
-    shadowColor: "#18181b",
-    shadowOffset: { width: -4, height: 0 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 10,
   },
   // Flat IM-style composer bar flush with the screen bottom: a tinted surface
   // band with a thin top divider. The input pill inside is the only rounded

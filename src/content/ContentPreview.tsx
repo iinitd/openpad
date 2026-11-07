@@ -27,7 +27,9 @@ type Props = ComponentProps<typeof EditorView>;
 
 const DEFAULT_PLUGIN_ID = "markdown";
 
-export const ContentPreview = memo(function ContentPreview(props: Props) {
+export const ContentPreview = memo(function ContentPreview(
+  props: Props & { hideHeader?: boolean },
+) {
   const activePluginId = useContentStore((state) => state.active.pluginId);
   const isStreaming = useSessionStore((state) => state.isStreaming);
   const plugin = getPlugin(activePluginId) ?? getPlugin(DEFAULT_PLUGIN_ID);
@@ -35,6 +37,7 @@ export const ContentPreview = memo(function ContentPreview(props: Props) {
 
   return (
     <View style={styles.container}>
+      {props.hideHeader ? null : (
       <View style={styles.header}>
         {props.onRequestFiles ? (
           <PressableRow
@@ -77,6 +80,7 @@ export const ContentPreview = memo(function ContentPreview(props: Props) {
           <View style={styles.headerSide} />
         )}
       </View>
+      )}
 
       <ContentActivityBanner onPress={props.onRequestAgent} />
 
