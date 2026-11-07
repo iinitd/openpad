@@ -73,7 +73,7 @@ jobs:
         id: page
         run: |
           chmod +x scripts/publish-dev-client.sh
-          scripts/publish-dev-client.sh build/OpenPadDev.ipa public | tee publish.env
+          scripts/publish-dev-client.sh build/OpenPadDev.ipa build/pages | tee publish.env
           install_url="$(sed -n 's/^install_url=//p' publish.env)"
           {
             echo "### OpenPad Dev"
@@ -91,7 +91,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cd public
+          cd build/pages
           git init -q
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
