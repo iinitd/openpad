@@ -1,5 +1,6 @@
 import type {
   BackendAgentStreamMessage,
+  BackendAttachment,
   BackendAgentTimeline,
   BackendAgentUpdateMessage,
   BackendPermissionRequest,
@@ -128,13 +129,29 @@ export class OpenCodeEvents {
     if (updated) this.publishAgent(id);
   }
 
-  async sendMessage(id: string, text: string, clientMessageId?: string): Promise<void> {
+  async sendMessage(
+    id: string,
+    text: string,
+    clientMessageId?: string,
+    attachments?: BackendAttachment[],
+  ): Promise<void> {
     const journal = this.track(id);
     const serverId = `msg_kel_${uniqueId().replace(/-/g, "")}`;
+    // OpenCode reads attachments as data URIs; the inline source keeps the bytes
+    // in the request instead of pointing at a path the server cannot see.
+    const files = attachments?.map((attachment) => ({
+      uri: `data:${attachment.mime};base64,${attachment.base64}`,
+      name: attachment.name,
+      source: { type: "inline" as const },
+    }));
     await this.transport.requestJson(`/api/session/${encodeURIComponent(id)}/prompt`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: serverId, text }),
+      body: JSON.stringify({
+        id: serverId,
+        text,
+        ...(files && files.length > 0 ? { files } : {}),
+      }),
     });
     const messageId = clientMessageId ?? serverId;
     this.status(id, "running");

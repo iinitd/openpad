@@ -1,6 +1,9 @@
 import { memo, useRef, useState } from "react";
-import { View, TextInput, TouchableOpacity, StyleSheet, Text } from "react-native";
+import { View, TextInput, TouchableOpacity, StyleSheet, Text, Image, Alert } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import { File } from "expo-file-system";
 import { useSessionStore } from "../stores/session-store";
+import { useConnectionStore } from "../stores/connection-store";
 import { Icon } from "../components/Icon";
 import { PressableRow } from "../components/PressableRow";
 import {
@@ -9,6 +12,14 @@ import {
 } from "../components/compact-composer-styles";
 import { THEME } from "../styles/theme";
 import { isWeb } from "../constants/platform";
+
+interface PendingImage {
+  id: string;
+  name: string;
+  mime: string;
+  base64: string;
+  uri: string;
+}
 
 export const ChatInput = memo(function ChatInput({
   // "standalone" (default) draws its own bordered footer for the desktop chat
@@ -25,19 +36,64 @@ export const ChatInput = memo(function ChatInput({
   const queued = useSessionStore((s) => s.queued);
   const removeQueued = useSessionStore((s) => s.removeQueued);
   const [text, setText] = useState("");
+  const [images, setImages] = useState<PendingImage[]>([]);
+  const [picking, setPicking] = useState(false);
   const inputRef = useRef<TextInput>(null);
+  const backendKind = useConnectionStore((state) => state.client?.kind);
+  // Only the OpenCode backend accepts attachments, and the queue is text-only,
+  // so an image can only go out while the session is idle.
+  const canAttach = backendKind === "opencode" && !isStreaming && !!agentId;
+
+  async function handleAttach() {
+    if (!canAttach || picking) return;
+    setPicking(true);
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsMultipleSelection: false,
+        quality: 0.8,
+        base64: true,
+      });
+      if (result.canceled) return;
+      const asset = result.assets?.[0];
+      if (!asset) return;
+      const base64 = asset.base64 ?? (await new File(asset.uri).base64());
+      setImages((prev) => [
+        ...prev,
+        {
+          id: `img-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          name: asset.fileName ?? `image-${prev.length + 1}.jpg`,
+          mime: asset.mimeType ?? "image/jpeg",
+          base64,
+          uri: asset.uri,
+        },
+      ]);
+    } catch {
+      Alert.alert("Could not attach image", "The image could not be read. Try another one.");
+    } finally {
+      setPicking(false);
+    }
+  }
 
   async function handleSend() {
     const trimmed = text.trim();
-    if (!trimmed || !agentId) return;
+    const outgoing = images.map(({ name, mime, base64 }) => ({ name, mime, base64 }));
+    if ((!trimmed && outgoing.length === 0) || !agentId) return;
 
+    const previousImages = images;
     setText("");
+    setImages([]);
     try {
       // sendMessage transparently queues the message if a turn is already
       // running, so the user can fire off several in a row.
-      await sendMessage(trimmed);
-    } catch {
-      // Error handled in store
+      await sendMessage(trimmed, outgoing.length > 0 ? outgoing : undefined);
+    } catch (error) {
+      // Keep the draft and the images so a failed send can be retried.
+      setText(trimmed);
+      setImages(previousImages);
+      if (outgoing.length > 0) {
+        Alert.alert("Image not sent", error instanceof Error ? error.message : "Try again.");
+      }
     }
   }
 
@@ -95,6 +151,23 @@ export const ChatInput = memo(function ChatInput({
           ))}
         </View>
       ) : null}
+      {images.length > 0 ? (
+        <View style={styles.attachmentRow}>
+          {images.map((image) => (
+            <View key={image.id} style={styles.attachmentThumbWrap}>
+              <Image source={{ uri: image.uri }} style={styles.attachmentThumb} />
+              <TouchableOpacity
+                style={styles.attachmentRemove}
+                onPress={() => setImages((prev) => prev.filter((item) => item.id !== image.id))}
+                hitSlop={8}
+                accessibilityLabel="Remove image"
+              >
+                <Text style={styles.attachmentRemoveText}>×</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+      ) : null}
       <View style={styles.inputRow}>
         {/* Pill-shaped composer matching the document comment bubble: a rounded
             surface field with the send affordance as a round button inside. */}
@@ -103,6 +176,17 @@ export const ChatInput = memo(function ChatInput({
             ? [COMPACT_COMPOSER_STYLES.pill, styles.pillFill]
             : styles.pill}
         >
+          {canAttach ? (
+            <TouchableOpacity
+              style={styles.attachButton}
+              onPress={handleAttach}
+              disabled={picking}
+              hitSlop={8}
+              accessibilityLabel="Attach image"
+            >
+              <Icon name="image" size={17} color={THEME.colors.textSecondary} />
+            </TouchableOpacity>
+          ) : null}
           <TextInput
             ref={inputRef}
             style={variant === "embedded"
@@ -123,12 +207,12 @@ export const ChatInput = memo(function ChatInput({
           <PressableRow
             style={[
               variant === "embedded" ? COMPACT_COMPOSER_STYLES.send : styles.send,
-              (!text.trim() || !agentId) && (
+              ((!text.trim() && images.length === 0) || !agentId) && (
                 variant === "embedded" ? COMPACT_COMPOSER_STYLES.sendDisabled : styles.sendDisabled
               ),
             ]}
             onPress={handleSend}
-            disabled={!text.trim() || !agentId}
+            disabled={(!text.trim() && images.length === 0) || !agentId}
             haptic="medium"
             scale={0.92}
           >
@@ -208,6 +292,45 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     color: THEME.colors.textSecondary,
     fontWeight: "600",
+  },
+  attachmentRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: THEME.spacing.sm,
+    marginBottom: THEME.spacing.xs,
+    paddingHorizontal: THEME.spacing.xs,
+  },
+  attachmentThumbWrap: {
+    position: "relative",
+  },
+  attachmentThumb: {
+    width: 56,
+    height: 56,
+    borderRadius: THEME.radii.md,
+    backgroundColor: THEME.colors.surface,
+  },
+  attachmentRemove: {
+    position: "absolute",
+    top: -6,
+    right: -6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(15,23,42,0.82)",
+  },
+  attachmentRemoveText: {
+    color: "#ffffff",
+    fontSize: 13,
+    lineHeight: 15,
+    fontWeight: "600",
+  },
+  attachButton: {
+    width: 28,
+    height: 28,
+    alignItems: "center",
+    justifyContent: "center",
   },
   inputRow: {
     flexDirection: "row",

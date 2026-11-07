@@ -7,6 +7,7 @@ export type {
   BackendAgentStreamMessage,
   BackendAgentTimeline,
   BackendAgentUpdateMessage,
+  BackendAttachment,
   BackendDirectory,
   BackendDirectoryEntry,
   BackendFile,

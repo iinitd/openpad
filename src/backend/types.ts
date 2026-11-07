@@ -158,6 +158,14 @@ export interface BackendFile {
   modifiedAt: string;
 }
 
+/** An image or file the user attaches to a single prompt. */
+export interface BackendAttachment {
+  name: string;
+  mime: string;
+  /** Base64 payload without the `data:` prefix. */
+  base64: string;
+}
+
 export type ProviderStatus = "ready" | "loading" | "error" | "unavailable";
 
 export interface AgentModelDefinition {
@@ -199,7 +207,11 @@ export interface WriterBackend {
   archiveAgent(agentId: string): Promise<void>;
   cancelAgent(agentId: string): Promise<void>;
   setAgentModel(agentId: string, model: string | null): Promise<void>;
-  sendAgentMessage(agentId: string, text: string, options?: { messageId?: string }): Promise<void>;
+  sendAgentMessage(
+    agentId: string,
+    text: string,
+    options?: { messageId?: string; attachments?: BackendAttachment[] },
+  ): Promise<void>;
   fetchAgentTimeline(agentId: string, options?: FetchAgentTimelineOptions): Promise<BackendAgentTimeline>;
   listDirectory(cwd: string, path: string): Promise<BackendDirectory>;
   readFile(cwd: string, path: string): Promise<BackendFile>;

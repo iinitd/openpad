@@ -32,7 +32,7 @@
       "bundler": "metro",
       "name": "OpenPad",
       "shortName": "OpenPad",
-      "description": "OpenPad \u2014 a focused writing workspace powered by Paseo, OpenClaw, and OpenCode.",
+      "description": "OpenPad — a focused writing workspace powered by Paseo, OpenClaw, and OpenCode.",
       "display": "standalone",
       "startUrl": "/",
       "scope": "/",
@@ -41,7 +41,13 @@
       "barStyle": "default"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "OpenPad uses your photo library to attach images to a conversation."
+        }
+      ]
     ],
     "extra": {
       "router": {},

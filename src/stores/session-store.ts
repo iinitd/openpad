@@ -3,6 +3,7 @@ import { subscribeWithSelector } from "zustand/middleware";
 import type {
   WriterBackend,
   BackendAgentStatus,
+  BackendAttachment,
   BackendStreamEvent,
   BackendTimelineItem,
   BackendPermissionRequest,
@@ -70,7 +71,7 @@ interface SessionStore {
   restoreAgent: (workspaceKey: string) => Promise<boolean>;
   restoreAgentById: (agentId: string, workspaceKey: string) => Promise<boolean>;
   catchUpAgent: () => Promise<void>;
-  sendMessage: (text: string) => Promise<void>;
+  sendMessage: (text: string, attachments?: BackendAttachment[]) => Promise<void>;
   removeQueued: (id: string) => void;
   drainQueue: () => Promise<void>;
   cancelAgent: () => Promise<void>;
@@ -991,7 +992,7 @@ export const useSessionStore = create<SessionStore>()(
       });
     },
 
-    sendMessage: async (text: string) => {
+    sendMessage: async (text: string, attachments?: BackendAttachment[]) => {
       const { agentId, _restoreGeneration: messageRestoreGeneration } = get();
       if (!agentId) throw new Error("No active agent");
 
@@ -1005,6 +1006,12 @@ export const useSessionStore = create<SessionStore>()(
       // idle agent still flushes the queue instead of discarding typed text.
       const queueWasIdle = !get().isStreaming;
       if (get().isStreaming || get().queued.length > 0) {
+        // Attachments are not part of the text-only queue: they carry base64
+        // payloads that should not be persisted, so a turn in flight has to
+        // finish before an image can be sent.
+        if (attachments && attachments.length > 0) {
+          throw new Error("Wait for the current reply before sending an image.");
+        }
         const currentQueue = get().queued;
         const queuedMessage = {
           id: `q-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -1050,7 +1057,7 @@ export const useSessionStore = create<SessionStore>()(
       }));
 
       try {
-        await client.sendAgentMessage(agentId, text, { messageId });
+        await client.sendAgentMessage(agentId, text, { messageId, attachments });
       } catch {
         if (
           get().agentId !== agentId ||

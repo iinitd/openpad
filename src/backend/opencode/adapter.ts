@@ -1,4 +1,5 @@
 import type {
+  BackendAttachment,
   BackendPermissionResponse,
   ConnectionState,
   CreateAgentOptions,
@@ -93,8 +94,12 @@ export class OpenCodeBackend implements WriterBackend {
     this.events.publishAgent(id);
   }
 
-  sendAgentMessage(id: string, text: string, options?: { messageId?: string }): Promise<void> {
-    return this.events.sendMessage(id, text, options?.messageId);
+  sendAgentMessage(
+    id: string,
+    text: string,
+    options?: { messageId?: string; attachments?: BackendAttachment[] },
+  ): Promise<void> {
+    return this.events.sendMessage(id, text, options?.messageId, options?.attachments);
   }
 
   fetchAgentTimeline(id: string, options?: FetchAgentTimelineOptions) {

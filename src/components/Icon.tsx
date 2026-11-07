@@ -24,7 +24,8 @@ export type IconName =
   | "pin"
   | "star"
   | "star-filled"
-  | "arrow-down";
+  | "arrow-down"
+  | "image";
 
 interface IconProps {
   name: IconName;
@@ -118,6 +119,13 @@ export function Icon({
         <>
           <Line x1="6" y1="6" x2="18" y2="18" {...common} />
           <Line x1="18" y1="6" x2="6" y2="18" {...common} />
+        </>
+      ) : null}
+      {name === "image" ? (
+        <>
+          <Rect x="3" y="3" width="18" height="18" rx="2" ry="2" {...common} />
+          <Circle cx="8.5" cy="8.5" r="1.5" {...common} />
+          <Polyline points="21 15 16 10 5 21" {...common} />
         </>
       ) : null}
       {name === "send" ? (
