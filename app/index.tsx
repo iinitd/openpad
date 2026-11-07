@@ -91,6 +91,13 @@ export default function ConnectScreen() {
   const isBusy = connecting;
   const addingConnection = addMode || connections.length > 0;
 
+  // A bare host:port defaults to http://, so both spellings mean plaintext.
+  const openCodePlaintext = (() => {
+    const target = opencodePairLink.trim() || opencodeUrl.trim();
+    if (!target) return false;
+    return !/^https:\/\//i.test(target);
+  })();
+
   useEffect(() => {
     screenMounted.current = true;
     return () => { screenMounted.current = false; };
@@ -324,6 +331,12 @@ export default function ConnectScreen() {
                 keyboardType="url"
               />
 
+              {openCodePlaintext ? (
+                <Text style={[styles.hint, styles.warningHint]}>
+                  This connection is not encrypted. HTTP sends the server password and session token in the clear, so anyone on the same network can read them. Prefer HTTPS, or a private network such as Tailscale.
+                </Text>
+              ) : null}
+
               <Text style={styles.label}>Username (optional)</Text>
               <TextInput
                 style={styles.input}
@@ -463,6 +476,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: THEME.colors.textSecondary,
     marginTop: -THEME.spacing.xs,
+  },
+  warningHint: {
+    color: THEME.colors.warning,
   },
   button: {
     backgroundColor: THEME.colors.primary,
