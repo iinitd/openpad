@@ -9,7 +9,7 @@ export const COMPACT_COMPOSER_STYLES = StyleSheet.create({
   pill: {
     flexDirection: "row",
     alignItems: "center",
-    height: 44,
+    minHeight: 44,
     paddingLeft: THEME.spacing.md,
     paddingRight: 4,
     paddingVertical: 2,
@@ -20,7 +20,7 @@ export const COMPACT_COMPOSER_STYLES = StyleSheet.create({
   },
   input: {
     flex: 1,
-    height: 38,
+    minHeight: 38,
     paddingHorizontal: 4,
     paddingVertical: 9,
     fontSize: 14,

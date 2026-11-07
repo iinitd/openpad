@@ -126,6 +126,22 @@ export function ComposerField({
 }: ComposerFieldProps) {
   const disabled = sendDisabled ?? (!value.trim() && images.length === 0);
 
+  // The field grows with the text up to four lines, then scrolls. Below the
+  // threshold the composer stays a pill; past it, the pill becomes a rounded
+  // rectangle so the text has a straight edge to live against.
+  const minInputHeight = variant === "embedded" ? 38 : 34;
+  const maxInputHeight = variant === "embedded" ? 98 : 88;
+  const [inputHeight, setInputHeight] = useState(minInputHeight);
+  const expanded = inputHeight > minInputHeight + 1;
+
+  const handleContentSizeChange = useCallback(
+    (event: { nativeEvent: { contentSize: { height: number } } }) => {
+      const height = Math.ceil(event.nativeEvent.contentSize.height);
+      setInputHeight(Math.min(maxInputHeight, Math.max(minInputHeight, height)));
+    },
+    [maxInputHeight, minInputHeight],
+  );
+
   return (
     <View style={variant === "embedded" ? styles.embeddedRow : styles.row}>
       {images.length > 0 ? (
@@ -147,9 +163,13 @@ export function ComposerField({
       ) : null}
       <View style={styles.pillRow}>
         <View
-          style={variant === "embedded"
-            ? [COMPACT_COMPOSER_STYLES.pill, styles.pillFill]
-            : styles.pill}
+          style={[
+            variant === "embedded"
+              ? [COMPACT_COMPOSER_STYLES.pill, styles.pillFill]
+              : styles.pill,
+            { alignItems: expanded ? "flex-end" : "center" },
+            expanded && styles.pillExpanded,
+          ]}
         >
           {onPickImage ? (
             <TouchableOpacity
@@ -163,9 +183,14 @@ export function ComposerField({
             </TouchableOpacity>
           ) : null}
           <TextInput
-            style={variant === "embedded"
-              ? [COMPACT_COMPOSER_STYLES.input, styles.inputWeb]
-              : styles.input}
+            style={[
+              variant === "embedded"
+                ? [COMPACT_COMPOSER_STYLES.input, styles.inputWeb]
+                : styles.input,
+              { height: inputHeight, maxHeight: maxInputHeight },
+            ]}
+            onContentSizeChange={handleContentSizeChange}
+            scrollEnabled={inputHeight >= maxInputHeight}
             value={value}
             onChangeText={onChangeText}
             placeholder={placeholder}
@@ -256,13 +281,16 @@ const styles = StyleSheet.create({
   pillFill: {
     flex: 1,
   },
+  pillExpanded: {
+    borderRadius: THEME.radii.xl,
+  },
   input: {
     flex: 1,
     paddingHorizontal: 7,
     paddingVertical: 4,
     fontSize: 14,
+    lineHeight: 20,
     color: THEME.colors.text,
-    maxHeight: 88,
     ...(isWeb ? { outlineStyle: "none" as unknown as undefined } : null),
   },
   inputWeb: {
