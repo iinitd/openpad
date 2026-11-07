@@ -652,9 +652,10 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         </View>
       ) : null}
 
-      {/* Left-anchored Files drawer. */}
+      {/* Left-anchored Files drawer. Sits above the document header, which
+          carries zIndex 30 of its own, so the drawer layer needs a higher one. */}
       {filesMounted ? (
-        <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+        <View style={[StyleSheet.absoluteFill, styles.drawerLayer]} pointerEvents="box-none">
           <Animated.View
             style={[styles.drawerBackdrop, WEB_DRAWER_BACKDROP_STYLE, { opacity: backdropOpacity }]}
             pointerEvents={filesOpen ? "auto" : "none"}
@@ -759,6 +760,9 @@ const styles = StyleSheet.create({
   },
   // Left-anchored file drawer. A full-screen dimmed backdrop sits underneath,
   // so the whole screen stays dimmed even while the panel slides in/out.
+  drawerLayer: {
+    zIndex: 100,
+  },
   drawer: {
     maxWidth: MOBILE_DRAWER_MAX_WIDTH,
     height: "100%",
