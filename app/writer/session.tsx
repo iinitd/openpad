@@ -707,10 +707,12 @@ const styles = StyleSheet.create({
     zIndex: 40,
   },
   mobileTabAction: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 34,
+    marginHorizontal: THEME.spacing.xs,
     alignItems: "center",
     justifyContent: "center",
+    borderRadius: 10,
   },
   mobileTabCenter: {
     flex: 1,
