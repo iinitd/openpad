@@ -17,6 +17,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { THEME } from "../../src/styles/theme";
 import { AgentChatPanel } from "../../src/agent/AgentChatPanel";
+import { ChatInput } from "../../src/agent/ChatInput";
 import { Icon } from "../../src/components/Icon";
 import { PressableRow } from "../../src/components/PressableRow";
 import { ContentPreview } from "../../src/content/ContentPreview";
@@ -515,26 +516,25 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
             </View>
           ) : null}
         </View>
-        <View
-          style={[
-            styles.page,
-            {
-              width: screenWidth,
-              // Same manual lift as the document dock, so both pages clear the
-              // keyboard the same way instead of mixing padding with
-              // KeyboardAvoidingView inside a translated pager.
-              paddingBottom: keyboardOpen
-                ? keyboardInset + THEME.spacing.xs
-                : insets.bottom,
-            },
-          ]}
-        >
-          <AgentChatPanel
-            showInput
-            avoidKeyboard={false}
-            showHeader={false}
-            onRequestClose={closeAgent}
-          />
+        <View style={[styles.page, { width: screenWidth }]}>
+          <View style={styles.pageFill}>
+            <AgentChatPanel
+              showInput={false}
+              avoidKeyboard={false}
+              showHeader={false}
+              onRequestClose={closeAgent}
+            />
+          </View>
+          {/* Same dock and same embedded composer as the document page. */}
+          <View
+            nativeID="kel-agent-composer"
+            style={[
+              styles.composerDock,
+              { paddingBottom: dockPadBottom, paddingRight: THEME.spacing.xl },
+            ]}
+          >
+            <ChatInput variant="embedded" />
+          </View>
         </View>
       </Animated.View>
 

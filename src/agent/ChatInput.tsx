@@ -2,7 +2,12 @@ import { memo, useState } from "react";
 import { Alert, View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useSessionStore } from "../stores/session-store";
 import { useConnectionStore } from "../stores/connection-store";
-import { ComposerField, toBackendAttachments, usePendingImages } from "../components/ComposerField";
+import {
+  COMPOSER_PLACEHOLDER,
+  ComposerField,
+  toBackendAttachments,
+  usePendingImages,
+} from "../components/ComposerField";
 import { THEME } from "../styles/theme";
 import { isWeb } from "../constants/platform";
 
@@ -106,7 +111,7 @@ export const ChatInput = memo(function ChatInput({
         onChangeText={setText}
         onSend={handleSend}
         onKeyPress={handleKeyPress}
-        placeholder={agentId ? "Ask the AI..." : "Create a session first"}
+        placeholder={COMPOSER_PLACEHOLDER}
         editable={!!agentId}
         images={pending.images}
         onRemoveImage={pending.remove}
@@ -129,7 +134,7 @@ const styles = StyleSheet.create({
   },
   // Inside the dock: no chrome (the dock card owns the surface/border).
   containerEmbedded: {
-    gap: 3,
+    gap: THEME.spacing.xs,
   },
   queueList: {
     gap: THEME.spacing.xs,

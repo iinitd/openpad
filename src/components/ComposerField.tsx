@@ -20,6 +20,9 @@ import type { BackendAttachment } from "../backend";
 import { THEME } from "../styles/theme";
 import { isWeb } from "../constants/platform";
 
+/** One placeholder for every composer, so the two inputs read as one control. */
+export const COMPOSER_PLACEHOLDER = "Ask the AI...";
+
 export interface PendingImage {
   id: string;
   name: string;

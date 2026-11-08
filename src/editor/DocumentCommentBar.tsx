@@ -1,7 +1,12 @@
 import { memo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { PressableRow } from "../components/PressableRow";
-import { ComposerField, toBackendAttachments, usePendingImages } from "../components/ComposerField";
+import {
+  COMPOSER_PLACEHOLDER,
+  ComposerField,
+  toBackendAttachments,
+  usePendingImages,
+} from "../components/ComposerField";
 import { useEditorStore } from "../stores/editor-store";
 import { useConnectionStore } from "../stores/connection-store";
 import { useSessionStore } from "../stores/session-store";
@@ -137,15 +142,7 @@ export const DocumentCommentBar = memo(function DocumentCommentBar({
         onChangeText={setComment}
         onSend={() => void submit()}
         onKeyPress={handleKeyPress}
-        placeholder={
-          hasImageRef
-            ? imageRef!.kind === "whiteboard"
-              ? "对这块白板说点什么…"
-              : "对这张图片说点什么…"
-            : hasSelection
-              ? "对选中内容说点什么…"
-              : "点击输入，评论这篇文档…"
-        }
+        placeholder={COMPOSER_PLACEHOLDER}
         sendDisabled={sendDisabled}
         images={pending.images}
         onRemoveImage={pending.remove}
