@@ -1,5 +1,18 @@
 import { useMemo, type ReactNode } from "react";
-import { Linking, StyleSheet, Text, View, type StyleProp, type TextStyle } from "react-native";
+import {
+  ActionSheetIOS,
+  Alert,
+  Linking,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type StyleProp,
+  type TextStyle,
+} from "react-native";
+import * as Clipboard from "expo-clipboard";
+import * as Haptics from "expo-haptics";
 import { marked, type Token, type Tokens } from "marked";
 import { THEME } from "../styles/theme";
 
@@ -10,21 +23,57 @@ import { THEME } from "../styles/theme";
  *
  * `marked` only tokenises here — every block is drawn with React Native views,
  * because a WebView per bubble would be far too heavy for a scrolling
- * transcript. Unknown or inline-only constructs fall back to their raw text.
+ * transcript.
+ *
+ * Selection is the platform's weak spot: iOS `<Text selectable>` copies a whole
+ * block with no highlight or handles, and a selectable node holding styled runs
+ * draws nothing at all on iOS 26. So a long press on any block offers the two
+ * granularities people actually want — this block, or the whole reply — and
+ * copies plain text.
  */
 
-function renderInline(
-  tokens: Token[] | undefined,
-  depth = 0,
-): ReactNode[] {
+type CopyHandler = (blockText: string) => void;
+
+function copyToClipboard(value: string) {
+  if (!value) return;
+  void Clipboard.setStringAsync(value);
+  if (Platform.OS !== "web") {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }
+}
+
+function openCopyMenu(blockText: string, replyText: string) {
+  const copy = (value: string) => copyToClipboard(value);
+  if (Platform.OS === "ios") {
+    ActionSheetIOS.showActionSheetWithOptions(
+      { options: ["Copy this block", "Copy whole reply", "Cancel"], cancelButtonIndex: 2 },
+      (index) => {
+        if (index === 0) copy(blockText);
+        else if (index === 1) copy(replyText);
+      },
+    );
+    return;
+  }
+  if (Platform.OS === "web") {
+    copy(blockText);
+    return;
+  }
+  Alert.alert("Copy", undefined, [
+    { text: "This block", onPress: () => copy(blockText) },
+    { text: "Whole reply", onPress: () => copy(replyText) },
+    { text: "Cancel", style: "cancel" },
+  ]);
+}
+
+function renderInline(tokens: Token[] | undefined, depth = 0): ReactNode[] {
   if (!tokens || depth > 8) return [];
   return tokens.map((token, index) => {
     const key = `${token.type}-${index}`;
     switch (token.type) {
       case "text": {
         const text = token as Tokens.Text;
-        // Plain runs stay strings: fewer nested Text nodes, and a paragraph
-        // made only of them can stay one selectable node.
+        // Plain runs stay strings: fewer nested Text nodes, which keeps the
+        // transcript cheap to lay out.
         return text.tokens ? renderInline(text.tokens, depth + 1) : text.text;
       }
       case "strong":
@@ -88,33 +137,6 @@ function renderInline(
   });
 }
 
-/**
- * iOS 26 draws `<Text selectable>` nodes that hold nested styled text without
- * any of the glyphs, so styling and selection cannot coexist in one node. A
- * block that is a single plain run keeps selection; anything with bold, code
- * or links renders as ordinary text.
- */
-function StyledText({
-  tokens,
-  fallback,
-  style,
-  selectable = true,
-}: {
-  tokens: Token[] | undefined;
-  fallback?: string;
-  style: StyleProp<TextStyle>;
-  selectable?: boolean;
-}) {
-  const nodes = renderInline(tokens);
-  const content = nodes.length > 0 ? nodes : fallback ? [fallback] : [];
-  const plain = selectable && content.length > 0 && content.every((node) => typeof node === "string");
-  return (
-    <Text selectable={plain} style={style}>
-      {content.length > 0 ? content : undefined}
-    </Text>
-  );
-}
-
 function inlinePlain(tokens: Token[] | undefined): string {
   if (!tokens) return "";
   return tokens
@@ -123,15 +145,85 @@ function inlinePlain(tokens: Token[] | undefined): string {
         const text = token as Tokens.Text;
         return text.tokens ? inlinePlain(text.tokens) : text.text;
       }
+      if (token.type === "br") return "\n";
       const value = (token as { text?: string }).text;
       return value ?? (token as { raw?: string }).raw ?? "";
     })
     .join("");
 }
 
-function renderBlocks(tokens: Token[]): ReactNode[] {
+/** The text a reader would get if they copied this block. */
+function blockPlain(token: Token): string {
+  switch (token.type) {
+    case "space":
+      return "";
+    case "heading":
+    case "paragraph":
+    case "text": {
+      const block = token as Tokens.Paragraph;
+      return inlinePlain(block.tokens) || block.text || "";
+    }
+    case "code":
+      return (token as Tokens.Code).text;
+    case "blockquote":
+      return (token as Tokens.Blockquote).tokens
+        .map(blockPlain)
+        .filter(Boolean)
+        .join("\n\n");
+    case "list": {
+      const list = token as Tokens.List;
+      return list.items
+        .map((item, index) => {
+          const marker = item.task
+            ? item.checked
+              ? "[x]"
+              : "[ ]"
+            : list.ordered
+              ? `${(list.start || 1) + index}.`
+              : "-";
+          return `${marker} ${item.tokens.map(blockPlain).filter(Boolean).join("\n")}`;
+        })
+        .join("\n");
+    }
+    case "table": {
+      const table = token as Tokens.Table;
+      const row = (cells: Tokens.TableCell[]) =>
+        cells.map((cell) => inlinePlain(cell.tokens) || cell.text).join(" | ");
+      return [row(table.header), ...table.rows.map(row)].join("\n");
+    }
+    case "hr":
+      return "---";
+    case "html":
+      return (token as Tokens.HTML).text.replace(/<[^>]*>/g, "").trim();
+    default:
+      return ((token as { raw?: string }).raw ?? "").trim();
+  }
+}
+
+function BlockText({
+  tokens,
+  fallback,
+  style,
+  onLongPress,
+}: {
+  tokens?: Token[];
+  fallback?: string;
+  style: StyleProp<TextStyle>;
+  onLongPress?: () => void;
+}) {
+  const nodes = renderInline(tokens);
+  const content = nodes.length > 0 ? nodes : fallback ? [fallback] : [];
+  return (
+    <Text style={style} onLongPress={onLongPress}>
+      {content.length > 0 ? content : undefined}
+    </Text>
+  );
+}
+
+function renderBlocks(tokens: Token[], onCopy: CopyHandler): ReactNode[] {
   return tokens.map((token, index) => {
     const key = `${token.type}-${index}`;
+    const copy = () => onCopy(blockPlain(token));
     switch (token.type) {
       case "space":
         return null;
@@ -144,54 +236,53 @@ function renderBlocks(tokens: Token[]): ReactNode[] {
               ? styles.h2
               : styles.h3;
         return (
-          <StyledText
+          <BlockText
             key={key}
             tokens={heading.tokens}
             fallback={heading.text}
             style={[styles.blockText, size, styles.heading]}
+            onLongPress={copy}
           />
         );
       }
       case "paragraph": {
         const paragraph = token as Tokens.Paragraph;
         return (
-          <StyledText
+          <BlockText
             key={key}
             tokens={paragraph.tokens}
             fallback={paragraph.text}
             style={styles.blockText}
+            onLongPress={copy}
           />
         );
       }
       case "text": {
         const text = token as Tokens.Text;
         return (
-          <StyledText
+          <BlockText
             key={key}
             tokens={text.tokens}
             fallback={text.text}
             style={styles.blockText}
+            onLongPress={copy}
           />
         );
       }
       case "code": {
         const code = token as Tokens.Code;
         return (
-          <View key={key} style={styles.codeBlock}>
-            {code.lang ? (
-              <Text style={styles.codeLang}>{code.lang}</Text>
-            ) : null}
-            <Text selectable style={styles.codeText}>
-              {code.text}
-            </Text>
-          </View>
+          <Pressable key={key} onLongPress={copy} delayLongPress={300} style={styles.codeBlock}>
+            {code.lang ? <Text style={styles.codeLang}>{code.lang}</Text> : null}
+            <Text style={styles.codeText}>{code.text}</Text>
+          </Pressable>
         );
       }
       case "blockquote": {
         const quote = token as Tokens.Blockquote;
         return (
           <View key={key} style={styles.quote}>
-            {renderBlocks(quote.tokens)}
+            {renderBlocks(quote.tokens, onCopy)}
           </View>
         );
       }
@@ -200,7 +291,12 @@ function renderBlocks(tokens: Token[]): ReactNode[] {
         return (
           <View key={key}>
             {list.items.map((item, itemIndex) => (
-              <View key={itemIndex} style={styles.listItem}>
+              <Pressable
+                key={itemIndex}
+                onLongPress={copy}
+                delayLongPress={300}
+                style={styles.listItem}
+              >
                 <Text style={styles.listMarker}>
                   {item.task
                     ? item.checked
@@ -214,23 +310,21 @@ function renderBlocks(tokens: Token[]): ReactNode[] {
                   {item.tokens.length > 0 &&
                   (item.tokens[0]!.type === "text" ||
                     item.tokens[0]!.type === "paragraph") ? (
-                    <StyledText
-                      tokens={
-                        (item.tokens[0] as Tokens.Text | Tokens.Paragraph).tokens
-                      }
-                      fallback={
-                        (item.tokens[0] as Tokens.Text | Tokens.Paragraph).text
-                      }
+                    <BlockText
+                      tokens={(item.tokens[0] as Tokens.Text | Tokens.Paragraph).tokens}
+                      fallback={(item.tokens[0] as Tokens.Text | Tokens.Paragraph).text}
                       style={styles.blockText}
+                      onLongPress={copy}
                     />
                   ) : null}
                   {renderBlocks(
                     item.tokens.filter(
                       (entry) => entry.type !== "text" && entry.type !== "paragraph",
                     ),
+                    onCopy,
                   )}
                 </View>
-              </View>
+              </Pressable>
             ))}
           </View>
         );
@@ -238,7 +332,7 @@ function renderBlocks(tokens: Token[]): ReactNode[] {
       case "table": {
         const table = token as Tokens.Table;
         return (
-          <View key={key} style={styles.table}>
+          <Pressable key={key} onLongPress={copy} delayLongPress={300} style={styles.table}>
             <View style={[styles.tableRow, styles.tableHead]}>
               {table.header.map((cell, cellIndex) => (
                 <Text
@@ -258,7 +352,6 @@ function renderBlocks(tokens: Token[]): ReactNode[] {
                 {row.map((cell, cellIndex) => (
                   <Text
                     key={cellIndex}
-                    selectable
                     style={[
                       styles.tableCell,
                       { textAlign: table.align[cellIndex] ?? "left" },
@@ -269,7 +362,7 @@ function renderBlocks(tokens: Token[]): ReactNode[] {
                 ))}
               </View>
             ))}
-          </View>
+          </Pressable>
         );
       }
       case "hr":
@@ -279,17 +372,23 @@ function renderBlocks(tokens: Token[]): ReactNode[] {
         // Raw HTML has no native equivalent; show the text it wraps, if any.
         const plain = html.text.replace(/<[^>]*>/g, "").trim();
         return plain ? (
-          <Text key={key} selectable style={[styles.blockText, styles.muted]}>
-            {plain}
-          </Text>
+          <BlockText
+            key={key}
+            fallback={plain}
+            style={[styles.blockText, styles.muted]}
+            onLongPress={copy}
+          />
         ) : null;
       }
       default: {
         const raw = (token as { raw?: string }).raw;
         return raw ? (
-          <Text key={key} selectable style={styles.blockText}>
-            {raw}
-          </Text>
+          <BlockText
+            key={key}
+            fallback={raw}
+            style={styles.blockText}
+            onLongPress={copy}
+          />
         ) : null;
       }
     }
@@ -297,10 +396,24 @@ function renderBlocks(tokens: Token[]): ReactNode[] {
 }
 
 export function MarkdownText({ text }: { text: string }) {
-  const blocks = useMemo(() => renderBlocks(marked.lexer(text)), [text]);
+  const { tokens, plain, blocks } = useMemo(() => {
+    const lexed = marked.lexer(text);
+    const reply = lexed
+      .map(blockPlain)
+      .filter(Boolean)
+      .join("\n\n");
+    const onCopy: CopyHandler = (blockText) => openCopyMenu(blockText, reply);
+    return { tokens: lexed, plain: reply, blocks: renderBlocks(lexed, onCopy) };
+  }, [text]);
   return (
     <View style={styles.root}>
-      {blocks.length > 0 ? blocks : <Text selectable style={styles.blockText}>{text}</Text>}
+      {blocks.length > 0 ? (
+        blocks
+      ) : (
+        <Text style={styles.blockText} onLongPress={() => openCopyMenu(plain, plain)}>
+          {text}
+        </Text>
+      )}
     </View>
   );
 }
