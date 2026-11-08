@@ -426,8 +426,8 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   // is no empty gap between the input and the keyboard.
   const keyboardOpen = keyboardInset > 0;
   const dockPadBottom = keyboardOpen
-    ? keyboardInset + THEME.spacing.sm
-    : Math.max(insets.bottom, THEME.spacing.lg) + THEME.spacing.sm;
+    ? keyboardInset + THEME.spacing.lg
+    : Math.max(insets.bottom, THEME.spacing.lg) + THEME.spacing.lg;
 
   // Plugin ids drive the composer selection: a file-scope plugin ("markdown",
   // "lark-working-copy") gets the comment bubble; the web-preview plugin
