@@ -4,6 +4,7 @@ import { THEME } from "../styles/theme";
 import { PressableRow } from "../components/PressableRow";
 import { HalfSheet } from "../components/HalfSheet";
 import { ActivityDot } from "../components/TypingDots";
+import { Icon } from "../components/Icon";
 import { summarizeActivity } from "../hooks/use-agent-progress";
 import type { StreamItem, ThoughtItem, ToolCallItem } from "../types/stream";
 
@@ -31,32 +32,59 @@ function StatusDot({ status }: { status: ToolCallItem["status"] }) {
 }
 
 /**
- * One reasoning step inside the activity sheet. The newest one is shown in
- * full; older history is clamped and expands on tap, so a long run does not
- * turn into a wall of text.
+ * One step inside the activity sheet: the kind on the left, the content on the
+ * right, one line each. Reasoning expands in place (the newest starts open);
+ * a tool call is already as long as it needs to be.
  */
-const SheetThought = memo(function SheetThought({
-  text,
+const ActivityStep = memo(function ActivityStep({
+  item,
   latest,
+  first,
 }: {
-  text: string;
+  item: ActivityItem;
   latest: boolean;
+  first: boolean;
 }) {
+  const isThought = item.kind === "thought";
+  const text = isThought ? item.text.trim() || "…" : item.name;
+  const failed = item.kind === "tool_call" && item.status === "failed";
   const [open, setOpen] = useState(latest);
   return (
-    <PressableRow
-      haptic="light"
-      scale={false}
-      disabled={latest}
-      onPress={() => setOpen((value) => !value)}
-      accessibilityRole={latest ? undefined : "button"}
-      accessibilityLabel={latest ? undefined : "Toggle thinking"}
-    >
-      <Text style={styles.sheetLabel}>Thinking</Text>
-      <Text style={styles.sheetText} numberOfLines={open ? undefined : 3}>
-        {text.trim() || "…"}
-      </Text>
-    </PressableRow>
+    <View style={first ? undefined : styles.stepDivider}>
+      <PressableRow
+        style={styles.stepRow}
+        haptic="light"
+        scale={false}
+        disabled={!isThought}
+        onPress={() => setOpen((value) => !value)}
+        accessibilityRole={isThought ? "button" : undefined}
+        accessibilityLabel={
+          isThought ? (open ? "Collapse thinking" : "Expand thinking") : undefined
+        }
+      >
+        <Text style={[styles.stepLabel, failed ? styles.stepFailed : null]}>
+          {isThought ? "Thinking" : "Tool"}
+        </Text>
+        <Text
+          style={[styles.stepPreview, failed ? styles.stepFailed : null]}
+          numberOfLines={1}
+        >
+          {text}
+        </Text>
+        {isThought ? (
+          <Icon
+            name={open ? "chevron-up" : "chevron-down"}
+            size={14}
+            color={THEME.colors.textMuted}
+          />
+        ) : null}
+      </PressableRow>
+      {isThought && open ? (
+        <Text style={styles.stepBody} selectable>
+          {text}
+        </Text>
+      ) : null}
+    </View>
   );
 });
 
@@ -129,46 +157,14 @@ export const ActivityRow = memo(function ActivityRow({
         ) : null}
       </PressableRow>
       <HalfSheet visible={open} title="Activity" onClose={() => setOpen(false)}>
-        {items.map((item, index) => {
-          const previous = index > 0 ? items[index - 1]! : null;
-          // Consecutive tool calls read as one dense list; only a change of
-          // kind earns a divider and the room that comes with it.
-          const separated =
-            previous !== null &&
-            (previous.kind === "thought" || item.kind === "thought");
-          return (
-            <View
-              key={item.id}
-              style={
-                separated
-                  ? styles.sheetSegment
-                  : index > 0
-                    ? styles.sheetTight
-                    : undefined
-              }
-            >
-              {item.kind === "thought" ? (
-                <SheetThought
-                  text={item.text}
-                  latest={item.id === latestThoughtId}
-                />
-              ) : (
-                <View style={styles.sheetToolRow}>
-                  <View style={styles.sheetToolDotWrap}>
-                    <StatusDot status={item.status} />
-                  </View>
-                  <Text
-                    style={styles.sheetToolName}
-                    numberOfLines={1}
-                    selectable
-                  >
-                    {item.name}
-                  </Text>
-                </View>
-              )}
-            </View>
-          );
-        })}
+        {items.map((item, index) => (
+          <ActivityStep
+            key={item.id}
+            item={item}
+            latest={item.id === latestThoughtId}
+            first={index === 0}
+          />
+        ))}
       </HalfSheet>
     </>
   );
@@ -318,59 +314,39 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
   },
-  sheetLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    letterSpacing: 0.08,
-    textTransform: "uppercase",
-    color: THEME.colors.textMuted,
-    marginBottom: 4,
-  },
-  sheetToolRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: THEME.spacing.sm,
-  },
-  sheetToolDotWrap: {
-    width: 16,
-    paddingTop: 8,
-  },
-  sheetToolName: {
-    flex: 1,
-    fontSize: 15,
-    lineHeight: 21,
-    color: THEME.colors.text,
-  },
-  sheetTight: {
-    marginTop: 6,
-  },
-  sheetSegment: {
-    marginTop: THEME.spacing.lg,
-    paddingTop: THEME.spacing.lg,
+  stepDivider: {
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: THEME.colors.border,
   },
-  sheetText: {
-    fontSize: 15,
-    lineHeight: 23,
-    color: THEME.colors.text,
-  },
-  sheetRow: {
+  stepRow: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     gap: THEME.spacing.sm,
-    paddingVertical: 6,
+    paddingVertical: 9,
   },
-  sheetGlyph: {
-    width: 16,
-    fontSize: 13,
-    lineHeight: 21,
+  // Fixed width so every step's content starts on the same column.
+  stepLabel: {
+    width: 62,
+    fontSize: 12,
+    fontWeight: "600",
     color: THEME.colors.textMuted,
   },
-  sheetRowText: {
+  stepPreview: {
     flex: 1,
-    fontSize: 15,
-    lineHeight: 21,
+    fontSize: 14,
+    lineHeight: 20,
+    color: THEME.colors.textSecondary,
+  },
+  stepFailed: {
+    color: THEME.colors.error,
+  },
+  // Sits on the content column, not under the label.
+  stepBody: {
+    marginLeft: 62 + THEME.spacing.sm,
+    marginTop: -2,
+    paddingBottom: 10,
+    fontSize: 14,
+    lineHeight: 22,
     color: THEME.colors.text,
   },
 });
