@@ -450,6 +450,24 @@ export const AgentChatPanel = memo(function AgentChatPanel({
                 style={styles.switcherAdd}
                 activeOpacity={0.6}
                 accessibilityRole="button"
+                accessibilityLabel="Refresh sessions"
+                onPress={() => {
+                  for (const section of sessionSources) {
+                    if (section.status !== "connected") continue;
+                    void useBackendCatalogStore
+                      .getState()
+                      .refresh(section.source.connectionId, { workspaces: false });
+                  }
+                }}
+                disabled={sessionsLoading || sessionSources.every((section) => section.status !== "connected")}
+                hitSlop={8}
+              >
+                <Icon name="refresh" size={15} color={THEME.colors.textSecondary} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.switcherAdd}
+                activeOpacity={0.6}
+                accessibilityRole="button"
                 accessibilityLabel="New session"
                 onPress={() => {
                   setSwitcherOpen(false);
@@ -482,34 +500,25 @@ export const AgentChatPanel = memo(function AgentChatPanel({
             ) : null}
             {sessionSources.map((section) => (
               <View key={section.key}>
-                <View style={styles.switcherSource}>
-                  <View style={styles.switcherSourceHeader}>
-                    <Text style={styles.switcherSourceLabel} numberOfLines={1}>{section.source.label}</Text>
+                {section.status !== "connected" ||
+                section.source.sessionsError ||
+                !section.source.sessionsLoaded ||
+                section.data.length === 0 ? (
+                  <View style={styles.switcherSource}>
                     {section.status !== "connected" ? (
                       <Text style={styles.switcherSourceStatus}>
                         {section.status === "connecting" ? "Reconnecting…" : "Offline"}
                       </Text>
                     ) : null}
-                    <TouchableOpacity
-                      style={styles.switcherRefresh}
-                      activeOpacity={0.6}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Refresh sessions from ${section.source.label}`}
-                      onPress={() => void useBackendCatalogStore.getState().refresh(section.source.connectionId, { workspaces: false })}
-                      disabled={sessionsLoading || section.status !== "connected"}
-                      hitSlop={6}
-                    >
-                      <Icon name="refresh" size={14} color={THEME.colors.textMuted} />
-                    </TouchableOpacity>
+                    {section.source.sessionsError ? (
+                      <Text style={styles.switcherError}>{section.source.sessionsError}</Text>
+                    ) : !section.source.sessionsLoaded ? (
+                      <Text style={styles.switcherLoadingText}>Loading sessions…</Text>
+                    ) : section.data.length === 0 ? (
+                      <Text style={styles.switcherEmpty}>No sessions in this project.</Text>
+                    ) : null}
                   </View>
-                  {section.source.sessionsError ? (
-                    <Text style={styles.switcherError}>{section.source.sessionsError}</Text>
-                  ) : !section.source.sessionsLoaded && section.status === "connected" ? (
-                    <Text style={styles.switcherLoadingText}>Loading sessions…</Text>
-                  ) : section.source.sessionsLoaded && section.data.length === 0 ? (
-                    <Text style={styles.switcherEmpty}>No sessions in this project.</Text>
-                  ) : null}
-                </View>
+                ) : null}
                 {section.data.map((item) => {
                   const { connectionId, agent } = item;
                   const active = connectionId === activeConnectionId && agent.id === agentId;
@@ -701,24 +710,9 @@ const styles = StyleSheet.create({
     paddingTop: THEME.spacing.md,
     paddingBottom: THEME.spacing.xs,
   },
-  switcherSourceHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: THEME.spacing.xs,
-  },
-  switcherSourceLabel: {
-    flex: 1,
-    minWidth: 0,
-    fontSize: 13,
-    fontWeight: "600",
-    color: THEME.colors.textSecondary,
-  },
   switcherSourceStatus: {
     fontSize: 13,
     color: THEME.colors.textMuted,
-  },
-  switcherRefresh: {
-    padding: THEME.spacing.xs,
   },
   switcherError: {
     fontSize: 14,
