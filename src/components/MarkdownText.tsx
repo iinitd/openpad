@@ -248,7 +248,7 @@ function renderBlocks(tokens: Token[]): ReactNode[] {
         // Raw HTML has no native equivalent; show the text it wraps, if any.
         const plain = html.text.replace(/<[^>]*>/g, "").trim();
         return plain ? (
-          <Text key={key} style={[styles.blockText, styles.muted]}>
+          <Text key={key} selectable style={[styles.blockText, styles.muted]}>
             {plain}
           </Text>
         ) : null;
@@ -269,7 +269,7 @@ export function MarkdownText({ text }: { text: string }) {
   const blocks = useMemo(() => renderBlocks(marked.lexer(text)), [text]);
   return (
     <View style={styles.root}>
-      {blocks.length > 0 ? blocks : <Text style={styles.blockText}>{text}</Text>}
+      {blocks.length > 0 ? blocks : <Text selectable style={styles.blockText}>{text}</Text>}
     </View>
   );
 }

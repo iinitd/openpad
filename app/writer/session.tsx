@@ -385,13 +385,23 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   const goToPageRef = useRef(goToPage);
   goToPageRef.current = goToPage;
 
+  // A long press is how text selection starts. A drag that begins after one is
+  // the reader moving a selection handle, not a page swipe, so the pager must
+  // keep its hands off it.
+  const touchStartedAtRef = useRef(0);
+
   const shouldClaimPageSwipe = (_evt: unknown, g: { dx: number; dy: number }) => {
     if (filesOpenRef.current || projectsOpenRef.current) return false;
+    if (Date.now() - touchStartedAtRef.current > 350) return false;
     return Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5;
   };
 
   const pageSwipeResponder = useRef(
     PanResponder.create({
+      onStartShouldSetPanResponderCapture: () => {
+        touchStartedAtRef.current = Date.now();
+        return false;
+      },
       onMoveShouldSetPanResponder: shouldClaimPageSwipe,
       onMoveShouldSetPanResponderCapture: shouldClaimPageSwipe,
       onPanResponderGrant: () => {
