@@ -7,7 +7,7 @@ import type {
   FetchAgentTimelineOptions,
   WriterBackend,
 } from "../types";
-import { OpenCodeEvents } from "./events";
+import { OpenCodeEvents, openCodeMessageId } from "./events";
 import { OpenCodeFiles } from "./files";
 import { OpenCodeSessions } from "./sessions";
 import { OpenCodeTransport, type OpenCodeConnectionOptions } from "./transport";
@@ -92,6 +92,10 @@ export class OpenCodeBackend implements WriterBackend {
   async setAgentModel(id: string, model: string | null): Promise<void> {
     await this.sessions.setAgentModel(id, model);
     this.events.publishAgent(id);
+  }
+
+  createMessageId(): string {
+    return openCodeMessageId();
   }
 
   sendAgentMessage(

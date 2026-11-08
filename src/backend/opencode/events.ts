@@ -39,6 +39,11 @@ function uniqueId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+/** A message id in the shape the OpenCode server stores for prompts. */
+export function openCodeMessageId(): string {
+  return `msg_kel_${uniqueId().replace(/-/g, "")}`;
+}
+
 interface Journal {
   epoch: string;
   seq: number;
@@ -136,7 +141,10 @@ export class OpenCodeEvents {
     attachments?: BackendAttachment[],
   ): Promise<void> {
     const journal = this.track(id);
-    const serverId = `msg_kel_${uniqueId().replace(/-/g, "")}`;
+    // The server stores the id the prompt carries, so a caller-supplied id is
+    // also the history id. Reusing it keeps one key across the optimistic row,
+    // the live echo and a later fetch.
+    const serverId = clientMessageId ?? openCodeMessageId();
     // OpenCode reads attachments as data URIs; the inline source keeps the bytes
     // in the request instead of pointing at a path the server cannot see.
     const files = attachments?.map((attachment) => ({
@@ -153,7 +161,7 @@ export class OpenCodeEvents {
         ...(files && files.length > 0 ? { files } : {}),
       }),
     });
-    const messageId = clientMessageId ?? serverId;
+    const messageId = serverId;
     this.status(id, "running");
     this.emit(id, { type: "timeline", item: { type: "user_message", text, messageId } });
     journal.tools.clear();

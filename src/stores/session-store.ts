@@ -1039,8 +1039,9 @@ export const useSessionStore = create<SessionStore>()(
         return;
       }
 
-      // Optimistic user message in tail
-      const messageId = createClientMessageId();
+      // Optimistic user message in tail. Prefer an id the backend also stores,
+      // so the echo and history replace this row instead of adding a twin.
+      const messageId = client.createMessageId?.() ?? createClientMessageId();
       const optimisticItem: StreamItem = {
         kind: "user_message",
         id: `user-${messageId}`,
@@ -1104,9 +1105,11 @@ export const useSessionStore = create<SessionStore>()(
       // so a direct send cannot start between them and race the queued batch.
       if (!agentId || queued.length === 0 || isStreaming) return;
 
+      const client = getClient();
       // A retry entry represents one previously-dispatched merged batch. Keep
-      // it separate from later follow-ups and reuse its messageId so Paseo can
-      // de-duplicate an accepted request whose acknowledgement was lost.
+      // it separate from later follow-ups and reuse its messageId so the
+      // backend can de-duplicate an accepted request whose acknowledgement was
+      // lost.
       const retryMessageId = queued[0]?.messageId;
       const batchEnd = retryMessageId
         ? (() => {
@@ -1121,7 +1124,8 @@ export const useSessionStore = create<SessionStore>()(
       const batch = queued.slice(0, batchEnd);
       const remainingQueue = queued.slice(batchEnd);
       const merged = batch.map((q) => q.text).join("\n\n");
-      const messageId = retryMessageId ?? createClientMessageId();
+      const messageId =
+        retryMessageId ?? client.createMessageId?.() ?? createClientMessageId();
       const inFlightEntry: QueuedMessage = retryMessageId
         ? batch[0]!
         : {
@@ -1145,7 +1149,6 @@ export const useSessionStore = create<SessionStore>()(
       }));
       persistVisibleQueue(agentId, queued, [inFlightEntry, ...remainingQueue]);
 
-      const client = getClient();
       const backendKey = usePreferencesStore.getState().activeBackendKey;
       try {
         await client.sendAgentMessage(agentId, merged, { messageId });

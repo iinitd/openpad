@@ -207,6 +207,12 @@ export interface WriterBackend {
   archiveAgent(agentId: string): Promise<void>;
   cancelAgent(agentId: string): Promise<void>;
   setAgentModel(agentId: string, model: string | null): Promise<void>;
+  /**
+   * Optional: an id the backend will also store for the message. When present,
+   * the optimistic row, the live echo and history all share one key, so a
+   * queued or retried send can be recognised instead of duplicated.
+   */
+  createMessageId?(): string;
   sendAgentMessage(
     agentId: string,
     text: string,
