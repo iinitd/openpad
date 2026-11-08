@@ -51,10 +51,21 @@ export const ActivityRow = memo(function ActivityRow({
     (latest.kind === "thought"
       ? latest.status === "loading"
       : latest.status === "running");
-  const isThought = latest.kind === "thought";
-  const preview = isThought
-    ? latest.text.trim() || "Thinking…"
-    : latest.name;
+  // Prefer the newest thing the agent actually said over whatever it happens to
+  // be running: a row that only ever shows command names tells the reader
+  // nothing about the work.
+  const lastThought = [...items]
+    .reverse()
+    .find(
+      (entry): entry is ThoughtItem =>
+        entry.kind === "thought" && entry.text.trim().length > 0,
+    );
+  const isThought = Boolean(lastThought);
+  const preview = lastThought
+    ? lastThought.text.trim()
+    : latest.kind === "tool_call"
+      ? latest.name
+      : "Thinking…";
   // The count matters when the newest step is a command; when the agent is
   // thinking, its own words are the useful part and get the whole width.
   const prefix = !isThought && items.length > 1 ? `${items.length} steps · ` : "";
