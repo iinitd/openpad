@@ -1,25 +1,9 @@
 import { useMemo } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
-import Svg, { Polyline } from "react-native-svg";
-import type { DocumentHeading } from "./file-content";
-import { THEME } from "../styles/theme";
 
-// A small caret that rotates via the `open` flag (points right when closed,
-// down when open). Kept local — it's the only place that needs it.
-function Caret({ open, color }: { open: boolean; color: string }) {
-  return (
-    <Svg width={14} height={14} viewBox="0 0 24 24">
-      <Polyline
-        points={open ? "6 9 12 15 18 9" : "9 6 15 12 9 18"}
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-      />
-    </Svg>
-  );
-}
+import type { DocumentHeading } from "./file-content";
+import { Icon } from "../components/Icon";
+import { THEME } from "../styles/theme";
 
 /**
  * The document title bar. Tapping it toggles a table-of-contents drawer built
@@ -60,7 +44,13 @@ export function DocumentToc({
         <Text style={styles.titleText} numberOfLines={1}>
           {title}
         </Text>
-        {hasToc ? <Caret open={open} color={THEME.colors.textMuted} /> : null}
+        {hasToc ? (
+          <Icon
+            name="list"
+            size={16}
+            color={open ? THEME.colors.text : THEME.colors.textMuted}
+          />
+        ) : null}
       </TouchableOpacity>
 
       {open && hasToc ? (
@@ -128,12 +118,7 @@ const styles = StyleSheet.create({
     zIndex: 21,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: THEME.colors.border,
-    backgroundColor: "rgba(255, 255, 255, 0.94)",
-    shadowColor: "#0f172a",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.14,
-    shadowRadius: 16,
-    elevation: 8,
+    backgroundColor: THEME.colors.background,
   },
   tocScroll: {
     maxHeight: 260,

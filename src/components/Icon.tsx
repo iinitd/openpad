@@ -26,7 +26,8 @@ export type IconName =
   | "star-filled"
   | "arrow-down"
   | "image"
-  | "grid";
+  | "grid"
+  | "list";
 
 interface IconProps {
   name: IconName;
@@ -120,6 +121,16 @@ export function Icon({
         <>
           <Line x1="6" y1="6" x2="18" y2="18" {...common} />
           <Line x1="18" y1="6" x2="6" y2="18" {...common} />
+        </>
+      ) : null}
+      {name === "list" ? (
+        <>
+          <Line x1="8" y1="6" x2="21" y2="6" {...common} />
+          <Line x1="8" y1="12" x2="21" y2="12" {...common} />
+          <Line x1="8" y1="18" x2="21" y2="18" {...common} />
+          <Line x1="3" y1="6" x2="3.01" y2="6" {...common} />
+          <Line x1="3" y1="12" x2="3.01" y2="12" {...common} />
+          <Line x1="3" y1="18" x2="3.01" y2="18" {...common} />
         </>
       ) : null}
       {name === "grid" ? (
