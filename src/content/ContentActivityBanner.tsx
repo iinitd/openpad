@@ -76,7 +76,7 @@ export function ContentActivityBanner({ onPress }: ContentActivityBannerProps) {
   const inner = (
     <>
       <TypingIndicator />
-      <Text style={styles.summary} numberOfLines={2}>
+      <Text style={styles.summary} numberOfLines={2} ellipsizeMode="tail">
         {summary}
       </Text>
     </>
@@ -130,8 +130,9 @@ const styles = StyleSheet.create({
     position: "relative",
     zIndex: 31,
     overflow: "visible",
+    height: 56,
+    justifyContent: "center",
     paddingHorizontal: 12,
-    paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: THEME.colors.border,
     backgroundColor: THEME.colors.surface,
@@ -168,8 +169,8 @@ const styles = StyleSheet.create({
   },
   summary: {
     flex: 1,
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 14,
+    lineHeight: 19,
     color: THEME.colors.textSecondary,
   },
 });
