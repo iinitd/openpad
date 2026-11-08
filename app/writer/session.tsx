@@ -860,12 +860,20 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         <View
           style={[
             styles.page,
-            { width: screenWidth, paddingBottom: keyboardOpen ? 0 : insets.bottom },
+            {
+              width: screenWidth,
+              // Same manual lift as the document dock, so both pages clear the
+              // keyboard the same way instead of mixing padding with
+              // KeyboardAvoidingView inside a translated pager.
+              paddingBottom: keyboardOpen
+                ? keyboardInset + THEME.spacing.xs
+                : insets.bottom,
+            },
           ]}
         >
           <AgentChatPanel
             showInput
-            avoidKeyboard
+            avoidKeyboard={false}
             showHeader={false}
             onRequestClose={closeAgent}
           />
