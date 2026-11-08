@@ -1,11 +1,11 @@
-import { memo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { Pressable, View, Text, StyleSheet } from "react-native";
 import { THEME } from "../styles/theme";
 import { PressableRow, hapticTap } from "../components/PressableRow";
 import { HalfSheet } from "../components/HalfSheet";
 import { ActivityDot } from "../components/TypingDots";
 import { Icon } from "../components/Icon";
-import { MarkdownText } from "../components/MarkdownText";
+import { MarkdownText, markdownPlainText } from "../components/MarkdownText";
 import { SelectableText } from "../components/SelectableText";
 import { hapticLongPress, SelectableSheet } from "../components/SelectableSheet";
 import { summarizeActivity } from "../hooks/use-agent-progress";
@@ -205,6 +205,26 @@ export const ActivityRow = memo(function ActivityRow({
   );
 });
 
+const AssistantBubble = memo(function AssistantBubble({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  const plain = useMemo(() => markdownPlainText(text), [text]);
+  return (
+    <>
+      <Pressable
+        style={[styles.message, styles.assistantMessage]}
+        delayLongPress={300}
+        onLongPress={() => {
+          hapticLongPress();
+          setOpen(true);
+        }}
+      >
+        <MarkdownText text={text} />
+      </Pressable>
+      {open ? <SelectableSheet text={plain} onClose={() => setOpen(false)} /> : null}
+    </>
+  );
+});
+
 const UserBubble = memo(function UserBubble({ text }: { text: string }) {
   const [open, setOpen] = useState(false);
   return (
@@ -231,11 +251,7 @@ export const ChatMessageItem = memo(function ChatMessageItem({ item }: Props) {
       // rendering fault.
       return item.text.trim() ? <UserBubble text={item.text} /> : null;
     case "assistant_message":
-      return (
-        <View style={[styles.message, styles.assistantMessage]}>
-          <MarkdownText text={item.text || "..."} />
-        </View>
-      );
+      return <AssistantBubble text={item.text || "..."} />;
     case "thought":
       return (
         <View style={[styles.message, styles.thoughtMessage]}>

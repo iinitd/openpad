@@ -1,7 +1,6 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import {
   Linking,
-  Pressable,
   StyleSheet,
   Text,
   View,
@@ -9,7 +8,6 @@ import {
   type TextStyle,
 } from "react-native";
 import { marked, type Token, type Tokens } from "marked";
-import { hapticLongPress, SelectableSheet } from "./SelectableSheet";
 import { THEME } from "../styles/theme";
 
 /**
@@ -341,35 +339,22 @@ function renderBlocks(tokens: Token[]): ReactNode[] {
   });
 }
 
+/** The reply as plain text, for the sheet that lets it be read and copied. */
+export function markdownPlainText(text: string): string {
+  const tokens = marked.lexer(text);
+  return tokens.map(blockPlain).filter(Boolean).join("\n\n") || text;
+}
+
 export function MarkdownText({ text }: { text: string }) {
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const { blocks, plain } = useMemo(() => {
-    const tokens = marked.lexer(text);
-    return {
-      blocks: renderBlocks(tokens),
-      plain: tokens.map(blockPlain).filter(Boolean).join("\n\n"),
-    };
-  }, [text]);
+  const blocks = useMemo(() => renderBlocks(marked.lexer(text)), [text]);
   return (
-    <>
-      <Pressable
-        style={styles.root}
-        delayLongPress={300}
-        onLongPress={() => {
-          hapticLongPress();
-          setSheetOpen(true);
-        }}
-      >
-        {blocks.length > 0 ? (
-          blocks
-        ) : (
-          <Text style={styles.blockText}>{text}</Text>
-        )}
-      </Pressable>
-      {sheetOpen ? (
-        <SelectableSheet text={plain || text} onClose={() => setSheetOpen(false)} />
-      ) : null}
-    </>
+    <View style={styles.root}>
+      {blocks.length > 0 ? (
+        blocks
+      ) : (
+        <Text style={styles.blockText}>{text}</Text>
+      )}
+    </View>
   );
 }
 
