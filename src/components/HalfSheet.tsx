@@ -11,7 +11,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { Icon } from "./Icon";
-import { PressableRow } from "./PressableRow";
+import { PressableRow, hapticTap } from "./PressableRow";
 import { THEME } from "../styles/theme";
 
 /**
@@ -98,7 +98,10 @@ export function HalfSheet({
         />
         <Pressable
           style={StyleSheet.absoluteFill}
-          onPress={onClose}
+          onPress={() => {
+            hapticTap("light");
+            onClose();
+          }}
           accessibilityRole="button"
           accessibilityLabel="Close"
         />
