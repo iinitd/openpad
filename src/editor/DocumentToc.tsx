@@ -32,6 +32,12 @@ export function DocumentToc({
     () => (hasToc ? Math.min(...headings.map((h) => h.level)) : 1),
     [headings, hasToc],
   );
+  // Weight only carries meaning when the outline actually has depths: a flat
+  // list reads better in regular weight than as a wall of bold titles.
+  const hasNesting = useMemo(
+    () => headings.some((h) => h.level > minLevel),
+    [headings, minLevel],
+  );
 
   return (
     <View style={styles.wrap}>
@@ -78,7 +84,14 @@ export function DocumentToc({
                 }}
               >
                 <Text
-                  style={[styles.tocText, h.level <= minLevel && styles.tocTextTop]}
+                  style={[
+                    styles.tocText,
+                    h.level <= minLevel
+                      ? hasNesting
+                        ? styles.tocTextTop
+                        : styles.tocTextFlat
+                      : styles.tocTextNested,
+                  ]}
                   numberOfLines={1}
                 >
                   {h.text}
@@ -137,15 +150,24 @@ const styles = StyleSheet.create({
     paddingVertical: THEME.spacing.sm,
   },
   tocRow: {
-    paddingVertical: THEME.spacing.xs + 2,
+    paddingVertical: THEME.spacing.xs + 3,
     paddingRight: THEME.spacing.lg,
   },
   tocText: {
     fontSize: 15,
+    lineHeight: 21,
     color: THEME.colors.textSecondary,
+  },
+  tocTextFlat: {
+    color: THEME.colors.text,
   },
   tocTextTop: {
     color: THEME.colors.text,
     fontWeight: "500",
+  },
+  tocTextNested: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: THEME.colors.textSecondary,
   },
 });
