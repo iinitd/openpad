@@ -316,6 +316,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   // The editor publishes its live selection + send handlers here so the dock
   // can render the comment bubble outside the editor and route sends back.
   const commentBridge = useEditorStore((s) => s.commentBridge);
+  const tocOpen = useEditorStore((s) => s.tocOpen);
   const activePluginId = useContentStore((state) => state.active.pluginId);
 
   // Files and Projects both present as native page sheets: the document stays
@@ -521,6 +522,16 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
                 onClearSelection={commentBridge?.onClearSelection}
                 secondaryAction={commentBridge?.secondaryAction}
               />
+              {tocOpen ? (
+                <Pressable
+                  style={StyleSheet.absoluteFill}
+                  onPress={() => useEditorStore.getState().setTocOpen(false)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close outline"
+                >
+                  <View style={styles.dockScrim} />
+                </Pressable>
+              ) : null}
             </View>
           ) : null}
         </View>

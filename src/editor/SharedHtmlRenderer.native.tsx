@@ -73,7 +73,8 @@ export function SharedHtmlRendererNative({
   const setApplyNativeAssetPatch = useEditorStore((s) => s.setApplyNativeAssetPatch);
   const changedBlockSigs = useEditorStore((s) => s.changedBlockSigs);
 
-  const [tocOpen, setTocOpen] = useState(false);
+  const tocOpen = useEditorStore((state) => state.tocOpen);
+  const setTocOpen = useEditorStore((state) => state.setTocOpen);
   const [headings, setHeadings] = useState<DocumentHeading[]>([]);
   const [selectionText, setSelectionText] = useState<string | null>(null);
   const [selectionBlockIds, setSelectionBlockIds] = useState<string[]>([]);
@@ -327,7 +328,7 @@ export function SharedHtmlRendererNative({
           title={documentTitle}
           headings={headings}
           open={tocOpen}
-          onToggle={() => setTocOpen((o) => !o)}
+          onToggle={() => setTocOpen(!tocOpen)}
           onSelect={handleTocSelect}
         />
       ) : null}

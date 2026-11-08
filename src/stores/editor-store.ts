@@ -73,6 +73,9 @@ interface EditorStore {
   // mobile dock) can render the bubble and route sends back to the editor.
   // Null when no editor is driving it (fall back to a doc-scoped bar).
   commentBridge: CommentBarBridge | null;
+  // Whether the outline dropdown is open. Lives here so the page-level dock can
+  // dim together with the editor's own scrim.
+  tocOpen: boolean;
   // In-flight AI revisions, keyed by cwd. A map (not a single slot) so running
   // agents in multiple workspaces don't clobber each other — switching
   // workspace restores the matching workspace's banner intact.
@@ -106,6 +109,7 @@ interface EditorStore {
   setActiveSelection: (selection: ActiveSelection | null) => void;
   setCommentDraft: (draft: string) => void;
   setCommentBridge: (bridge: CommentBarBridge | null) => void;
+  setTocOpen: (open: boolean) => void;
   // Set/clear the per-workspace revise target. Pass target=null to drop the
   // entry for that cwd. The cwd is the key; passing a cwd with no existing
   // entry and target=null is a no-op.
@@ -129,6 +133,7 @@ export const useEditorStore = create<EditorStore>()(
     activeSelection: null,
     commentDraft: "",
     commentBridge: null,
+    tocOpen: false,
     reviseTargetsByCwd: {},
     reviseBaseline: null,
     changedBlockSigs: [],
@@ -148,6 +153,7 @@ export const useEditorStore = create<EditorStore>()(
         activeSelection: null,
         commentDraft: "",
         commentBridge: null,
+        tocOpen: false,
         reviseBaseline: null,
         changedBlockSigs: [],
       })),
@@ -204,6 +210,7 @@ export const useEditorStore = create<EditorStore>()(
     setActiveSelection: (activeSelection) => set({ activeSelection }),
     setCommentDraft: (commentDraft) => set({ commentDraft }),
     setCommentBridge: (commentBridge) => set({ commentBridge }),
+    setTocOpen: (tocOpen) => set({ tocOpen }),
     setReviseTargetForCwd: (cwd, target) =>
       set((state) => {
         // No cwd (session not yet attached to a workspace): don't try to keep a
