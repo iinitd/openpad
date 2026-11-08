@@ -118,11 +118,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     fontWeight: "600",
-    color: THEME.colors.text,
+    color: THEME.colors.textSecondary,
   },
   meta: {
     fontSize: 11,
-    color: THEME.colors.textMuted,
+    color: "#b3b3bc",
   },
   // Aligned with the label, so the dots read as the bullet for the whole block.
   preview: {
@@ -130,6 +130,6 @@ const styles = StyleSheet.create({
     marginLeft: 24,
     fontSize: 14,
     lineHeight: 19,
-    color: THEME.colors.textSecondary,
+    color: THEME.colors.textMuted,
   },
 });
