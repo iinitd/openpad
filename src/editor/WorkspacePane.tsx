@@ -22,65 +22,8 @@ import { PressableRow } from "../components/PressableRow";
 import { Icon } from "../components/Icon";
 import { THEME } from "../styles/theme";
 
-const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
-
 function directoryLabel(cwd: string): string {
   return cwd.split("/").filter(Boolean).pop() || cwd;
-}
-
-function isRecent(timestamp: string | null | undefined): boolean {
-  if (!timestamp) return false;
-  const value = Date.parse(timestamp);
-  if (!Number.isFinite(value)) return false;
-  return Date.now() - value <= THREE_DAYS_MS;
-}
-
-// Small pulsing dot used when an agent is actively running in that workspace.
-// Shared Animated.Value across all instances so the pulse stays in sync for
-// multiple simultaneously-running workspaces.
-const pulseValue = new Animated.Value(0);
-let pulseStarted = false;
-function ensurePulseLoop() {
-  if (pulseStarted) return;
-  pulseStarted = true;
-  Animated.loop(
-    Animated.sequence([
-      Animated.timing(pulseValue, {
-        toValue: 1,
-        duration: 700,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: true,
-      }),
-      Animated.timing(pulseValue, {
-        toValue: 0,
-        duration: 700,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: true,
-      }),
-    ]),
-  ).start();
-}
-
-function NativeRunningDot() {
-  const opacityRef = useRef(pulseValue).current;
-  useEffect(() => {
-    ensurePulseLoop();
-  }, []);
-  const opacity = opacityRef.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.35, 1],
-  });
-  return <Animated.View style={[styles.dot, styles.dotRunning, { opacity }]} />;
-}
-
-function RunningDot() {
-  // RN Web has no native animation driver; a perpetual JS animation keeps the
-  // browser main thread awake even while the sidebar is idle. A steady live
-  // indicator is cheaper and equally legible on Web.
-  if (Platform.OS === "web") {
-    return <View style={[styles.dot, styles.dotRunning]} />;
-  }
-  return <NativeRunningDot />;
 }
 
 // Projects group sessions by cwd within each connection. The agent pane
@@ -100,8 +43,6 @@ export function WorkspacePane({
   const activeConnectionId = useConnectionStore((state) => state.activeConnectionId);
   const isSwitchingConnection = useConnectionStore((state) => state.isSwitchingConnection);
   const currentCwd = useSessionStore((state) => state.cwd);
-  const currentIsStreaming = useSessionStore((state) => state.isStreaming);
-  const currentAgentStatus = useSessionStore((state) => state.agentStatus);
   const activeCwd = normalizeWorkspaceCwd(currentCwd ?? "");
   // Also subscribe to inactive preference snapshots so pins update immediately.
   const preferences = usePreferencesStore();
@@ -204,8 +145,6 @@ export function WorkspacePane({
     const key = catalogItemKey(source.connectionId, ws.cwd);
     const active = source.connectionId === activeConnectionId && ws.cwd === activeCwd;
     const recent = getBackendPreferences(contextKey ?? null).recentWorkspaces.find((entry) => normalizeWorkspaceCwd(entry.cwd) === ws.cwd);
-    const running = ws.sessions.some(({ agent }) => agent.status === "running") ||
-      (active && (currentIsStreaming || currentAgentStatus === "running"));
     const pinned = Boolean(recent?.pinnedAt);
     return (
       <View key={key}>
@@ -216,7 +155,13 @@ export function WorkspacePane({
           disabled={Boolean(busyKey) || opening || isSwitchingConnection}
         >
           <View style={styles.rowInner}>
-            {running ? <RunningDot /> : <View style={[styles.dot, isRecent(recent?.lastOpenedAt) ? styles.dotRecent : styles.dotIdle]} />}
+            <View style={styles.rowIcon}>
+              <Icon
+                name="folder"
+                size={16}
+                color={active ? THEME.colors.text : THEME.colors.textSecondary}
+              />
+            </View>
             <View style={styles.rowBody}>
               <Text style={[styles.rowTitle, active && styles.rowTitleActive]} numberOfLines={1} ellipsizeMode="head">
                 {directoryLabel(ws.cwd)}
@@ -298,8 +243,8 @@ export function WorkspacePane({
               accessibilityRole="button"
               accessibilityLabel={`Add a project to ${source.label}`}
             >
-              <View style={styles.addGlyph}>
-                <Icon name="plus" size={15} color={THEME.colors.textSecondary} />
+              <View style={styles.rowIcon}>
+                <Icon name="plus" size={16} color={THEME.colors.textSecondary} />
               </View>
               <Text style={styles.addRowText}>New working directory</Text>
             </PressableRow>
@@ -364,20 +309,30 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: THEME.colors.textSecondary,
   },
+  // Same geometry as a file row: a narrow icon column, and the open item gets
+  // an outline rather than a filled block.
   row: {
-    borderRadius: 8,
+    borderRadius: 9,
+    marginVertical: 1,
     borderWidth: 1,
     borderColor: "transparent",
   },
   rowActive: {
-    backgroundColor: THEME.colors.surface,
+    backgroundColor: "rgba(255, 255, 255, 0.62)",
+    borderColor: "rgba(148, 163, 184, 0.28)",
   },
   rowInner: {
     flexDirection: "row",
     alignItems: "center",
-    gap: THEME.spacing.sm,
+    gap: 6,
     paddingHorizontal: THEME.spacing.md,
-    paddingVertical: 9,
+    minHeight: 36,
+    paddingVertical: 3,
+  },
+  rowIcon: {
+    width: 18,
+    alignItems: "center",
+    justifyContent: "center",
   },
   rowBody: {
     flex: 1,
@@ -386,28 +341,15 @@ const styles = StyleSheet.create({
   },
   rowTitle: {
     fontSize: 15,
-    color: THEME.colors.text,
+    color: THEME.colors.textSecondary,
   },
   rowTitleActive: {
     fontWeight: "600",
+    color: THEME.colors.text,
   },
   rowAlias: {
     fontSize: 13,
     color: THEME.colors.textMuted,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  dotRunning: {
-    backgroundColor: THEME.colors.primary,
-  },
-  dotRecent: {
-    backgroundColor: THEME.colors.success,
-  },
-  dotIdle: {
-    backgroundColor: THEME.colors.border,
   },
   pinButton: {
     padding: 4,
@@ -416,8 +358,7 @@ const styles = StyleSheet.create({
   pinButtonPressed: {
     opacity: 0.6,
   },
-  // Matches a project row's geometry: the plus sits in the status-dot column,
-  // so the label lines up with the titles below it.
+  // Matches a project row's geometry, so the label lines up with the names.
   addRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -425,10 +366,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: THEME.spacing.md,
     paddingVertical: 9,
     borderRadius: 8,
-  },
-  addGlyph: {
-    width: 6,
-    alignItems: "center",
   },
   addRowPressed: {
     backgroundColor: THEME.colors.backgroundSecondary,
