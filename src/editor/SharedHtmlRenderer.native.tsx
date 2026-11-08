@@ -1,6 +1,6 @@
 import { createPluginContext } from "../content/plugin-context";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { View, StyleSheet, Linking } from "react-native";
+import { View, StyleSheet, Linking, Pressable } from "react-native";
 import { WebView, type WebViewMessageEvent } from "react-native-webview";
 import { DocumentCommentBar } from "./DocumentCommentBar";
 import { DocumentToc } from "./DocumentToc";
@@ -355,6 +355,16 @@ export function SharedHtmlRendererNative({
           onJumpNext={jumpNextChanged}
           onJumpPrev={jumpPrevChanged}
         />
+        {tocOpen ? (
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => setTocOpen(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Close outline"
+          >
+            <View style={styles.tocScrim} />
+          </Pressable>
+        ) : null}
       </View>
 
       {hideInlineCommentBar ? null : (
@@ -373,6 +383,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: THEME.colors.background,
+  },
+  tocScrim: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(15,23,42,0.18)",
   },
   previewArea: {
     flex: 1,

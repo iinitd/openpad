@@ -124,7 +124,10 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 21,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: THEME.colors.border,
+    borderTopWidth: 0,
+    borderColor: "#f0f0f2",
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
     backgroundColor: THEME.colors.background,
   },
   tocScroll: {
