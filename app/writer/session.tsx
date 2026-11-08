@@ -13,7 +13,6 @@ import {
   Keyboard,
   PanResponder,
   useWindowDimensions,
-  type ViewStyle,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { THEME } from "../../src/styles/theme";
@@ -41,8 +40,6 @@ import { measureStartupTrace, noteStartupTrace } from "../../src/utils/startup-t
 
 const COMPACT_BREAKPOINT = 576;
 const PHONE_PORTRAIT_MAX_SHORT_SIDE = 700;
-const MOBILE_DRAWER_SCREEN_RATIO = 0.82;
-const MOBILE_DRAWER_MAX_WIDTH = 360;
 
 // A phone in portrait should keep the mobile shell even when its reported
 // viewport is wider than the desktop breakpoint (foldables, desktop-site mode,
@@ -60,101 +57,10 @@ function isPhonePortraitWeb(): boolean {
   return touch && shortSide > 0 && shortSide <= PHONE_PORTRAIT_MAX_SHORT_SIDE;
 }
 
-// Left-edge right-swipe opens the Files drawer. On the document tab a drag also
-// selects text, so we only claim swipes that begin within this many px of the
-// left edge.
-const SWIPE_EDGE_ZONE = 32;
 
-// RN Web already maps translateX/opacity to CSS; these hints keep the drawer
-// layers promoted so Safari can composite them without repainting the editor.
-const WEB_DRAWER_SURFACE_STYLE = Platform.OS === "web"
-  ? ({ willChange: "transform", backfaceVisibility: "hidden" } as unknown as ViewStyle)
-  : undefined;
-const WEB_DRAWER_BACKDROP_STYLE = Platform.OS === "web"
-  ? ({ willChange: "opacity" } as unknown as ViewStyle)
-  : undefined;
+
 const NOOP_COMMENT_SEND = async () => {};
 
-// Safari reserves inward swipes from the physical screen edges for browser
-// history navigation. React's responder is chosen after the gesture starts, so
-// reserve an edge gesture synchronously on touchstart, before Safari commits to
-// back/forward navigation. The listener only cancels touches inside the narrow
-// edge zone; normal scrolling elsewhere stays passive.
-function installWebEdgeSwipeGuard(isDrawerMounted: () => boolean): () => void {
-  if (
-    Platform.OS !== "web" ||
-    typeof document === "undefined" ||
-    typeof navigator === "undefined" ||
-    navigator.maxTouchPoints <= 0
-  ) {
-    return () => {};
-  }
-
-  let edge: "left" | null = null;
-  let startX = 0;
-  let startY = 0;
-  let listeningForMove = false;
-
-  const stopTracking = () => {
-    edge = null;
-    if (listeningForMove) {
-      document.removeEventListener("touchmove", onTouchMove);
-      listeningForMove = false;
-    }
-  };
-
-  const onTouchMove = (event: TouchEvent) => {
-    if (!edge || event.touches.length !== 1) {
-      stopTracking();
-      return;
-    }
-    const touch = event.touches[0]!;
-    const deltaX = touch.clientX - startX;
-    const deltaY = touch.clientY - startY;
-    if (Math.abs(deltaY) > 8 && Math.abs(deltaY) > Math.abs(deltaX) * 1.2) {
-      // It was a vertical scroll that happened to begin near an edge.
-      stopTracking();
-      return;
-    }
-    const inward = deltaX > 0;
-    if (
-      inward &&
-      Math.abs(deltaX) > 6 &&
-      Math.abs(deltaX) > Math.abs(deltaY) * 1.2 &&
-      event.cancelable
-    ) {
-      event.preventDefault();
-    }
-  };
-
-  const onTouchStart = (event: TouchEvent) => {
-    stopTracking();
-    // Open drawers own edge taps and scrolling. Cancelling touchstart here
-    // suppresses the click on disclosure arrows near the left screen edge.
-    if (isDrawerMounted()) return;
-    if (event.touches.length !== 1) return;
-    const touch = event.touches[0]!;
-    edge = touch.clientX <= SWIPE_EDGE_ZONE ? "left" : null;
-    if (!edge) return;
-    // iOS Safari can commit to history navigation before the first touchmove.
-    // `touchstart` must therefore be non-passive and cancelled immediately.
-    if (event.cancelable) event.preventDefault();
-    startX = touch.clientX;
-    startY = touch.clientY;
-    document.addEventListener("touchmove", onTouchMove, { passive: false });
-    listeningForMove = true;
-  };
-
-  document.addEventListener("touchstart", onTouchStart, { passive: false });
-  document.addEventListener("touchend", stopTracking, { passive: true });
-  document.addEventListener("touchcancel", stopTracking, { passive: true });
-  return () => {
-    stopTracking();
-    document.removeEventListener("touchstart", onTouchStart);
-    document.removeEventListener("touchend", stopTracking);
-    document.removeEventListener("touchcancel", stopTracking);
-  };
-}
 
 export default function WriterSessionScreen() {
   const router = useRouter();
@@ -392,16 +298,16 @@ export default function WriterSessionScreen() {
   );
 }
 
-// On narrow screens the panes don't fit side by side, so the document view
-// takes the whole content area. The Agent chat is a middle-pane mode, not a
-// right-anchored drawer: the document top bar's agent button swaps the pane in
-// place and the same button (or the compact header's close control) swaps it
-// back. Files remain a left-anchored drawer. Settings opens as a dedicated
-// route, so the writing context is never lost.
+// On narrow screens the panes don't fit side by side, so the document and the
+// conversation become two full-width pages in a pager: the header tabs and a
+// horizontal swipe move between them, and both stay mounted.
 //
-// One bottom dock is shared by both modes. The document comment bar and the
-// agent composer keep their own state; switching panes only changes which one
-// is visible, and the dock itself never moves.
+// Files and Projects present as native page sheets over the current page, which
+// keeps horizontal gestures dedicated to paging. Settings lives in the projects
+// sheet footer.
+//
+// Each page owns its composer: the document keeps the comment dock, the
+// conversation keeps its own input.
 function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset: number }) {
   const insets = useSafeAreaInsets();
   const keyboardInset = useKeyboardInset();
@@ -410,26 +316,12 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   const commentBridge = useEditorStore((s) => s.commentBridge);
   const activePluginId = useContentStore((state) => state.active.pluginId);
 
-  // Files drawer slides in from the left. `filesOpen` is the intent; `filesMounted`
-  // keeps the overlay rendered through the slide-out so it animates instead of
-  // popping away. `slideX` translates the panel (never a fade).
-  // We render the drawer as an absolutely-positioned overlay inside the mobile
-  // container (not a Modal). On web, Modal remounts a sibling container into
-  // the DOM which produces a visible stall at open/close; a plain Animated.View
-  // keeps the DOM tree stable so the slide stays smooth.
-  const drawerWidth = Math.min(
-    screenWidth * MOBILE_DRAWER_SCREEN_RATIO,
-    MOBILE_DRAWER_MAX_WIDTH,
-  );
+  // Files and Projects both present as native page sheets: the document stays
+  // visible, scaled back behind the card, and iOS owns the slide, the rounded
+  // corners and the swipe-to-dismiss.
   const [filesOpen, setFilesOpen] = useState(false);
-  const [filesMounted, setFilesMounted] = useState(false);
-  // Shadows on a transformed layer are re-rasterised on iOS every frame; drop
-  // the shadow while the finger is down and restore it on release.
-  const [drawerDragging, setDrawerDragging] = useState(false);
-  const slideX = useRef(new Animated.Value(-drawerWidth)).current;
-  // Projects present as a native page sheet: the document stays visible, scaled
-  // back behind the card, and iOS owns the slide and the swipe-to-dismiss.
   const [projectsOpen, setProjectsOpen] = useState(false);
+
   // Two full-width pages — document and conversation — live side by side in a
   // pager. The header tabs and a horizontal swipe both slide between them, and
   // both stay mounted so a switch never reloads the document or the transcript.
@@ -438,32 +330,17 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   const pageRef = useRef(page);
   pageRef.current = page;
 
-  // Mount both drawers after the first screen settles. A swipe then only moves
-  // existing views; mounting the file tree and project list mid-gesture was the
-  // main source of stutter on the first pull.
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setFilesMounted(true);
-    }, 1200);
-    return () => clearTimeout(timer);
-  }, []);
-
   const openFiles = useCallback(() => {
-    setProjectsOpen(false);
-    setFilesMounted(true);
+    Keyboard.dismiss();
     setFilesOpen(true);
   }, []);
-  const closeFiles = useCallback(() => {
-    setFilesOpen(false);
-  }, []);
+  const closeFiles = useCallback(() => setFilesOpen(false), []);
   const openProjects = useCallback(() => {
     Keyboard.dismiss();
-    setFilesOpen(false);
     setProjectsOpen(true);
   }, []);
-  const closeProjects = useCallback(() => {
-    setProjectsOpen(false);
-  }, []);
+  const closeProjects = useCallback(() => setProjectsOpen(false), []);
+
   const goToPage = useCallback((next: number) => {
     const clamped = Math.max(0, Math.min(1, next));
     setPage(clamped);
@@ -477,7 +354,6 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
 
   const openAgent = useCallback(() => {
     Keyboard.dismiss();
-    setFilesOpen(false);
     goToPage(1);
   }, [goToPage]);
   const closeAgent = useCallback(() => {
@@ -486,202 +362,46 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   }, [goToPage]);
   const showDocument = useCallback(() => {
     Keyboard.dismiss();
-    setFilesOpen(false);
     goToPage(0);
   }, [goToPage]);
 
-  useEffect(() => {
-    if (filesOpen) {
-      Animated.timing(slideX, {
-        toValue: 0,
-        duration: 240,
-        easing: Easing.bezier(0.32, 0.72, 0, 1),
-        useNativeDriver: Platform.OS !== "web",
-      }).start();
-    } else if (filesMounted) {
-      Animated.timing(slideX, {
-        toValue: -drawerWidth,
-        duration: 220,
-        easing: Easing.bezier(0.32, 0.72, 0, 1),
-        useNativeDriver: Platform.OS !== "web",
-      }).start();
-    }
-  }, [drawerWidth, filesOpen, slideX]);
-
-  // A horizontal drag moves the pager. Starting on the left edge belongs to the
-  // files drawer while the document page is showing, so the page swipe leaves
-  // that gesture alone.
-  const shouldClaimPageSwipe = (_evt: unknown, g: { dx: number; dy: number; moveX: number }) => {
-    if (filesOpenRef.current || projectsOpenRef.current) return false;
-    const horizontal = Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5;
-    if (!horizontal) return false;
-    return true;
-  };
-
-
-
-
-
-  // Backdrop dims in step with the slide (0 when off-screen → 1 when open).
-  const backdropOpacity = slideX.interpolate({
-    inputRange: [-drawerWidth, 0],
-    outputRange: [0, 1],
-  });
-
-
-
-  const filesMountedRef = useRef(filesMounted);
-  filesMountedRef.current = filesMounted;
   const filesOpenRef = useRef(filesOpen);
   filesOpenRef.current = filesOpen;
   const projectsOpenRef = useRef(projectsOpen);
   projectsOpenRef.current = projectsOpen;
-  useEffect(() => installWebEdgeSwipeGuard(() => filesOpenRef.current), []);
-  // Edge-swipe drives the slide value directly so the drawer tracks the finger
-  // instead of snapping at release — iOS-style. Ref keeps us out of PanResponder
-  // closure staleness.
-  const drawerWidthRef = useRef(drawerWidth);
-  drawerWidthRef.current = drawerWidth;
-  const dragFrameRef = useRef<number | null>(null);
-  const pendingDragRef = useRef<number | null>(null);
-
-  const flushDragPosition = () => {
-    if (dragFrameRef.current !== null && typeof window !== "undefined") {
-      window.cancelAnimationFrame(dragFrameRef.current);
-      dragFrameRef.current = null;
-    }
-    const pending = pendingDragRef.current;
-    pendingDragRef.current = null;
-    if (pending !== null) slideX.setValue(pending);
-  };
-
-  const setDragPosition = (value: number) => {
-    if (Platform.OS !== "web" || typeof window === "undefined") {
-      slideX.setValue(value);
-      return;
-    }
-    pendingDragRef.current = value;
-    if (dragFrameRef.current === null) {
-      dragFrameRef.current = window.requestAnimationFrame(() => {
-        dragFrameRef.current = null;
-        const pending = pendingDragRef.current;
-        pendingDragRef.current = null;
-        if (pending !== null) slideX.setValue(pending);
-      });
-    }
-  };
-
-  useEffect(() => () => {
-    if (dragFrameRef.current !== null && typeof window !== "undefined") {
-      window.cancelAnimationFrame(dragFrameRef.current);
-    }
-  }, []);
-
-  // A rightward drag anywhere on the document page opens the files drawer;
-  // there is no page to the right, so that direction is free.
-  const shouldClaimEdgeSwipe = (_evt: unknown, g: { dx: number; dy: number }) => {
-    if (filesOpenRef.current || projectsOpenRef.current) return false;
-    if (pageRef.current !== 0) return false;
-    const horizontal = Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6;
-    if (!horizontal) return false;
-    return g.dx > 0;
-  };
-
-  // One responder owns both edges: a rightward drag from the left edge opens the
-  // files drawer, a leftward drag from the right edge opens the conversation.
-  // Sharing it avoids a second transparent view stealing taps from the content.
-  const activeSwipeRef = useRef<"files" | "page" | null>(null);
   const screenWidthRef = useRef(screenWidth);
   screenWidthRef.current = screenWidth;
   const dragPageStartRef = useRef(0);
   const goToPageRef = useRef(goToPage);
   goToPageRef.current = goToPage;
 
-  const claimSwipe = (evt: unknown, g: { dx: number; dy: number; moveX: number }) => {
-    if (shouldClaimEdgeSwipe(evt, g)) {
-      activeSwipeRef.current = "files";
-      return true;
-    }
-    if (shouldClaimPageSwipe(evt, g)) {
-      activeSwipeRef.current = "page";
-      return true;
-    }
-    return false;
+  const shouldClaimPageSwipe = (_evt: unknown, g: { dx: number; dy: number }) => {
+    if (filesOpenRef.current || projectsOpenRef.current) return false;
+    return Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5;
   };
 
-  const swipeResponder = useRef(
+  const pageSwipeResponder = useRef(
     PanResponder.create({
-      onMoveShouldSetPanResponder: claimSwipe,
-      onMoveShouldSetPanResponderCapture: claimSwipe,
+      onMoveShouldSetPanResponder: shouldClaimPageSwipe,
+      onMoveShouldSetPanResponderCapture: shouldClaimPageSwipe,
       onPanResponderGrant: () => {
-        // A settle animation may still be running from the previous gesture;
-        // let the finger take over instead of fighting it frame by frame.
-        slideX.stopAnimation();
         pageX.stopAnimation();
-        if (activeSwipeRef.current === "files") {
-          setDrawerDragging(true);
-        }
-        if (activeSwipeRef.current === "page") {
-          dragPageStartRef.current = -pageRef.current * screenWidthRef.current;
-          return;
-        }
-        setFilesMounted(true);
-        slideX.setValue(-drawerWidthRef.current);
+        dragPageStartRef.current = -pageRef.current * screenWidthRef.current;
       },
       onPanResponderMove: (_evt, g) => {
-        if (activeSwipeRef.current === "page") {
-          const width = screenWidthRef.current;
-          const next = Math.min(0, Math.max(-width, dragPageStartRef.current + g.dx));
-          pageX.setValue(next);
-          return;
-        }
-        const dw = drawerWidthRef.current;
-        setDragPosition(Math.min(0, -dw + Math.max(0, g.dx)));
+        const width = screenWidthRef.current;
+        pageX.setValue(Math.min(0, Math.max(-width, dragPageStartRef.current + g.dx)));
       },
       onPanResponderRelease: (_evt, g) => {
-        setDrawerDragging(false);
-        if (activeSwipeRef.current === "page") {
-          activeSwipeRef.current = null;
-          const width = screenWidthRef.current;
-          const from = pageRef.current;
-          let next = from;
-          if (g.dx <= -width * 0.22 || g.vx <= -0.45) next = Math.min(1, from + 1);
-          else if (g.dx >= width * 0.22 || g.vx >= 0.45) next = Math.max(0, from - 1);
-          goToPageRef.current(next);
-          return;
-        }
-        activeSwipeRef.current = null;
-        flushDragPosition();
-        const dw = drawerWidthRef.current;
-        const shouldOpen = g.dx >= dw * 0.3 || g.vx > 0.4;
-        if (shouldOpen) {
-          // Flip the intent; the open effect owns the single settle animation.
-          setFilesOpen(true);
-        } else {
-          // Animate back closed from wherever we left off — can't rely on the
-          // open-effect since filesOpen was never flipped to true.
-          Animated.timing(slideX, {
-            toValue: -dw,
-            duration: 180,
-            easing: Easing.bezier(0.32, 0.72, 0, 1),
-            useNativeDriver: Platform.OS !== "web",
-          }).start();
-        }
+        const width = screenWidthRef.current;
+        const from = pageRef.current;
+        let next = from;
+        if (g.dx <= -width * 0.22 || g.vx <= -0.45) next = Math.min(1, from + 1);
+        else if (g.dx >= width * 0.22 || g.vx >= 0.45) next = Math.max(0, from - 1);
+        goToPageRef.current(next);
       },
       onPanResponderTerminate: () => {
-        setDrawerDragging(false);
-        if (activeSwipeRef.current === "page") {
-          activeSwipeRef.current = null;
-          goToPageRef.current(pageRef.current);
-          return;
-        }
-        activeSwipeRef.current = null;
-        flushDragPosition();
-        Animated.timing(slideX, {
-          toValue: -drawerWidthRef.current,
-          duration: 160,
-          useNativeDriver: Platform.OS !== "web",
-        }).start();
+        goToPageRef.current(pageRef.current);
       },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -718,7 +438,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
           paddingTop: topInset,
         },
       ]}
-      {...swipeResponder.panHandlers}
+      {...pageSwipeResponder.panHandlers}
     >
       <View style={styles.mobileTabBar}>
         <PressableRow
@@ -818,42 +538,38 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         </View>
       </Animated.View>
 
-      {/* Left-anchored Files drawer. Sits above the document header, which
-          carries zIndex 30 of its own, so the drawer layer needs a higher one. */}
-      {filesMounted ? (
-        <View style={[StyleSheet.absoluteFill, styles.drawerLayer]} pointerEvents="box-none">
-          <Animated.View
-            style={[styles.drawerBackdrop, WEB_DRAWER_BACKDROP_STYLE, { opacity: backdropOpacity }]}
-            pointerEvents={filesOpen ? "auto" : "none"}
-          >
-            <Pressable
-              style={styles.drawerBackdropTouch}
-              accessibilityRole="button"
+      {/* Files as a native page sheet, matching the projects panel. */}
+      <Modal
+        visible={filesOpen}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={closeFiles}
+        onDismiss={closeFiles}
+      >
+        <View style={[styles.pageSheet, { paddingTop: insets.top }]}>
+          <View style={styles.pageSheetHeader}>
+            <Text style={styles.sheetTitle}>Files</Text>
+            <PressableRow
+              style={styles.pageSheetClose}
+              onPress={closeFiles}
+              haptic="light"
               accessibilityLabel="Close files"
-              onPressIn={closeFiles}
-            />
-          </Animated.View>
-          <Animated.View
-            style={[
-              styles.drawer,
-              WEB_DRAWER_SURFACE_STYLE,
-              drawerDragging && styles.drawerDragging,
-              { width: drawerWidth, paddingTop: insets.top, transform: [{ translateX: slideX }] },
-            ]}
-          >
-            <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>Files</Text>
-            </View>
-            <FileTree
-              mode="files"
-              showHeader={false}
-              bottomInset={insets.bottom}
-              onCloseDrawer={closeFiles}
-              onFileOpened={showDocument}
-            />
-          </Animated.View>
+            >
+              <Icon name="close" size={18} color={THEME.colors.textSecondary} />
+            </PressableRow>
+          </View>
+          <FileTree
+            mode="files"
+            showHeader={false}
+            bottomInset={insets.bottom}
+            onCloseDrawer={closeFiles}
+            onFileOpened={() => {
+              closeFiles();
+              showDocument();
+            }}
+          />
         </View>
-      ) : null}
+      </Modal>
 
       {/* Projects as a native page sheet: iOS slides it up over the document,
           scales the presenting screen back and owns the swipe-to-dismiss. */}
@@ -862,12 +578,13 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={closeProjects}
+        onDismiss={closeProjects}
       >
-        <View style={[styles.projectsModal, { paddingTop: insets.top }]}>
-          <View style={styles.projectsModalHeader}>
+        <View style={[styles.pageSheet, { paddingTop: insets.top }]}>
+          <View style={styles.pageSheetHeader}>
             <Text style={styles.sheetTitle}>Projects</Text>
             <PressableRow
-              style={styles.projectsModalClose}
+              style={styles.pageSheetClose}
               onPress={closeProjects}
               haptic="light"
               accessibilityLabel="Close projects"
@@ -1001,32 +718,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: THEME.spacing.xl,
     paddingTop: THEME.spacing.sm,
   },
-  // Left-anchored file drawer. A full-screen dimmed backdrop sits underneath,
-  // so the whole screen stays dimmed even while the panel slides in/out.
-  drawerLayer: {
-    zIndex: 100,
-  },
-  drawer: {
-    maxWidth: MOBILE_DRAWER_MAX_WIDTH,
-    height: "100%",
-    backgroundColor: THEME.colors.background,
-    borderRightWidth: StyleSheet.hairlineWidth,
-    borderRightColor: "#f0f0f2",
-    shadowColor: "#18181b",
-    shadowOffset: { width: 4, height: 0 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 6,
-  },
-  drawerDragging: {
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  projectsModal: {
+  pageSheet: {
     flex: 1,
     backgroundColor: THEME.colors.background,
   },
-  projectsModalHeader: {
+  pageSheetHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -1035,33 +731,12 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#f0f0f2",
   },
-  projectsModalClose: {
+  pageSheetClose: {
     width: 36,
     height: 36,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: THEME.radii.md,
-  },
-  drawerBackdrop: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(15,23,42,0.28)",
-  },
-  drawerBackdropTouch: {
-    flex: 1,
-  },
-  sheetHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    minHeight: 44,
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.xs + 2,
-    backgroundColor: THEME.colors.background,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: THEME.colors.border,
   },
   sheetTitle: {
     fontSize: 17,
