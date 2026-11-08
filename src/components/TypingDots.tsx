@@ -2,6 +2,10 @@ import { useEffect, useRef } from "react";
 import { Animated, Easing, Platform, StyleSheet, View } from "react-native";
 import { THEME } from "../styles/theme";
 
+const DOT = 5;
+const SLOT = 20;
+const SIDE_OFFSET = (SLOT - DOT) / 2;
+
 /** The three-dot "composing" indicator shared by the banner and activity rows. */
 export function TypingDots({ color = THEME.colors.textSecondary }: { color?: string }) {
   const phase = useRef(new Animated.Value(0)).current;
@@ -47,17 +51,101 @@ export function TypingDots({ color = THEME.colors.textSecondary }: { color?: str
   );
 }
 
+/**
+ * One indicator that morphs between a single dot (idle / finished) and three
+ * dots (working): the outer dots slide out from the centre and fade in, so the
+ * state change reads as one dot splitting rather than two icons swapping.
+ */
+export function ActivityDot({
+  running,
+  color = THEME.colors.textSecondary,
+}: {
+  running: boolean;
+  color?: string;
+}) {
+  const expand = useRef(new Animated.Value(running ? 1 : 0)).current;
+  const phase = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(expand, {
+      toValue: running ? 1 : 0,
+      duration: 220,
+      easing: Easing.bezier(0.32, 0.72, 0, 1),
+      useNativeDriver: Platform.OS !== "web",
+    }).start();
+  }, [expand, running]);
+
+  useEffect(() => {
+    if (!running) return;
+    phase.setValue(0);
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(phase, {
+          toValue: 3,
+          duration: 900,
+          easing: Easing.linear,
+          useNativeDriver: Platform.OS !== "web",
+        }),
+        Animated.delay(140),
+      ]),
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [phase, running]);
+
+  const pulse = (index: number) => {
+    const peak = 0.4 + index * 0.8;
+    return phase.interpolate({
+      inputRange: [0, peak - 0.3, peak, peak + 0.3, 3],
+      outputRange: [0.45, 0.45, 1, 0.45, 0.45],
+    });
+  };
+
+  const slide = (direction: -1 | 1) =>
+    expand.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0, direction * SIDE_OFFSET],
+    });
+
+  // The centre dot is fully opaque while collapsed and follows the pulse once
+  // the row is running: expand * (pulse - 1) + 1.
+  const centerOpacity = Animated.add(
+    Animated.multiply(expand, Animated.subtract(pulse(1), 1)),
+    1,
+  );
+
+  return (
+    <View style={styles.slot} accessible={false}>
+      <Animated.View style={{ opacity: expand, transform: [{ translateX: slide(-1) }] }}>
+        <Animated.View style={[styles.dot, { backgroundColor: color, opacity: pulse(0) }]} />
+      </Animated.View>
+      <Animated.View style={[styles.dot, { backgroundColor: color, opacity: centerOpacity }]} />
+      <Animated.View style={{ opacity: expand, transform: [{ translateX: slide(1) }] }}>
+        <Animated.View style={[styles.dot, { backgroundColor: color, opacity: pulse(2) }]} />
+      </Animated.View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   wrap: {
-    width: 20,
+    width: SLOT,
     height: 18,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
   dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+    width: DOT,
+    height: DOT,
+    borderRadius: DOT / 2,
+  },
+  slot: {
+    width: SLOT,
+    height: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
   },
 });

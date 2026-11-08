@@ -144,11 +144,7 @@ const DisplayRowItem = memo(function DisplayRowItem({
   streaming: boolean;
 }) {
   if (row.type === "activity") {
-    return row.items.length === 1 && row.items[0]!.kind === "thought" ? (
-      <ChatMessageItem item={row.items[0]!} />
-    ) : (
-      <ActivityRow items={row.items} streaming={streaming} />
-    );
+    return <ActivityRow items={row.items} streaming={streaming} />;
   }
   return <ChatMessageItem item={row.item} />;
 });

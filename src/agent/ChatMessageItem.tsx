@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { THEME } from "../styles/theme";
 import { PressableRow } from "../components/PressableRow";
 import { HalfSheet } from "../components/HalfSheet";
-import { TypingDots } from "../components/TypingDots";
+import { ActivityDot } from "../components/TypingDots";
 import type { StreamItem, ThoughtItem, ToolCallItem } from "../types/stream";
 
 interface Props {
@@ -23,11 +23,7 @@ function StatusDot({ status }: { status: ToolCallItem["status"] }) {
     <View
       style={[
         styles.statusDot,
-        status === "failed"
-          ? styles.statusDotFailed
-          : status === "running"
-            ? styles.statusDotRunning
-            : null,
+        status === "failed" ? styles.statusDotFailed : null,
       ]}
     />
   );
@@ -68,13 +64,14 @@ export const ActivityRow = memo(function ActivityRow({
         accessibilityLabel="Show agent activity"
       >
         <View style={styles.toolMessage}>
-          {live ? (
-            <TypingDots color={THEME.colors.textMuted} />
-          ) : latest.kind === "tool_call" ? (
-            <StatusDot status={latest.status} />
-          ) : (
-            <View style={styles.statusDot} />
-          )}
+          <ActivityDot
+            running={live}
+            color={
+              latest.kind === "tool_call" && latest.status === "failed"
+                ? THEME.colors.error
+                : THEME.colors.textSecondary
+            }
+          />
           <Text
             style={isThought ? styles.activityPreview : styles.toolText}
             numberOfLines={2}
@@ -111,38 +108,6 @@ export const ActivityRow = memo(function ActivityRow({
   );
 });
 
-const ThoughtMessage = memo(function ThoughtMessage({
-  text,
-  status,
-}: {
-  text: string;
-  status?: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const body = text.trim() ? text : status === "loading" ? "Thinking…" : "…";
-  const expandable = text.trim().length > 0;
-  return (
-    <>
-      <PressableRow
-        style={[styles.message, styles.thoughtMessage]}
-        onPress={() => expandable && setOpen(true)}
-        disabled={!expandable}
-        haptic="light"
-        scale={false}
-        accessibilityRole={expandable ? "button" : undefined}
-        accessibilityLabel={expandable ? "Show full reasoning" : undefined}
-      >
-        <Text style={styles.thoughtText} numberOfLines={2}>
-          {body}
-        </Text>
-      </PressableRow>
-      <HalfSheet visible={open} title="Reasoning" onClose={() => setOpen(false)}>
-        <Text style={styles.sheetText}>{text}</Text>
-      </HalfSheet>
-    </>
-  );
-});
-
 export const ChatMessageItem = memo(function ChatMessageItem({ item }: Props) {
   switch (item.kind) {
     case "user_message":
@@ -158,7 +123,13 @@ export const ChatMessageItem = memo(function ChatMessageItem({ item }: Props) {
         </View>
       );
     case "thought":
-      return <ThoughtMessage text={item.text} status={item.status} />;
+      return (
+        <View style={[styles.message, styles.thoughtMessage]}>
+          <Text style={styles.thoughtText} selectable numberOfLines={2}>
+            {item.text ? item.text : item.status === "loading" ? "Thinking…" : "…"}
+          </Text>
+        </View>
+      );
     case "tool_call":
       // Tool calls are normally collapsed into ToolActivityRow by the panel;
       // this fallback keeps a single stray call compact.
@@ -234,13 +205,10 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
     backgroundColor: THEME.colors.border,
-  },
-  statusDotRunning: {
-    backgroundColor: THEME.colors.accent,
   },
   statusDotFailed: {
     backgroundColor: THEME.colors.error,
