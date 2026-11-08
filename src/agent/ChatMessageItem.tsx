@@ -1,7 +1,7 @@
 import { memo, useState } from "react";
 import { Pressable, View, Text, StyleSheet } from "react-native";
 import { THEME } from "../styles/theme";
-import { PressableRow } from "../components/PressableRow";
+import { PressableRow, hapticTap } from "../components/PressableRow";
 import { HalfSheet } from "../components/HalfSheet";
 import { ActivityDot } from "../components/TypingDots";
 import { Icon } from "../components/Icon";
@@ -55,11 +55,16 @@ const ActivityStepHeader = memo(function ActivityStepHeader({
   const text = isThought ? item.text.trim() || "…" : item.name;
   const failed = item.kind === "tool_call" && item.status === "failed";
   return (
-    <PressableRow
-      style={[styles.stepRow, first ? null : styles.stepDivider]}
-      haptic="light"
-      scale={false}
+    <Pressable
+      style={({ pressed }) => [
+        styles.stepRow,
+        first ? null : styles.stepDivider,
+        // A translucent press tint would let the text scrolling under a pinned
+        // header show through, so the feedback is an opaque surface shift.
+        pressed ? styles.stepRowPressed : null,
+      ]}
       disabled={!isThought}
+      onPressIn={() => hapticTap("light")}
       onPress={onToggle}
       accessibilityRole={isThought ? "button" : undefined}
       accessibilityLabel={
@@ -82,7 +87,7 @@ const ActivityStepHeader = memo(function ActivityStepHeader({
           color={THEME.colors.textMuted}
         />
       ) : null}
-    </PressableRow>
+    </Pressable>
   );
 });
 
@@ -375,6 +380,9 @@ const styles = StyleSheet.create({
     paddingVertical: 9,
     // Pinned headers must cover the text scrolling underneath them.
     backgroundColor: THEME.colors.background,
+  },
+  stepRowPressed: {
+    backgroundColor: THEME.colors.surface,
   },
   // Fixed width so every step's content starts on the same column.
   stepLabel: {
