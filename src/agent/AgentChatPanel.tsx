@@ -34,6 +34,7 @@ import {
   type ProviderModelSelection,
 } from "./ModelSwitcher";
 import { Icon } from "../components/Icon";
+import { hapticTap } from "../components/PressableRow";
 import { THEME } from "../styles/theme";
 import type { StreamItem, ToolCallItem } from "../types/stream";
 import type { BackendAgentEntry } from "../backend";
@@ -400,7 +401,10 @@ export const AgentChatPanel = memo(function AgentChatPanel({
               accessibilityRole="button"
               accessibilityLabel={`Choose session, current: ${sessionTitle}`}
               accessibilityState={{ expanded: switcherOpen }}
-              onPress={() => setSwitcherOpen((value) => !value)}
+              onPress={() => {
+                hapticTap("light");
+                setSwitcherOpen((value) => !value);
+              }}
             >
               <Text style={styles.headerTitle} numberOfLines={1}>{sessionTitle}</Text>
               <Icon
@@ -431,7 +435,10 @@ export const AgentChatPanel = memo(function AgentChatPanel({
               accessibilityRole="button"
               accessibilityLabel={`Choose session, current: ${sessionTitle}`}
               accessibilityState={{ expanded: switcherOpen }}
-              onPress={() => setSwitcherOpen((v) => !v)}
+              onPress={() => {
+                hapticTap("light");
+                setSwitcherOpen((v) => !v);
+              }}
             >
               {/* The caret hangs off the title without shifting it: the group is
                   nudged right by half the caret width so the text itself sits on
@@ -481,6 +488,7 @@ export const AgentChatPanel = memo(function AgentChatPanel({
                 accessibilityRole="button"
                 accessibilityLabel="Refresh sessions"
                 onPress={() => {
+                  hapticTap("light");
                   for (const section of sessionSources) {
                     if (section.status !== "connected") continue;
                     void useBackendCatalogStore
@@ -499,6 +507,7 @@ export const AgentChatPanel = memo(function AgentChatPanel({
                 accessibilityRole="button"
                 accessibilityLabel="New session"
                 onPress={() => {
+                  hapticTap("light");
                   setSwitcherOpen(false);
                   setNewSessionError(null);
                   setNewSessionPickerOpen(true);
@@ -560,7 +569,10 @@ export const AgentChatPanel = memo(function AgentChatPanel({
                       accessibilityRole="button"
                       accessibilityLabel={`${title}, ${section.source.label}, ${agent.cwd}`}
                       accessibilityState={{ selected: active }}
-                      onPress={() => void switchToSession(item)}
+                      onPress={() => {
+                        hapticTap("selection");
+                        void switchToSession(item);
+                      }}
                       disabled={switcherBusy || newSessionBusy || opening || isSwitchingConnection}
                     >
                       <View style={[
@@ -578,7 +590,10 @@ export const AgentChatPanel = memo(function AgentChatPanel({
                           activeOpacity={0.6}
                           accessibilityRole="button"
                           accessibilityLabel={`Archive ${title}`}
-                          onPress={() => confirmDelete(item)}
+                          onPress={() => {
+                            hapticTap("warning");
+                            confirmDelete(item);
+                          }}
                           hitSlop={8}
                         >
                           <Icon name="archive" size={15} color={THEME.colors.textMuted} />

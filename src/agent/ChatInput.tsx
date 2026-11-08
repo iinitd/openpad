@@ -8,6 +8,7 @@ import {
   toBackendAttachments,
   usePendingImages,
 } from "../components/ComposerField";
+import { hapticTap } from "../components/PressableRow";
 import { THEME } from "../styles/theme";
 import { isWeb } from "../constants/platform";
 
@@ -95,7 +96,10 @@ export const ChatInput = memo(function ChatInput({
               </Text>
               <TouchableOpacity
                 style={styles.queueRemove}
-                onPress={() => removeQueued(q.id)}
+                onPress={() => {
+                  hapticTap("light");
+                  removeQueued(q.id);
+                }}
                 hitSlop={8}
                 accessibilityLabel="Remove queued message"
               >

@@ -19,6 +19,7 @@ import { BackendConnections } from "../src/components/BackendConnections";
 import { THEME } from "../src/styles/theme";
 import { beginStartupTrace, measureStartupTrace, noteStartupTrace } from "../src/utils/startup-trace";
 import { useShallow } from "zustand/react/shallow";
+import { hapticTap } from "../src/components/PressableRow";
 
 export default function ConnectScreen() {
   const router = useRouter();
@@ -192,7 +193,10 @@ export default function ConnectScreen() {
         <View style={styles.tabs}>
           <TouchableOpacity
             style={[styles.tab, mode === "direct" && styles.tabActive]}
-            onPress={() => setMode("direct")}
+            onPress={() => {
+              hapticTap("selection");
+              setMode("direct");
+            }}
             disabled={isBusy}
           >
             <Text style={[styles.tabText, mode === "direct" && styles.tabTextActive]}>
@@ -201,7 +205,10 @@ export default function ConnectScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, mode === "relay" && styles.tabActive]}
-            onPress={() => setMode("relay")}
+            onPress={() => {
+              hapticTap("selection");
+              setMode("relay");
+            }}
             disabled={isBusy}
           >
             <Text style={[styles.tabText, mode === "relay" && styles.tabTextActive]}>
@@ -210,7 +217,10 @@ export default function ConnectScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, mode === "openclaw" && styles.tabActive]}
-            onPress={() => setMode("openclaw")}
+            onPress={() => {
+              hapticTap("selection");
+              setMode("openclaw");
+            }}
             disabled={isBusy}
           >
             <Text style={[styles.tabText, mode === "openclaw" && styles.tabTextActive]}>
@@ -219,7 +229,10 @@ export default function ConnectScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, mode === "opencode" && styles.tabActive]}
-            onPress={() => setMode("opencode")}
+            onPress={() => {
+              hapticTap("selection");
+              setMode("opencode");
+            }}
             disabled={isBusy}
           >
             <Text style={[styles.tabText, mode === "opencode" && styles.tabTextActive]}>
@@ -367,7 +380,10 @@ export default function ConnectScreen() {
 
           <TouchableOpacity
             style={[styles.button, isBusy && styles.buttonDisabled]}
-            onPress={handleConnect}
+            onPress={() => {
+              hapticTap("medium");
+              void handleConnect();
+            }}
             disabled={isBusy}
           >
             {isBusy ? (

@@ -5,6 +5,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useConnectionStore } from "../stores/connection-store";
 import { useWriterOpeningStore } from "../stores/writer-opening-store";
 import { THEME } from "../styles/theme";
+import { hapticTap } from "./PressableRow";
 
 interface BackendConnectionsProps {
   disabled?: boolean;
@@ -113,7 +114,10 @@ export function BackendConnections({ disabled = false, showActiveOpen = false }:
               {connected && (!active || showActiveOpen) ? (
                 <TouchableOpacity
                   style={[styles.button, actionsDisabled && styles.buttonDisabled]}
-                  onPress={() => runAction(connection.id, "open")}
+                  onPress={() => {
+                    hapticTap("light");
+                    runAction(connection.id, "open");
+                  }}
                   disabled={actionsDisabled}
                   accessibilityRole="button"
                   activeOpacity={0.7}
@@ -124,7 +128,10 @@ export function BackendConnections({ disabled = false, showActiveOpen = false }:
               {!connected && !connecting && saved ? (
                 <TouchableOpacity
                   style={[styles.button, actionsDisabled && styles.buttonDisabled]}
-                  onPress={() => runAction(connection.id, "retry")}
+                  onPress={() => {
+                    hapticTap("light");
+                    runAction(connection.id, "retry");
+                  }}
                   disabled={actionsDisabled}
                   accessibilityRole="button"
                   activeOpacity={0.7}
@@ -135,7 +142,10 @@ export function BackendConnections({ disabled = false, showActiveOpen = false }:
               {live || saved?.autoConnect ? (
                 <TouchableOpacity
                   style={[styles.button, styles.buttonDanger, actionsDisabled && styles.buttonDisabled]}
-                  onPress={() => runAction(connection.id, "disconnect")}
+                  onPress={() => {
+                    hapticTap("warning");
+                    runAction(connection.id, "disconnect");
+                  }}
                   disabled={actionsDisabled}
                   accessibilityRole="button"
                   activeOpacity={0.7}

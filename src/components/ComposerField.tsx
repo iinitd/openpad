@@ -11,6 +11,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import { File } from "expo-file-system";
 import { Icon } from "./Icon";
+import { hapticTap } from "./PressableRow";
 import { PressableRow } from "./PressableRow";
 import {
   COMPACT_COMPOSER_ICON_SIZE,
@@ -168,7 +169,10 @@ export function ComposerField({
               <Image source={{ uri: image.uri }} style={styles.attachmentThumb} />
               <TouchableOpacity
                 style={styles.attachmentRemove}
-                onPress={() => onRemoveImage(image.id)}
+                onPress={() => {
+                  hapticTap("light");
+                  onRemoveImage(image.id);
+                }}
                 hitSlop={8}
                 accessibilityLabel="Remove image"
               >
@@ -191,7 +195,10 @@ export function ComposerField({
           {onPickImage ? (
             <TouchableOpacity
               style={styles.attachButton}
-              onPress={onPickImage}
+              onPress={() => {
+                hapticTap("light");
+                onPickImage?.();
+              }}
               disabled={pickingImage || !editable}
               hitSlop={8}
               accessibilityLabel="Attach image"

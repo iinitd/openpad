@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-nati
 
 import type { DocumentHeading } from "./file-content";
 import { Icon } from "../components/Icon";
+import { hapticTap } from "../components/PressableRow";
 import { THEME } from "../styles/theme";
 
 /**
@@ -37,7 +38,10 @@ export function DocumentToc({
       <TouchableOpacity
         style={styles.titleBar}
         activeOpacity={hasToc ? 0.6 : 1}
-        onPress={hasToc ? onToggle : undefined}
+        onPress={hasToc ? () => {
+          hapticTap("light");
+          onToggle();
+        } : undefined}
         accessibilityRole={hasToc ? "button" : undefined}
         accessibilityLabel={hasToc ? "Toggle table of contents" : undefined}
       >
@@ -68,7 +72,10 @@ export function DocumentToc({
                   { paddingLeft: THEME.spacing.lg + (h.level - minLevel) * 16 },
                 ]}
                 activeOpacity={0.6}
-                onPress={() => onSelect(h.index)}
+                onPress={() => {
+                  hapticTap("selection");
+                  onSelect(h.index);
+                }}
               >
                 <Text
                   style={[styles.tocText, h.level <= minLevel && styles.tocTextTop]}

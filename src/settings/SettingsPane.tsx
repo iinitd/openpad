@@ -9,6 +9,7 @@ import { useRouter } from "expo-router";
 import { useConnectionStore } from "../stores/connection-store";
 import { BackendConnections } from "../components/BackendConnections";
 import { THEME } from "../styles/theme";
+import { hapticTap } from "../components/PressableRow";
 
 // Workspace switching lives in the Files sidebar and provider/model selection
 // lives in the agent pane. Settings only keeps app-level connection controls.
@@ -25,7 +26,10 @@ export function SettingsPane() {
       <View>
         <TouchableOpacity
           style={styles.button}
-          onPress={() => router.push("/?add=1")}
+          onPress={() => {
+            hapticTap("light");
+            router.push("/?add=1");
+          }}
           activeOpacity={0.7}
           accessibilityRole="button"
         >

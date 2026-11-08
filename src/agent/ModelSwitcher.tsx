@@ -13,6 +13,7 @@ import { useProvidersStore } from "../stores/providers-store";
 import { usePreferencesStore } from "../stores/preferences-store";
 import { THEME } from "../styles/theme";
 import { useShallow } from "zustand/react/shallow";
+import { hapticTap } from "../components/PressableRow";
 
 export interface ProviderModelSelection {
   provider: string;
@@ -119,13 +120,20 @@ export function ProviderModelPickerModal({
       <TouchableOpacity
         style={styles.backdrop}
         activeOpacity={1}
-        onPress={() => !busy && onCancel()}
+        onPress={() => {
+          if (busy) return;
+          hapticTap("light");
+          onCancel();
+        }}
       >
         <TouchableOpacity activeOpacity={1} style={styles.sheet}>
           <View style={styles.sheetHeader}>
             <Text style={styles.dialogTitle}>{title}</Text>
             <TouchableOpacity
-              onPress={onCancel}
+              onPress={() => {
+                hapticTap("light");
+                onCancel();
+              }}
               disabled={busy}
               hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
             >
@@ -150,7 +158,10 @@ export function ProviderModelPickerModal({
                         !entry.available && styles.chipUnavailable,
                       ]}
                       disabled={busy || !entry.available}
-                      onPress={() => selectProvider(entry.provider)}
+                      onPress={() => {
+                        hapticTap("selection");
+                        selectProvider(entry.provider);
+                      }}
                     >
                       <Text style={[styles.chipText, active && styles.chipTextActive]}>
                         {entry.label}
@@ -172,7 +183,10 @@ export function ProviderModelPickerModal({
             <TouchableOpacity
               style={[styles.modelRow, draftModel === null && styles.modelRowActive]}
               disabled={busy || !draftProvider}
-              onPress={() => setDraftModel(null)}
+              onPress={() => {
+                hapticTap("selection");
+                setDraftModel(null);
+              }}
             >
               <Text style={styles.modelLabel}>Provider default</Text>
             </TouchableOpacity>
@@ -183,7 +197,10 @@ export function ProviderModelPickerModal({
                   key={candidate.id}
                   style={[styles.modelRow, active && styles.modelRowActive]}
                   disabled={busy}
-                  onPress={() => setDraftModel(candidate.id)}
+                  onPress={() => {
+                    hapticTap("selection");
+                    setDraftModel(candidate.id);
+                  }}
                 >
                   <Text style={styles.modelLabel}>{candidate.label || candidate.id}</Text>
                   {candidate.description ? (
@@ -203,16 +220,20 @@ export function ProviderModelPickerModal({
             <TouchableOpacity
               style={styles.cancelButton}
               disabled={busy}
-              onPress={onCancel}
+              onPress={() => {
+                hapticTap("light");
+                onCancel();
+              }}
             >
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.confirmButton, !canConfirm && styles.confirmButtonDisabled]}
               disabled={!canConfirm}
-              onPress={() =>
-                void onConfirm({ provider: draftProvider, model: draftModel })
-              }
+              onPress={() => {
+                hapticTap("medium");
+                void onConfirm({ provider: draftProvider, model: draftModel });
+              }}
             >
               {busy ? (
                 <ActivityIndicator size="small" color="#fff" />
@@ -266,6 +287,7 @@ export function ModelSwitcher() {
       <TouchableOpacity
         style={styles.trigger}
         onPress={() => {
+          hapticTap("light");
           setError(null);
           setOpen(true);
         }}

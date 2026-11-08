@@ -15,7 +15,7 @@ import * as Haptics from "expo-haptics";
 // color overlay), Android gets the system ripple, web stays usable. Haptics
 // fire on press-in so the hit feels instant.
 
-type HapticFlavor = "light" | "medium" | "selection" | "none";
+type HapticFlavor = "light" | "medium" | "selection" | "warning" | "none";
 
 export interface PressableRowProps extends Omit<PressableProps, "style" | "children"> {
   style?: StyleProp<ViewStyle>;
@@ -33,6 +33,7 @@ function trigger(flavor: HapticFlavor) {
   const mod = Haptics;
   if (flavor === "medium") void mod.impactAsync(mod.ImpactFeedbackStyle.Medium);
   else if (flavor === "selection") void mod.selectionAsync();
+  else if (flavor === "warning") void mod.notificationAsync(mod.NotificationFeedbackType.Warning);
   else void mod.impactAsync(mod.ImpactFeedbackStyle.Light);
 }
 
