@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { Icon } from "./Icon";
 import { PressableRow } from "./PressableRow";
@@ -21,6 +21,19 @@ export function HalfSheet({
   children: ReactNode;
 }) {
   const { height } = useWindowDimensions();
+  const scrollRef = useRef<ScrollView>(null);
+  // The newest step is the one being read; open the sheet at the end instead of
+  // at the start of a long run.
+  const scrollToEnd = useCallback(() => {
+    scrollRef.current?.scrollToEnd({ animated: false });
+  }, []);
+  useEffect(() => {
+    if (!visible) return;
+    // Content mounts with the modal, so its measured height lands a frame or
+    // two later than the visible flag flips.
+    const handle = setTimeout(scrollToEnd, 320);
+    return () => clearTimeout(handle);
+  }, [visible, scrollToEnd]);
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
@@ -45,7 +58,12 @@ export function HalfSheet({
               <Icon name="close" size={18} color={THEME.colors.textSecondary} />
             </PressableRow>
           </View>
-          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            ref={scrollRef}
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
+            onContentSizeChange={scrollToEnd}
+          >
             {children}
           </ScrollView>
         </View>

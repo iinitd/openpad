@@ -7,6 +7,8 @@ type ActivityItem = ThoughtItem | ToolCallItem;
 export interface ActivitySummary {
   /** The newest action, named as it is: "Thinking" or the command. */
   label: string;
+  /** How many reasoning/tool steps this run contains. */
+  steps: number;
   /** The last thing the agent reasoned about in this run, if anything. */
   preview: string;
 }
@@ -53,6 +55,7 @@ export function summarizeActivity(items: Array<StreamItem>): ActivitySummary | n
 
   return {
     label: latest.kind === "thought" ? "Thinking" : latest.name,
+    steps: items.length,
     preview: lastThought ? oneLine(lastThought.text) : "",
   };
 }
@@ -69,17 +72,26 @@ function trailingRun(items: StreamItem[]): ActivityItem[] {
 }
 
 /**
- * Live summary of the current turn for the document banners. Returns a single
- * line: "Thinking  <snippet>" or just the command name when nothing was
- * reasoned about yet.
+ * Live summary of the current turn for the document banners: label, step count
+ * and reasoning preview, straight from the same function the transcript row
+ * uses.
+ */
+export function useAgentActivitySummary(): ActivitySummary | null {
+  return useSessionStore(
+    useShallow((state) =>
+      // The run can straddle the committed tail and the streaming head, so read
+      // the timeline as one list; the split is an internal rendering detail.
+      summarizeActivity(trailingRun([...state.tail, ...state.head])),
+    ),
+  );
+}
+
+/**
+ * The same summary flattened to a single line, for banners that only have room
+ * for one paragraph: "Thinking  <snippet>" or just the command name.
  */
 export function useAgentProgressSummary(): string | null {
-  return useSessionStore(
-    useShallow((state) => {
-      const source = state.head.length > 0 ? state.head : state.tail;
-      const summary = summarizeActivity(trailingRun(source));
-      if (!summary) return null;
-      return summary.preview ? `${summary.label}  ${summary.preview}` : summary.label;
-    }),
-  );
+  const summary = useAgentActivitySummary();
+  if (!summary) return null;
+  return summary.preview ? `${summary.label}  ${summary.preview}` : summary.label;
 }

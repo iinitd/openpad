@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Polygon, Polyline } from "react-native-svg";
 import { useSessionStore } from "../stores/session-store";
-import { useAgentProgressSummary } from "../hooks/use-agent-progress";
+import { useAgentActivitySummary } from "../hooks/use-agent-progress";
 import { THEME } from "../styles/theme";
 import { TypingDots } from "../components/TypingDots";
 
@@ -17,16 +17,25 @@ interface ContentActivityBannerProps {
 
 export function ContentActivityBanner({ onPress }: ContentActivityBannerProps) {
   const running = useSessionStore((state) => state.isStreaming);
-  const progress = useAgentProgressSummary();
+  const activity = useAgentActivitySummary();
   if (!running) return null;
-  const summary = progress || "Agent is working…";
   const tappable = !!onPress;
   const inner = (
     <>
-      <TypingDots />
-      <Text style={styles.summary} numberOfLines={2} ellipsizeMode="tail">
-        {summary}
-      </Text>
+      <View style={styles.labelRow}>
+        <TypingDots />
+        <Text style={styles.label} numberOfLines={1}>
+          {activity ? activity.label : "Agent is working"}
+        </Text>
+        {activity && activity.steps > 1 ? (
+          <Text style={styles.meta}>{activity.steps} steps</Text>
+        ) : null}
+      </View>
+      {activity?.preview ? (
+        <Text style={styles.preview} numberOfLines={2} ellipsizeMode="tail">
+          {activity.preview}
+        </Text>
+      ) : null}
     </>
   );
   return (
@@ -78,15 +87,17 @@ const styles = StyleSheet.create({
     position: "relative",
     zIndex: 31,
     overflow: "visible",
-    height: 56,
     justifyContent: "center",
     paddingHorizontal: 12,
+    paddingVertical: 8,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: THEME.colors.border,
     backgroundColor: THEME.colors.surface,
   },
-  content: {
-    flex: 1,
+  // The banner is as tall as its content now, so this wrapper must not be
+  // flex:1 — a zero-basis child of an auto-height parent collapses.
+  content: {},
+  labelRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
@@ -102,8 +113,21 @@ const styles = StyleSheet.create({
     top: -9,
     right: 15,
   },
-  summary: {
-    flex: 1,
+  label: {
+    flexShrink: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "600",
+    color: THEME.colors.text,
+  },
+  meta: {
+    fontSize: 11,
+    color: THEME.colors.textMuted,
+  },
+  // Aligned with the label, so the dots read as the bullet for the whole block.
+  preview: {
+    marginTop: 3,
+    marginLeft: 24,
     fontSize: 14,
     lineHeight: 19,
     color: THEME.colors.textSecondary,
