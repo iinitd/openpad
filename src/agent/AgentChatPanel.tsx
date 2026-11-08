@@ -442,9 +442,33 @@ export const AgentChatPanel = memo(function AgentChatPanel({
         <View style={styles.switcherPanel}>
           <View style={styles.switcherHeading}>
             <Text style={styles.switcherHeadingText}>Sessions</Text>
-            {sessionsLoading || switcherBusy ? (
-              <ActivityIndicator size="small" color={THEME.colors.textSecondary} />
-            ) : null}
+            <View style={styles.switcherHeadingRight}>
+              {sessionsLoading || switcherBusy ? (
+                <ActivityIndicator size="small" color={THEME.colors.textSecondary} />
+              ) : null}
+              <TouchableOpacity
+                style={styles.switcherAdd}
+                activeOpacity={0.6}
+                accessibilityRole="button"
+                accessibilityLabel="New session"
+                onPress={() => {
+                  setSwitcherOpen(false);
+                  setNewSessionError(null);
+                  setNewSessionPickerOpen(true);
+                }}
+                disabled={
+                  switcherBusy ||
+                  newSessionBusy ||
+                  opening ||
+                  isSwitchingConnection ||
+                  connectionStatus !== "connected" ||
+                  !cwd
+                }
+                hitSlop={8}
+              >
+                <Icon name="plus" size={16} color={THEME.colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
           </View>
           {switcherError ? <Text style={styles.switcherError}>{switcherError}</Text> : null}
           <ScrollView
@@ -520,21 +544,6 @@ export const AgentChatPanel = memo(function AgentChatPanel({
               </View>
             ))}
           </ScrollView>
-          <TouchableOpacity
-            style={[styles.switcherRow, styles.switcherNewRow]}
-            activeOpacity={0.6}
-            accessibilityRole="button"
-            accessibilityLabel="New session"
-            onPress={() => {
-              setSwitcherOpen(false);
-              setNewSessionError(null);
-              setNewSessionPickerOpen(true);
-            }}
-            disabled={switcherBusy || newSessionBusy || opening || isSwitchingConnection || connectionStatus !== "connected" || !cwd}
-          >
-            <Icon name="plus" size={16} color={THEME.colors.textSecondary} />
-            <Text style={styles.switcherNewLabel}>New session</Text>
-          </TouchableOpacity>
           {!showHeader ? (
             <View style={styles.switcherModelRow}>
               <Text style={styles.switcherModelLabel}>Model</Text>
@@ -664,6 +673,18 @@ const styles = StyleSheet.create({
     minHeight: 24,
     paddingHorizontal: THEME.spacing.xs,
   },
+  switcherHeadingRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: THEME.spacing.sm,
+  },
+  switcherAdd: {
+    width: 28,
+    height: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 6,
+  },
   switcherHeadingText: {
     fontSize: 11,
     fontWeight: "600",
@@ -751,16 +772,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: THEME.colors.textMuted,
     paddingVertical: THEME.spacing.sm,
-  },
-  switcherNewRow: {
-    minHeight: 40,
-    marginTop: THEME.spacing.xs,
-  },
-  switcherNewLabel: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: "500",
-    color: THEME.colors.textSecondary,
   },
   switcherModelRow: {
     minHeight: 36,
