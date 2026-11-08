@@ -5,6 +5,7 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v56.0.0/ before 
 # Local Working Rules
 
 - Ask before any action that spends money, quota, or other people's time: EAS cloud builds (`eas build`), submissions (`eas submit`), GitHub Actions runs, tagging a release, or force-pushing. Diagnose and prepare, then state the reason and wait for approval. Local commands that only read or run on this machine do not need approval.
+- Do not run `expo export`, bundler checks, or any verification pass after routine changes. The user verifies on the device; only run one when they explicitly ask or when a change touches native/bundling configuration that could break the build.
 - Routine code changes in this project usually do not need new test files.
 - Routine code changes in this project usually do not need test runs.
 - If a bug is unclear, keeps regressing, or needs confirmation, it is acceptable to build a minimal local repro or run targeted verification.
