@@ -14,18 +14,21 @@ export function HalfSheet({
   title,
   onClose,
   children,
+  scrollToEndOnOpen = false,
 }: {
   visible: boolean;
   title: string;
   onClose: () => void;
   children: ReactNode;
+  /** Progress sheets read newest-last; a text sheet starts at the top. */
+  scrollToEndOnOpen?: boolean;
 }) {
   const { height } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
   const userTookOver = useRef(false);
   useEffect(() => {
     userTookOver.current = false;
-    if (!visible) return;
+    if (!visible || !scrollToEndOnOpen) return;
     // One jump per open, so the newest step is in view. Never again while the
     // sheet stays open: streaming steps keep changing the content height, and
     // following them would drag a reader who has scrolled up back down. Any
@@ -37,7 +40,7 @@ export function HalfSheet({
       }, delay),
     );
     return () => timers.forEach(clearTimeout);
-  }, [visible]);
+  }, [visible, scrollToEndOnOpen]);
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>

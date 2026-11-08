@@ -1,7 +1,5 @@
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
-  ActionSheetIOS,
-  Alert,
   Linking,
   Platform,
   Pressable,
@@ -11,9 +9,10 @@ import {
   type StyleProp,
   type TextStyle,
 } from "react-native";
-import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import { marked, type Token, type Tokens } from "marked";
+import { HalfSheet } from "./HalfSheet";
+import { SelectableText } from "./SelectableText";
 import { THEME } from "../styles/theme";
 
 /**
@@ -27,42 +26,23 @@ import { THEME } from "../styles/theme";
  *
  * Selection is the platform's weak spot: iOS `<Text selectable>` copies a whole
  * block with no highlight or handles, and a selectable node holding styled runs
- * draws nothing at all on iOS 26. So a long press on any block offers the two
- * granularities people actually want — this block, or the whole reply — and
- * copies plain text.
+ * draws nothing at all on iOS 26. So a long press on a block opens it as plain
+ * text in a half sheet, where a real text view takes over and range selection,
+ * handles and the edit menu all behave normally.
  */
 
-type CopyHandler = (blockText: string) => void;
+interface BlockSheet {
+  text: string;
+  mono: boolean;
+}
 
-function copyToClipboard(value: string) {
-  if (!value) return;
-  void Clipboard.setStringAsync(value);
+type OpenSheet = (block: BlockSheet) => void;
+
+function openBlockSheet(open: OpenSheet, token: Token) {
   if (Platform.OS !== "web") {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }
-}
-
-function openCopyMenu(blockText: string, replyText: string) {
-  const copy = (value: string) => copyToClipboard(value);
-  if (Platform.OS === "ios") {
-    ActionSheetIOS.showActionSheetWithOptions(
-      { options: ["Copy this block", "Copy whole reply", "Cancel"], cancelButtonIndex: 2 },
-      (index) => {
-        if (index === 0) copy(blockText);
-        else if (index === 1) copy(replyText);
-      },
-    );
-    return;
-  }
-  if (Platform.OS === "web") {
-    copy(blockText);
-    return;
-  }
-  Alert.alert("Copy", undefined, [
-    { text: "This block", onPress: () => copy(blockText) },
-    { text: "Whole reply", onPress: () => copy(replyText) },
-    { text: "Cancel", style: "cancel" },
-  ]);
+  open({ text: blockPlain(token), mono: token.type === "code" });
 }
 
 function renderInline(tokens: Token[] | undefined, depth = 0): ReactNode[] {
@@ -220,10 +200,10 @@ function BlockText({
   );
 }
 
-function renderBlocks(tokens: Token[], onCopy: CopyHandler): ReactNode[] {
+function renderBlocks(tokens: Token[], open: OpenSheet): ReactNode[] {
   return tokens.map((token, index) => {
     const key = `${token.type}-${index}`;
-    const copy = () => onCopy(blockPlain(token));
+    const openThis = () => openBlockSheet(open, token);
     switch (token.type) {
       case "space":
         return null;
@@ -241,7 +221,7 @@ function renderBlocks(tokens: Token[], onCopy: CopyHandler): ReactNode[] {
             tokens={heading.tokens}
             fallback={heading.text}
             style={[styles.blockText, size, styles.heading]}
-            onLongPress={copy}
+            onLongPress={openThis}
           />
         );
       }
@@ -253,7 +233,7 @@ function renderBlocks(tokens: Token[], onCopy: CopyHandler): ReactNode[] {
             tokens={paragraph.tokens}
             fallback={paragraph.text}
             style={styles.blockText}
-            onLongPress={copy}
+            onLongPress={openThis}
           />
         );
       }
@@ -265,14 +245,14 @@ function renderBlocks(tokens: Token[], onCopy: CopyHandler): ReactNode[] {
             tokens={text.tokens}
             fallback={text.text}
             style={styles.blockText}
-            onLongPress={copy}
+            onLongPress={openThis}
           />
         );
       }
       case "code": {
         const code = token as Tokens.Code;
         return (
-          <Pressable key={key} onLongPress={copy} delayLongPress={300} style={styles.codeBlock}>
+          <Pressable key={key} onLongPress={openThis} delayLongPress={300} style={styles.codeBlock}>
             {code.lang ? <Text style={styles.codeLang}>{code.lang}</Text> : null}
             <Text style={styles.codeText}>{code.text}</Text>
           </Pressable>
@@ -282,7 +262,7 @@ function renderBlocks(tokens: Token[], onCopy: CopyHandler): ReactNode[] {
         const quote = token as Tokens.Blockquote;
         return (
           <View key={key} style={styles.quote}>
-            {renderBlocks(quote.tokens, onCopy)}
+            {renderBlocks(quote.tokens, open)}
           </View>
         );
       }
@@ -293,7 +273,7 @@ function renderBlocks(tokens: Token[], onCopy: CopyHandler): ReactNode[] {
             {list.items.map((item, itemIndex) => (
               <Pressable
                 key={itemIndex}
-                onLongPress={copy}
+                onLongPress={openThis}
                 delayLongPress={300}
                 style={styles.listItem}
               >
@@ -314,14 +294,14 @@ function renderBlocks(tokens: Token[], onCopy: CopyHandler): ReactNode[] {
                       tokens={(item.tokens[0] as Tokens.Text | Tokens.Paragraph).tokens}
                       fallback={(item.tokens[0] as Tokens.Text | Tokens.Paragraph).text}
                       style={styles.blockText}
-                      onLongPress={copy}
+                      onLongPress={openThis}
                     />
                   ) : null}
                   {renderBlocks(
                     item.tokens.filter(
                       (entry) => entry.type !== "text" && entry.type !== "paragraph",
                     ),
-                    onCopy,
+                    open,
                   )}
                 </View>
               </Pressable>
@@ -332,7 +312,7 @@ function renderBlocks(tokens: Token[], onCopy: CopyHandler): ReactNode[] {
       case "table": {
         const table = token as Tokens.Table;
         return (
-          <Pressable key={key} onLongPress={copy} delayLongPress={300} style={styles.table}>
+          <Pressable key={key} onLongPress={openThis} delayLongPress={300} style={styles.table}>
             <View style={[styles.tableRow, styles.tableHead]}>
               {table.header.map((cell, cellIndex) => (
                 <Text
@@ -376,7 +356,7 @@ function renderBlocks(tokens: Token[], onCopy: CopyHandler): ReactNode[] {
             key={key}
             fallback={plain}
             style={[styles.blockText, styles.muted]}
-            onLongPress={copy}
+            onLongPress={openThis}
           />
         ) : null;
       }
@@ -387,7 +367,7 @@ function renderBlocks(tokens: Token[], onCopy: CopyHandler): ReactNode[] {
             key={key}
             fallback={raw}
             style={styles.blockText}
-            onLongPress={copy}
+            onLongPress={openThis}
           />
         ) : null;
       }
@@ -396,25 +376,34 @@ function renderBlocks(tokens: Token[], onCopy: CopyHandler): ReactNode[] {
 }
 
 export function MarkdownText({ text }: { text: string }) {
-  const { tokens, plain, blocks } = useMemo(() => {
+  const [sheet, setSheet] = useState<BlockSheet | null>(null);
+  const blocks = useMemo(() => {
     const lexed = marked.lexer(text);
-    const reply = lexed
-      .map(blockPlain)
-      .filter(Boolean)
-      .join("\n\n");
-    const onCopy: CopyHandler = (blockText) => openCopyMenu(blockText, reply);
-    return { tokens: lexed, plain: reply, blocks: renderBlocks(lexed, onCopy) };
+    return renderBlocks(lexed, setSheet);
   }, [text]);
   return (
-    <View style={styles.root}>
-      {blocks.length > 0 ? (
-        blocks
-      ) : (
-        <Text style={styles.blockText} onLongPress={() => openCopyMenu(plain, plain)}>
-          {text}
-        </Text>
-      )}
-    </View>
+    <>
+      <View style={styles.root}>
+        {blocks.length > 0 ? (
+          blocks
+        ) : (
+          <Text
+            style={styles.blockText}
+            onLongPress={() => setSheet({ text, mono: false })}
+          >
+            {text}
+          </Text>
+        )}
+      </View>
+      {sheet ? (
+        <HalfSheet visible title="Text" onClose={() => setSheet(null)}>
+          <SelectableText
+            text={sheet.text}
+            style={sheet.mono ? styles.sheetMono : styles.sheetText}
+          />
+        </HalfSheet>
+      ) : null}
+    </>
   );
 }
 
@@ -514,6 +503,17 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     fontSize: 13,
     lineHeight: 18,
+    color: THEME.colors.text,
+  },
+  sheetText: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: THEME.colors.text,
+  },
+  sheetMono: {
+    fontFamily: THEME.fonts.mono,
+    fontSize: 14,
+    lineHeight: 21,
     color: THEME.colors.text,
   },
   hr: {

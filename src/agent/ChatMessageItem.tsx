@@ -155,7 +155,12 @@ export const ActivityRow = memo(function ActivityRow({
           </View>
         ) : null}
       </PressableRow>
-      <HalfSheet visible={open} title="Activity" onClose={() => setOpen(false)}>
+      <HalfSheet
+        visible={open}
+        title="Activity"
+        onClose={() => setOpen(false)}
+        scrollToEndOnOpen
+      >
         {items.map((item, index) => (
           <ActivityStep
             key={item.id}
