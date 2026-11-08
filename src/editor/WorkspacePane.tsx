@@ -286,26 +286,20 @@ export function WorkspacePane({
               <Text style={styles.loadingText}>Retry {source.label}</Text>
             </PressableRow>
           ) : null}
-          {/* The primary action sits above the list: a project list is a set of
-              destinations, and adding one is how you extend it. */}
+          {/* A dashed outline reads as "create", so it never competes with the
+              filled row that marks the project you are currently in. */}
           {source.workspacesLoaded && !source.workspacesError ? (
             <PressableRow
-              style={[styles.addCard, addDisabled && styles.addCardDisabled]}
+              style={[styles.addRow, addDisabled && styles.addRowDisabled]}
               onPress={() => openAddProject(source)}
               haptic="selection"
-              pressedStyle={styles.addCardPressed}
+              pressedStyle={styles.addRowPressed}
               disabled={addDisabled}
               accessibilityRole="button"
               accessibilityLabel={`Add a project to ${source.label}`}
             >
-              <View style={styles.addGlyph}>
-                <Icon name="plus" size={16} color={THEME.colors.accent} />
-              </View>
-              <View style={styles.addBody}>
-                <Text style={styles.addTitle}>Add project</Text>
-                <Text style={styles.addHint}>Open a folder on this connection</Text>
-              </View>
-              <Icon name="chevron-right" size={16} color={THEME.colors.textMuted} />
+              <Icon name="plus" size={16} color={THEME.colors.textSecondary} />
+              <Text style={styles.addRowText}>New working directory</Text>
             </PressableRow>
           ) : null}
           {workspaces.map((ws) => renderRow(source, contextKey, ws))}
@@ -420,41 +414,26 @@ const styles = StyleSheet.create({
   pinButtonPressed: {
     opacity: 0.6,
   },
-  addCard: {
+  addRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: THEME.spacing.md,
+    gap: THEME.spacing.sm,
     paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.md,
-    borderRadius: THEME.radii.lg,
-    backgroundColor: THEME.colors.surface,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: THEME.colors.border,
   },
-  addCardPressed: {
-    backgroundColor: "#ececef",
+  addRowPressed: {
+    backgroundColor: THEME.colors.backgroundSecondary,
   },
-  addCardDisabled: {
+  addRowDisabled: {
     opacity: 0.45,
   },
-  addGlyph: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: THEME.colors.accentSoft,
-  },
-  addBody: {
-    flex: 1,
-    gap: 2,
-  },
-  addTitle: {
+  addRowText: {
     fontSize: 15,
-    fontWeight: "600",
-    color: THEME.colors.text,
-  },
-  addHint: {
-    fontSize: 12,
-    color: THEME.colors.textMuted,
+    color: THEME.colors.textSecondary,
   },
   loadingRow: {
     flexDirection: "row",
