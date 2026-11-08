@@ -565,6 +565,14 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
           </View>
           <View style={styles.filesBody}>
             <View style={[styles.filesTreeColumn, filesFolder !== null && styles.filesTreeNarrow]}>
+              {filesFolder !== null ? (
+                <View style={styles.filesColumnHeader}>
+                  <View style={styles.filesColumnBackSpacer} />
+                  <Text style={styles.filesColumnTitle} numberOfLines={1}>
+                    {filesCwd?.split("/").filter(Boolean).pop() || "Workspace"}
+                  </Text>
+                </View>
+              ) : null}
               <FileTree
                 mode="files"
                 showHeader={false}
@@ -759,6 +767,27 @@ const styles = StyleSheet.create({
   filesFolderColumn: {
     flex: 1.1,
     minWidth: 0,
+  },
+  // Both columns carry a header of the same height, so their lists start on the
+  // same baseline instead of the right pane floating lower than the tree.
+  filesColumnHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: THEME.spacing.xs,
+    paddingHorizontal: THEME.spacing.sm,
+    paddingVertical: THEME.spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#f0f0f2",
+  },
+  filesColumnBackSpacer: {
+    width: 26,
+    height: 26,
+  },
+  filesColumnTitle: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "600",
+    color: THEME.colors.text,
   },
   pageSheet: {
     flex: 1,
