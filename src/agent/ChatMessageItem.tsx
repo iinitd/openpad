@@ -220,7 +220,11 @@ const AssistantBubble = memo(function AssistantBubble({ text }: { text: string }
       >
         <MarkdownText text={text} />
       </Pressable>
-      {open ? <SelectableSheet text={plain} onClose={() => setOpen(false)} /> : null}
+      <SelectableSheet
+        visible={open}
+        text={plain}
+        onClose={() => setOpen(false)}
+      />
     </>
   );
 });
@@ -239,7 +243,11 @@ const UserBubble = memo(function UserBubble({ text }: { text: string }) {
       >
         <Text style={styles.userText}>{text}</Text>
       </Pressable>
-      {open ? <SelectableSheet text={text} onClose={() => setOpen(false)} /> : null}
+      <SelectableSheet
+        visible={open}
+        text={text}
+        onClose={() => setOpen(false)}
+      />
     </>
   );
 });

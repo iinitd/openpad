@@ -19,14 +19,16 @@ export function hapticLongPress() {
  * selection: highlight, drag handles and the usual edit menu.
  */
 export function SelectableSheet({
+  visible,
   text,
   onClose,
 }: {
+  visible: boolean;
   text: string;
   onClose: () => void;
 }) {
   return (
-    <HalfSheet visible title="Text" onClose={onClose}>
+    <HalfSheet visible={visible} title="Text" onClose={onClose}>
       <SelectableText text={text} style={styles.text} />
     </HalfSheet>
   );

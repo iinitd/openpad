@@ -1,5 +1,15 @@
-import { useEffect, useRef, type ReactNode } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  Animated,
+  Easing,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { Icon } from "./Icon";
 import { PressableRow } from "./PressableRow";
 import { THEME } from "../styles/theme";
@@ -27,8 +37,36 @@ export function HalfSheet({
   stickyHeaderIndices?: number[];
 }) {
   const { height } = useWindowDimensions();
+  const sheetHeight = Math.round(height * 0.75);
   const scrollRef = useRef<ScrollView>(null);
   const userTookOver = useRef(false);
+
+  // The sheet rises from the bottom on its own animation: Modal's built-in
+  // "slide" would drag the dimming layer up with it, which reads as a black
+  // panel climbing the screen.
+  const [mounted, setMounted] = useState(visible);
+  const progress = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (visible) {
+      setMounted(true);
+      Animated.timing(progress, {
+        toValue: 1,
+        duration: 260,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }).start();
+      return;
+    }
+    Animated.timing(progress, {
+      toValue: 0,
+      duration: 200,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) setMounted(false);
+    });
+  }, [visible, progress]);
+
   useEffect(() => {
     userTookOver.current = false;
     if (!visible || !scrollToEndOnOpen) return;
@@ -44,16 +82,32 @@ export function HalfSheet({
     );
     return () => timers.forEach(clearTimeout);
   }, [visible, scrollToEndOnOpen]);
+  if (!mounted) return null;
+
+  const translateY = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [sheetHeight, 0],
+  });
+
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible transparent animationType="none" onRequestClose={onClose}>
       <View style={styles.overlay}>
+        <Animated.View
+          pointerEvents="none"
+          style={[StyleSheet.absoluteFill, styles.scrim, { opacity: progress }]}
+        />
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={onClose}
           accessibilityRole="button"
           accessibilityLabel="Close"
         />
-        <View style={[styles.sheet, { height: Math.round(height * 0.75) }]}>
+        <Animated.View
+          style={[
+            styles.sheet,
+            { height: sheetHeight, transform: [{ translateY }] },
+          ]}
+        >
           <View style={styles.handle} />
           <View style={styles.header}>
             <Text style={styles.title} numberOfLines={1}>
@@ -82,7 +136,7 @@ export function HalfSheet({
           >
             {children}
           </ScrollView>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -92,6 +146,8 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: "flex-end",
+  },
+  scrim: {
     backgroundColor: "rgba(15,23,42,0.32)",
   },
   sheet: {
