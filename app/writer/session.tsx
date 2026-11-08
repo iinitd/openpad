@@ -40,8 +40,8 @@ import { measureStartupTrace, noteStartupTrace } from "../../src/utils/startup-t
 
 const COMPACT_BREAKPOINT = 576;
 const PHONE_PORTRAIT_MAX_SHORT_SIDE = 700;
-const MOBILE_DRAWER_SCREEN_RATIO = 0.85;
-const MOBILE_DRAWER_MAX_WIDTH = 380;
+const MOBILE_DRAWER_SCREEN_RATIO = 0.82;
+const MOBILE_DRAWER_MAX_WIDTH = 360;
 
 // A phone in portrait should keep the mobile shell even when its reported
 // viewport is wider than the desktop breakpoint (foldables, desktop-site mode,
@@ -422,6 +422,9 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   );
   const [filesOpen, setFilesOpen] = useState(false);
   const [filesMounted, setFilesMounted] = useState(false);
+  // Shadows on a transformed layer are re-rasterised on iOS every frame; drop
+  // the shadow while the finger is down and restore it on release.
+  const [drawerDragging, setDrawerDragging] = useState(false);
   const slideX = useRef(new Animated.Value(-drawerWidth)).current;
   // Projects live in a mirrored drawer on the right edge.
   const [projectsOpen, setProjectsOpen] = useState(false);
@@ -491,14 +494,11 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
 
   useEffect(() => {
     if (filesOpen) {
-      // iOS-style spring: snappy start, soft settle. No overshoot visible but it
-      // feels alive rather than mechanical.
-      Animated.spring(slideX, {
+      Animated.timing(slideX, {
         toValue: 0,
+        duration: 240,
+        easing: Easing.bezier(0.32, 0.72, 0, 1),
         useNativeDriver: Platform.OS !== "web",
-        stiffness: 260,
-        damping: 28,
-        mass: 0.9,
       }).start();
     } else if (filesMounted) {
       Animated.timing(slideX, {
@@ -532,12 +532,11 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
 
   useEffect(() => {
     if (projectsOpen) {
-      Animated.spring(projectsX, {
+      Animated.timing(projectsX, {
         toValue: 0,
+        duration: 240,
+        easing: Easing.bezier(0.32, 0.72, 0, 1),
         useNativeDriver: Platform.OS !== "web",
-        stiffness: 260,
-        damping: 28,
-        mass: 0.9,
       }).start();
     } else if (projectsMounted) {
       Animated.timing(projectsX, {
@@ -655,6 +654,9 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         slideX.stopAnimation();
         projectsX.stopAnimation();
         pageX.stopAnimation();
+        if (activeSwipeRef.current === "files" || activeSwipeRef.current === "projects") {
+          setDrawerDragging(true);
+        }
         if (activeSwipeRef.current === "projects") {
           setProjectsMounted(true);
           projectsX.setValue(drawerWidthRef.current);
@@ -683,6 +685,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         setDragPosition(Math.min(0, -dw + Math.max(0, g.dx)));
       },
       onPanResponderRelease: (_evt, g) => {
+        setDrawerDragging(false);
         if (activeSwipeRef.current === "projects") {
           activeSwipeRef.current = null;
           const dw = drawerWidthRef.current;
@@ -727,6 +730,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         }
       },
       onPanResponderTerminate: () => {
+        setDrawerDragging(false);
         if (activeSwipeRef.current === "projects") {
           activeSwipeRef.current = null;
           Animated.timing(projectsX, {
@@ -903,6 +907,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
             style={[
               styles.drawer,
               WEB_DRAWER_SURFACE_STYLE,
+              drawerDragging && styles.drawerDragging,
               { width: drawerWidth, paddingTop: insets.top, transform: [{ translateX: slideX }] },
             ]}
           >
@@ -940,6 +945,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
               styles.drawer,
               styles.projectsDrawer,
               WEB_DRAWER_SURFACE_STYLE,
+              drawerDragging && styles.drawerDragging,
               { width: drawerWidth, paddingTop: insets.top, transform: [{ translateX: projectsX }] },
             ]}
           >
@@ -1089,6 +1095,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 12,
     elevation: 6,
+  },
+  drawerDragging: {
+    shadowOpacity: 0,
+    elevation: 0,
   },
   projectsDrawer: {
     alignSelf: "flex-end",
