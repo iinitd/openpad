@@ -14,6 +14,7 @@ export type IconName =
   | "chat"
   | "settings"
   | "chevron-right"
+  | "chevron-left"
   | "chevron-down"
   | "chevron-up"
   | "file"
@@ -99,6 +100,9 @@ export function Icon({
       ) : null}
       {name === "chevron-right" ? (
         <Polyline points="9 6 15 12 9 18" {...common} />
+      ) : null}
+      {name === "chevron-left" ? (
+        <Polyline points="15 6 9 12 15 18" {...common} />
       ) : null}
       {name === "chevron-down" ? (
         <Polyline points="6 9 12 15 18 9" {...common} />

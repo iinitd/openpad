@@ -286,24 +286,31 @@ export function WorkspacePane({
               <Text style={styles.loadingText}>Retry {source.label}</Text>
             </PressableRow>
           ) : null}
-          {workspaces.map((ws) => renderRow(source, contextKey, ws))}
+          {/* The primary action sits above the list: a project list is a set of
+              destinations, and adding one is how you extend it. */}
           {source.workspacesLoaded && !source.workspacesError ? (
             <PressableRow
-              style={addDisabled ? styles.addRowDisabled : undefined}
+              style={[styles.addCard, addDisabled && styles.addCardDisabled]}
               onPress={() => openAddProject(source)}
               haptic="selection"
+              pressedStyle={styles.addCardPressed}
               disabled={addDisabled}
               accessibilityRole="button"
               accessibilityLabel={`Add a project to ${source.label}`}
             >
-              <View style={styles.addRow}>
-                <Icon name="plus" size={15} color={THEME.colors.textSecondary} />
-                <Text style={styles.addRowText}>Add project</Text>
+              <View style={styles.addGlyph}>
+                <Icon name="plus" size={16} color={THEME.colors.accent} />
               </View>
+              <View style={styles.addBody}>
+                <Text style={styles.addTitle}>Add project</Text>
+                <Text style={styles.addHint}>Open a folder on this connection</Text>
+              </View>
+              <Icon name="chevron-right" size={16} color={THEME.colors.textMuted} />
             </PressableRow>
           ) : null}
+          {workspaces.map((ws) => renderRow(source, contextKey, ws))}
           {source.workspacesLoaded && !source.workspacesError && workspaces.length === 0
-            ? <Text style={styles.empty}>No projects available.</Text> : null}
+            ? <Text style={styles.empty}>No projects yet.</Text> : null}
           </> : null}
         </View>
         );
@@ -413,20 +420,41 @@ const styles = StyleSheet.create({
   pinButtonPressed: {
     opacity: 0.6,
   },
-  addRow: {
+  addCard: {
     flexDirection: "row",
     alignItems: "center",
-    gap: THEME.spacing.sm,
+    gap: THEME.spacing.md,
     paddingHorizontal: THEME.spacing.md,
-    paddingVertical: 9,
-    borderRadius: 8,
+    paddingVertical: THEME.spacing.md,
+    borderRadius: THEME.radii.lg,
+    backgroundColor: THEME.colors.surface,
   },
-  addRowText: {
-    fontSize: 15,
-    color: THEME.colors.textSecondary,
+  addCardPressed: {
+    backgroundColor: "#ececef",
   },
-  addRowDisabled: {
+  addCardDisabled: {
     opacity: 0.45,
+  },
+  addGlyph: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: THEME.colors.accentSoft,
+  },
+  addBody: {
+    flex: 1,
+    gap: 2,
+  },
+  addTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: THEME.colors.text,
+  },
+  addHint: {
+    fontSize: 12,
+    color: THEME.colors.textMuted,
   },
   loadingRow: {
     flexDirection: "row",

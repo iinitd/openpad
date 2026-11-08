@@ -163,6 +163,7 @@ export const FileTree = memo(function FileTree({
   onFileOpened,
   showHeader = true,
   showSettingsFooter = false,
+  onOpenSettings,
   onCloseDrawer,
   bottomInset = 0,
   mode,
@@ -178,6 +179,8 @@ export const FileTree = memo(function FileTree({
   // Mobile app sidebar pins a Settings entry at the bottom; the desktop pane
   // uses the gear in the header instead.
   showSettingsFooter?: boolean;
+  // The mobile sheet opens settings in place instead of pushing a route.
+  onOpenSettings?: () => void;
   // Mobile sidebar passes a callback so Settings tap closes the drawer first.
   onCloseDrawer?: () => void;
   // Honor the safe-area bottom inset for the pinned footer.
@@ -353,6 +356,10 @@ export const FileTree = memo(function FileTree({
         <PressableRow
           style={[styles.settingsFooter, { paddingBottom: THEME.spacing.md + bottomInset }]}
           onPress={() => {
+            if (onOpenSettings) {
+              onOpenSettings();
+              return;
+            }
             onCloseDrawer?.();
             router.push("/writer/settings");
           }}

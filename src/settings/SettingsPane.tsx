@@ -1,41 +1,67 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-} from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useConnectionStore } from "../stores/connection-store";
 import { BackendConnections } from "../components/BackendConnections";
+import { Icon } from "../components/Icon";
+import { PressableRow, hapticTap } from "../components/PressableRow";
 import { THEME } from "../styles/theme";
-import { hapticTap } from "../components/PressableRow";
 
 // Workspace switching lives in the Files sidebar and provider/model selection
 // lives in the agent pane. Settings only keeps app-level connection controls.
-export function SettingsPane() {
+//
+// The pane has no title of its own: it is hosted by the projects sheet (or the
+// standalone settings screen), both of which draw the "Settings" header.
+export function SettingsPane({
+  onAddConnection,
+}: {
+  onAddConnection?: () => void;
+} = {}) {
   const router = useRouter();
-  const hasConnections = useConnectionStore((state) => state.connections.length > 0 || state.savedConnections.length > 0);
+  const hasConnections = useConnectionStore(
+    (state) => state.connections.length > 0 || state.savedConnections.length > 0,
+  );
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.heading}>Settings</Text>
-
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+    >
       <Text style={styles.sectionLabel}>Connections</Text>
-      {hasConnections ? <BackendConnections /> : <Text style={styles.hint}>No saved connections yet.</Text>}
-      <View>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => {
-            hapticTap("light");
-            router.push("/?add=1");
-          }}
-          activeOpacity={0.7}
-          accessibilityRole="button"
-        >
-          <Text style={styles.buttonText}>Add connection</Text>
-        </TouchableOpacity>
-      </View>
+      {hasConnections ? (
+        <BackendConnections />
+      ) : (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyText}>
+            No connections yet. Add one to point OpenPad at your own backend.
+          </Text>
+        </View>
+      )}
+
+      <PressableRow
+        style={styles.addRow}
+        haptic="light"
+        pressedStyle={styles.addRowPressed}
+        onPress={() => {
+          hapticTap("light");
+          if (onAddConnection) {
+            onAddConnection();
+            return;
+          }
+          router.push("/?add=1");
+        }}
+        accessibilityRole="button"
+        accessibilityLabel="Add connection"
+      >
+        <View style={styles.addGlyph}>
+          <Icon name="plus" size={15} color={THEME.colors.accent} />
+        </View>
+        <View style={styles.addBody}>
+          <Text style={styles.addTitle}>Add connection</Text>
+          <Text style={styles.addHint}>Server URL, or pair with a relay</Text>
+        </View>
+        <Icon name="chevron-right" size={16} color={THEME.colors.textMuted} />
+      </PressableRow>
     </ScrollView>
   );
 }
@@ -46,37 +72,59 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.background,
   },
   content: {
-    padding: THEME.spacing.lg,
+    paddingHorizontal: THEME.spacing.lg,
+    paddingTop: THEME.spacing.lg,
+    paddingBottom: THEME.spacing.xxl,
     gap: THEME.spacing.md,
   },
-  heading: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: THEME.colors.text,
-    marginBottom: THEME.spacing.sm,
-  },
   sectionLabel: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: THEME.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 0.6,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginTop: THEME.spacing.sm,
+    color: THEME.colors.textMuted,
   },
-  hint: { fontSize: 16, color: THEME.colors.textSecondary },
-  button: {
-    alignSelf: "flex-start",
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.sm,
-    borderRadius: THEME.radii.md,
-    borderWidth: 1,
-    borderColor: THEME.colors.border,
-    backgroundColor: THEME.colors.background,
-    marginTop: THEME.spacing.xs,
+  emptyCard: {
+    padding: THEME.spacing.lg,
+    borderRadius: THEME.radii.lg,
+    backgroundColor: THEME.colors.backgroundSecondary,
   },
-  buttonText: {
-    fontSize: 16,
+  emptyText: {
+    fontSize: 15,
+    lineHeight: 21,
+    color: THEME.colors.textSecondary,
+  },
+  addRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: THEME.spacing.md,
+    paddingHorizontal: THEME.spacing.md,
+    paddingVertical: THEME.spacing.md,
+    borderRadius: THEME.radii.lg,
+    backgroundColor: THEME.colors.surface,
+  },
+  addRowPressed: {
+    backgroundColor: "#ececef",
+  },
+  addGlyph: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: THEME.colors.accentSoft,
+  },
+  addBody: {
+    flex: 1,
+    gap: 2,
+  },
+  addTitle: {
+    fontSize: 15,
     fontWeight: "600",
     color: THEME.colors.text,
+  },
+  addHint: {
+    fontSize: 12,
+    color: THEME.colors.textMuted,
   },
 });

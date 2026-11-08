@@ -1,4 +1,5 @@
 import { createPluginContext } from "../../src/content/plugin-context";
+import { SettingsPane } from "../../src/settings/SettingsPane";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   View,
@@ -311,6 +312,7 @@ export default function WriterSessionScreen() {
 // Each page owns its composer: the document keeps the comment dock, the
 // conversation keeps its own input.
 function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset: number }) {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const keyboardInset = useKeyboardInset();
   // The editor publishes its live selection + send handlers here so the dock
@@ -324,6 +326,8 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   // corners and the swipe-to-dismiss.
   const [filesOpen, setFilesOpen] = useState(false);
   const [projectsOpen, setProjectsOpen] = useState(false);
+  // Settings opens inside the projects sheet rather than pushing a screen.
+  const [projectsScreen, setProjectsScreen] = useState<"list" | "settings">("list");
   // Folder currently expanded into the right-hand column of the files sheet.
   const [filesFolder, setFilesFolder] = useState<string | null>(null);
   const filesCwd = useFilesStore((state) => state.cwd);
@@ -650,11 +654,28 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={closeProjects}
-        onDismiss={closeProjects}
+        onDismiss={() => {
+          setProjectsScreen("list");
+          closeProjects();
+        }}
       >
         <View style={styles.pageSheet}>
           <View style={styles.pageSheetHeader}>
-            <Text style={styles.sheetTitle}>Projects</Text>
+            {projectsScreen === "settings" ? (
+              <PressableRow
+                style={styles.pageSheetClose}
+                onPress={() => setProjectsScreen("list")}
+                haptic="light"
+                accessibilityLabel="Back to projects"
+              >
+                <Icon name="chevron-left" size={20} color={THEME.colors.text} />
+              </PressableRow>
+            ) : (
+              <View style={styles.pageSheetClose} />
+            )}
+            <Text style={styles.sheetTitle}>
+              {projectsScreen === "settings" ? "Settings" : "Projects"}
+            </Text>
             <PressableRow
               style={styles.pageSheetClose}
               onPress={closeProjects}
@@ -664,17 +685,28 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
               <Icon name="close" size={18} color={THEME.colors.textSecondary} />
             </PressableRow>
           </View>
-          <FileTree
-            mode="projects"
-            showHeader={false}
-            showSettingsFooter
-            bottomInset={insets.bottom}
-            onCloseDrawer={closeProjects}
-            onFileOpened={() => {
-              closeProjects();
-              showDocument();
-            }}
-          />
+          {projectsScreen === "settings" ? (
+            <SettingsPane
+              onAddConnection={() => {
+                setProjectsScreen("list");
+                closeProjects();
+                router.push("/?add=1");
+              }}
+            />
+          ) : (
+            <FileTree
+              mode="projects"
+              showHeader={false}
+              showSettingsFooter
+              onOpenSettings={() => setProjectsScreen("settings")}
+              bottomInset={insets.bottom}
+              onCloseDrawer={closeProjects}
+              onFileOpened={() => {
+                closeProjects();
+                showDocument();
+              }}
+            />
+          )}
         </View>
       </Modal>
     </View>
