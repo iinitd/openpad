@@ -759,6 +759,7 @@ const styles = StyleSheet.create({
   filesTreeColumn: {
     flex: 1,
     minWidth: 0,
+    backgroundColor: THEME.colors.background,
   },
   // With the right column open the tree keeps just enough width for names.
   filesTreeNarrow: {
@@ -767,6 +768,7 @@ const styles = StyleSheet.create({
   filesFolderColumn: {
     flex: 1.1,
     minWidth: 0,
+    backgroundColor: THEME.colors.background,
   },
   // Both columns carry a header of the same height, so their lists start on the
   // same baseline instead of the right pane floating lower than the tree.

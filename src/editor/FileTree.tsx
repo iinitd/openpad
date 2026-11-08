@@ -427,6 +427,7 @@ const styles = StyleSheet.create({
   },
   tree: {
     flex: 1,
+    backgroundColor: THEME.colors.background,
   },
   treeContent: {
     paddingTop: THEME.spacing.xs,

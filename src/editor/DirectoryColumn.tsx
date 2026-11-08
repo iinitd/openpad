@@ -97,7 +97,7 @@ export function DirectoryColumn({
       {error ? (
         <Text style={styles.error}>{error}</Text>
       ) : (
-        <ScrollView contentContainerStyle={styles.list}>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.list}>
           {entries.map((entry) => (
             <PressableRow
               key={entry.path}
@@ -137,6 +137,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     minWidth: 0,
+    backgroundColor: THEME.colors.background,
     borderLeftWidth: StyleSheet.hairlineWidth,
     borderLeftColor: "#f0f0f2",
   },
@@ -164,6 +165,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: THEME.colors.text,
+  },
+  scroll: {
+    flex: 1,
+    backgroundColor: THEME.colors.background,
   },
   list: {
     paddingVertical: THEME.spacing.xs,
