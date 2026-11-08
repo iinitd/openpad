@@ -34,7 +34,7 @@ export const COMPACT_COMPOSER_STYLES = StyleSheet.create({
     marginLeft: 6,
     borderRadius: 15,
     overflow: "hidden",
-    backgroundColor: THEME.colors.accent,
+    backgroundColor: THEME.colors.primary,
   },
   sendInner: {
     width: 30,

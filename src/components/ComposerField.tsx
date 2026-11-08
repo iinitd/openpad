@@ -268,7 +268,7 @@ export function ComposerField({
             hitSlop={6}
             accessibilityLabel="Stop generating"
           >
-            <Icon name="stop" size={16} color="#fff" />
+            <Icon name="stop" size={16} color={THEME.colors.error} />
           </TouchableOpacity>
         ) : null}
       </View>
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: THEME.radii.full,
-    backgroundColor: THEME.colors.accent,
+    backgroundColor: THEME.colors.primary,
     overflow: "hidden",
   },
   sendInner: {
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: THEME.radii.full,
-    backgroundColor: THEME.colors.error,
+    backgroundColor: THEME.colors.surface,
     alignItems: "center",
     justifyContent: "center",
     alignSelf: "center",
