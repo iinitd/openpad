@@ -426,8 +426,8 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   // is no empty gap between the input and the keyboard.
   const keyboardOpen = keyboardInset > 0;
   const dockPadBottom = keyboardOpen
-    ? keyboardInset + THEME.spacing.xs
-    : Math.max(insets.bottom, THEME.spacing.lg) + THEME.spacing.xs;
+    ? keyboardInset + THEME.spacing.sm
+    : Math.max(insets.bottom, THEME.spacing.lg) + THEME.spacing.sm;
 
   // Plugin ids drive the composer selection: a file-scope plugin ("markdown",
   // "lark-working-copy") gets the comment bubble; the web-preview plugin
@@ -778,7 +778,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: "#f0f0f2",
     paddingHorizontal: THEME.spacing.xl,
-    paddingTop: THEME.spacing.sm,
+    paddingTop: THEME.spacing.md,
   },
   filesBody: {
     flex: 1,
