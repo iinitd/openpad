@@ -178,26 +178,21 @@ function BlockText({
   tokens,
   fallback,
   style,
-  onLongPress,
 }: {
   tokens?: Token[];
   fallback?: string;
   style: StyleProp<TextStyle>;
-  onLongPress?: () => void;
 }) {
   const nodes = renderInline(tokens);
   const content = nodes.length > 0 ? nodes : fallback ? [fallback] : [];
   return (
-    <Text style={style} onLongPress={onLongPress}>
-      {content.length > 0 ? content : undefined}
-    </Text>
+    <Text style={style}>{content.length > 0 ? content : undefined}</Text>
   );
 }
 
-function renderBlocks(tokens: Token[], open: () => void): ReactNode[] {
+function renderBlocks(tokens: Token[]): ReactNode[] {
   return tokens.map((token, index) => {
     const key = `${token.type}-${index}`;
-    const openThis = () => openBubbleSheet(open);
     switch (token.type) {
       case "space":
         return null;
@@ -215,8 +210,7 @@ function renderBlocks(tokens: Token[], open: () => void): ReactNode[] {
             tokens={heading.tokens}
             fallback={heading.text}
             style={[styles.blockText, size, styles.heading]}
-            onLongPress={openThis}
-          />
+                      />
         );
       }
       case "paragraph": {
@@ -227,8 +221,7 @@ function renderBlocks(tokens: Token[], open: () => void): ReactNode[] {
             tokens={paragraph.tokens}
             fallback={paragraph.text}
             style={styles.blockText}
-            onLongPress={openThis}
-          />
+                      />
         );
       }
       case "text": {
@@ -239,24 +232,23 @@ function renderBlocks(tokens: Token[], open: () => void): ReactNode[] {
             tokens={text.tokens}
             fallback={text.text}
             style={styles.blockText}
-            onLongPress={openThis}
-          />
+                      />
         );
       }
       case "code": {
         const code = token as Tokens.Code;
         return (
-          <Pressable key={key} onLongPress={openThis} delayLongPress={300} style={styles.codeBlock}>
+          <View key={key} style={styles.codeBlock}>
             {code.lang ? <Text style={styles.codeLang}>{code.lang}</Text> : null}
             <Text style={styles.codeText}>{code.text}</Text>
-          </Pressable>
+          </View>
         );
       }
       case "blockquote": {
         const quote = token as Tokens.Blockquote;
         return (
           <View key={key} style={styles.quote}>
-            {renderBlocks(quote.tokens, open)}
+            {renderBlocks(quote.tokens)}
           </View>
         );
       }
@@ -265,12 +257,7 @@ function renderBlocks(tokens: Token[], open: () => void): ReactNode[] {
         return (
           <View key={key}>
             {list.items.map((item, itemIndex) => (
-              <Pressable
-                key={itemIndex}
-                onLongPress={openThis}
-                delayLongPress={300}
-                style={styles.listItem}
-              >
+              <View key={itemIndex} style={styles.listItem}>
                 <Text style={styles.listMarker}>
                   {item.task
                     ? item.checked
@@ -288,17 +275,15 @@ function renderBlocks(tokens: Token[], open: () => void): ReactNode[] {
                       tokens={(item.tokens[0] as Tokens.Text | Tokens.Paragraph).tokens}
                       fallback={(item.tokens[0] as Tokens.Text | Tokens.Paragraph).text}
                       style={styles.blockText}
-                      onLongPress={openThis}
-                    />
+                                          />
                   ) : null}
                   {renderBlocks(
                     item.tokens.filter(
                       (entry) => entry.type !== "text" && entry.type !== "paragraph",
                     ),
-                    open,
                   )}
                 </View>
-              </Pressable>
+              </View>
             ))}
           </View>
         );
@@ -306,7 +291,7 @@ function renderBlocks(tokens: Token[], open: () => void): ReactNode[] {
       case "table": {
         const table = token as Tokens.Table;
         return (
-          <Pressable key={key} onLongPress={openThis} delayLongPress={300} style={styles.table}>
+          <View key={key} style={styles.table}>
             <View style={[styles.tableRow, styles.tableHead]}>
               {table.header.map((cell, cellIndex) => (
                 <Text
@@ -336,7 +321,7 @@ function renderBlocks(tokens: Token[], open: () => void): ReactNode[] {
                 ))}
               </View>
             ))}
-          </Pressable>
+          </View>
         );
       }
       case "hr":
@@ -350,8 +335,7 @@ function renderBlocks(tokens: Token[], open: () => void): ReactNode[] {
             key={key}
             fallback={plain}
             style={[styles.blockText, styles.muted]}
-            onLongPress={openThis}
-          />
+                      />
         ) : null;
       }
       default: {
@@ -361,8 +345,7 @@ function renderBlocks(tokens: Token[], open: () => void): ReactNode[] {
             key={key}
             fallback={raw}
             style={styles.blockText}
-            onLongPress={openThis}
-          />
+                      />
         ) : null;
       }
     }
@@ -373,26 +356,24 @@ export function MarkdownText({ text }: { text: string }) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const { blocks, plain } = useMemo(() => {
     const tokens = marked.lexer(text);
-    const open = () => setSheetOpen(true);
     return {
-      blocks: renderBlocks(tokens, open),
+      blocks: renderBlocks(tokens),
       plain: tokens.map(blockPlain).filter(Boolean).join("\n\n"),
     };
   }, [text]);
   return (
     <>
-      <View style={styles.root}>
+      <Pressable
+        style={styles.root}
+        delayLongPress={300}
+        onLongPress={() => openBubbleSheet(() => setSheetOpen(true))}
+      >
         {blocks.length > 0 ? (
           blocks
         ) : (
-          <Text
-            style={styles.blockText}
-            onLongPress={() => openBubbleSheet(() => setSheetOpen(true))}
-          >
-            {text}
-          </Text>
+          <Text style={styles.blockText}>{text}</Text>
         )}
-      </View>
+      </Pressable>
       {sheetOpen ? (
         <HalfSheet visible title="Text" onClose={() => setSheetOpen(false)}>
           <SelectableText text={plain || text} style={styles.sheetText} />
