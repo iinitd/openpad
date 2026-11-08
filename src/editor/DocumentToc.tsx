@@ -117,10 +117,10 @@ const styles = StyleSheet.create({
   },
   titleBar: {
     position: "relative",
+    minHeight: 48,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 48,
-    paddingVertical: THEME.spacing.xs + 2,
   },
   titleText: {
     width: "100%",
