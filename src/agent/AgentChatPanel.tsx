@@ -205,9 +205,6 @@ function activeSessionTitle(
   return title || "AI Assistant";
 }
 
-function directoryLabel(cwd: string): string {
-  return cwd.split(/[\\/]/).filter(Boolean).pop() || cwd || "Workspace";
-}
 
 export const AgentChatPanel = memo(function AgentChatPanel({
   showInput = true,
@@ -523,7 +520,6 @@ export const AgentChatPanel = memo(function AgentChatPanel({
                   const { connectionId, agent } = item;
                   const active = connectionId === activeConnectionId && agent.id === agentId;
                   const title = agent.title?.trim() || "Untitled writing session";
-                  const directory = directoryLabel(agent.cwd);
                   return (
                     <TouchableOpacity
                       key={catalogItemKey(connectionId, `session:${agent.id}`)}
@@ -542,9 +538,6 @@ export const AgentChatPanel = memo(function AgentChatPanel({
                       <View style={styles.switcherRowBody}>
                         <Text style={[styles.switcherTitle, active && styles.switcherTitleActive]} numberOfLines={1}>
                           {title}
-                        </Text>
-                        <Text style={styles.switcherWorkspace} numberOfLines={1} ellipsizeMode="middle">
-                          {directory}{agent.cwd && agent.cwd !== directory ? ` · ${agent.cwd}` : ""}
                         </Text>
                       </View>
                     </TouchableOpacity>
@@ -722,9 +715,9 @@ const styles = StyleSheet.create({
   switcherRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: THEME.spacing.sm,
-    paddingVertical: 9,
-    paddingHorizontal: THEME.spacing.xs,
+    gap: THEME.spacing.md,
+    paddingVertical: 11,
+    paddingHorizontal: THEME.spacing.md,
     borderRadius: 8,
   },
   switcherTitle: {
@@ -741,11 +734,6 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     gap: 3,
-  },
-  switcherWorkspace: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: THEME.colors.textMuted,
   },
   switcherDot: {
     width: 6,
