@@ -18,8 +18,19 @@ interface Props {
 // separate badge needed below the list.
 type ActivityItem = ThoughtItem | ToolCallItem;
 
-function toolGlyph(status: ToolCallItem["status"]): string {
-  return status === "failed" ? "✕" : status === "running" ? "⚙" : "✓";
+function StatusDot({ status }: { status: ToolCallItem["status"] }) {
+  return (
+    <View
+      style={[
+        styles.statusDot,
+        status === "failed"
+          ? styles.statusDotFailed
+          : status === "running"
+            ? styles.statusDotRunning
+            : null,
+      ]}
+    />
+  );
 }
 
 /**
@@ -56,9 +67,9 @@ export const ActivityRow = memo(function ActivityRow({
           {live ? (
             <TypingDots color={THEME.colors.textMuted} />
           ) : latest.kind === "tool_call" ? (
-            <Text style={styles.toolGlyph}>{toolGlyph(latest.status)}</Text>
+            <StatusDot status={latest.status} />
           ) : (
-            <Text style={styles.toolGlyph}>✳</Text>
+            <View style={styles.statusDot} />
           )}
           <Text style={styles.toolText} numberOfLines={2}>
             {prefix}
@@ -78,7 +89,9 @@ export const ActivityRow = memo(function ActivityRow({
               </Text>
             ) : (
               <View style={styles.sheetToolRow}>
-                <Text style={styles.sheetToolGlyph}>{toolGlyph(item.status)}</Text>
+                <View style={styles.sheetToolDotWrap}>
+                  <StatusDot status={item.status} />
+                </View>
                 <Text style={styles.sheetToolName} selectable>
                   {item.name}
                 </Text>
@@ -144,8 +157,9 @@ export const ChatMessageItem = memo(function ChatMessageItem({ item }: Props) {
       // this fallback keeps a single stray call compact.
       return (
         <View style={styles.toolMessage}>
+          <StatusDot status={item.status} />
           <Text style={styles.toolText} numberOfLines={1}>
-            {item.status === "running" ? "⚙" : item.status === "failed" ? "✕" : "✓"} {item.name}
+            {item.name}
           </Text>
         </View>
       );
@@ -212,10 +226,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
   },
-  toolGlyph: {
-    color: THEME.colors.textMuted,
-    fontSize: 13,
-    opacity: 0.8,
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: THEME.colors.border,
+  },
+  statusDotRunning: {
+    backgroundColor: THEME.colors.accent,
+  },
+  statusDotFailed: {
+    backgroundColor: THEME.colors.error,
   },
   toolText: {
     color: THEME.colors.textMuted,
@@ -244,11 +265,9 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: THEME.spacing.sm,
   },
-  sheetToolGlyph: {
+  sheetToolDotWrap: {
     width: 16,
-    fontSize: 13,
-    lineHeight: 21,
-    color: THEME.colors.textMuted,
+    paddingTop: 8,
   },
   sheetToolName: {
     flex: 1,
