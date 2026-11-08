@@ -23,6 +23,7 @@ import { PressableRow } from "../../src/components/PressableRow";
 import { ContentPreview } from "../../src/content/ContentPreview";
 import { DocumentCommentBar } from "../../src/editor/DocumentCommentBar";
 import { FileTree, openWorkspaceDocument } from "../../src/editor/FileTree";
+import { DirectoryColumn } from "../../src/editor/DirectoryColumn";
 import { useConnectionStore } from "../../src/stores/connection-store";
 import { useSessionStore } from "../../src/stores/session-store";
 import { useWriterOpeningStore } from "../../src/stores/writer-opening-store";
@@ -322,6 +323,9 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   // corners and the swipe-to-dismiss.
   const [filesOpen, setFilesOpen] = useState(false);
   const [projectsOpen, setProjectsOpen] = useState(false);
+  // Folder currently expanded into the right-hand column of the files sheet.
+  const [filesFolder, setFilesFolder] = useState<string | null>(null);
+  const filesCwd = useFilesStore((state) => state.cwd);
 
   // Two full-width pages — document and conversation — live side by side in a
   // pager. The header tabs and a horizontal swipe both slide between them, and
@@ -333,6 +337,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
 
   const openFiles = useCallback(() => {
     Keyboard.dismiss();
+    setFilesFolder(null);
     setFilesOpen(true);
   }, []);
   const closeFiles = useCallback(() => setFilesOpen(false), []);
@@ -558,16 +563,37 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
               <Icon name="close" size={18} color={THEME.colors.textSecondary} />
             </PressableRow>
           </View>
-          <FileTree
-            mode="files"
-            showHeader={false}
-            bottomInset={insets.bottom}
-            onCloseDrawer={closeFiles}
-            onFileOpened={() => {
-              closeFiles();
-              showDocument();
-            }}
-          />
+          <View style={styles.filesBody}>
+            <View style={[styles.filesTreeColumn, filesFolder !== null && styles.filesTreeNarrow]}>
+              <FileTree
+                mode="files"
+                showHeader={false}
+                bottomInset={insets.bottom}
+                onCloseDrawer={closeFiles}
+                onSelectFolder={setFilesFolder}
+                selectedFolder={filesFolder}
+                onFileOpened={() => {
+                  closeFiles();
+                  showDocument();
+                }}
+              />
+            </View>
+            {filesFolder !== null && filesCwd ? (
+              <View style={styles.filesFolderColumn}>
+                <DirectoryColumn
+                  cwd={filesCwd}
+                  path={filesFolder}
+                  onNavigate={setFilesFolder}
+                  onOpenFile={(path) => {
+                    void openWorkspaceDocument(filesCwd, path).then(() => {
+                      closeFiles();
+                      showDocument();
+                    });
+                  }}
+                />
+              </View>
+            ) : null}
+          </View>
         </View>
       </Modal>
 
@@ -717,6 +743,22 @@ const styles = StyleSheet.create({
     borderTopColor: "#f0f0f2",
     paddingHorizontal: THEME.spacing.xl,
     paddingTop: THEME.spacing.sm,
+  },
+  filesBody: {
+    flex: 1,
+    flexDirection: "row",
+  },
+  filesTreeColumn: {
+    flex: 1,
+    minWidth: 0,
+  },
+  // With the right column open the tree keeps just enough width for names.
+  filesTreeNarrow: {
+    flex: 0.9,
+  },
+  filesFolderColumn: {
+    flex: 1.1,
+    minWidth: 0,
   },
   pageSheet: {
     flex: 1,

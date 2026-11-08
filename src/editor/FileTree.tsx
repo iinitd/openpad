@@ -70,19 +70,35 @@ interface RowProps {
   depth: number;
   activePath: string | null;
   onOpenFile: (node: FileNode) => void;
+  onSelectFolder?: (path: string) => void;
+  selectedFolder?: string | null;
 }
 
-const TreeRow = memo(function TreeRow({ node, depth, activePath, onOpenFile }: RowProps) {
+const TreeRow = memo(function TreeRow({
+  node,
+  depth,
+  activePath,
+  onOpenFile,
+  onSelectFolder,
+  selectedFolder,
+}: RowProps) {
   const toggleDirectory = useFilesStore((state) => state.toggleDirectory);
   const isDir = node.kind === "directory";
   const openable = !isDir && OPENABLE.has(extname(node.name));
   const isActive = activePath === node.path;
+  const isSelectedFolder = isDir && selectedFolder === node.path;
 
   return (
     <>
       <PressableRow
-        style={[styles.row, isActive && styles.rowActive]}
-        onPress={() => (isDir ? toggleDirectory(node.path) : openable && onOpenFile(node))}
+        style={[styles.row, isActive && styles.rowActive, isSelectedFolder && styles.rowSelected]}
+        onPress={() =>
+          isDir
+            ? onSelectFolder
+              ? onSelectFolder(node.path)
+              : toggleDirectory(node.path)
+            : openable && onOpenFile(node)
+        }
         disabled={!isDir && !openable}
         haptic="selection"
       >
@@ -134,6 +150,8 @@ const TreeRow = memo(function TreeRow({ node, depth, activePath, onOpenFile }: R
               depth={depth + 1}
               activePath={activePath}
               onOpenFile={onOpenFile}
+              onSelectFolder={onSelectFolder}
+              selectedFolder={selectedFolder}
             />
           ))
         : null}
@@ -148,6 +166,8 @@ export const FileTree = memo(function FileTree({
   onCloseDrawer,
   bottomInset = 0,
   mode,
+  onSelectFolder,
+  selectedFolder,
 }: {
   onFileOpened?: () => void;
   // Pin the sidebar to one pane (the mobile drawers each show a single one) and
@@ -162,6 +182,10 @@ export const FileTree = memo(function FileTree({
   onCloseDrawer?: () => void;
   // Honor the safe-area bottom inset for the pinned footer.
   bottomInset?: number;
+  // When set, tapping a folder selects it instead of expanding it in place —
+  // the two-column browser uses this to drive its right-hand pane.
+  onSelectFolder?: (path: string) => void;
+  selectedFolder?: string | null;
 } = {}) {
   const cwd = useFilesStore((state) => state.cwd);
   const root = useFilesStore((state) => state.root);
@@ -460,6 +484,9 @@ const styles = StyleSheet.create({
   plannerSpinner: {
     width: 16,
     transform: [{ scale: 0.72 }],
+  },
+  rowSelected: {
+    backgroundColor: THEME.colors.accentSoft,
   },
   rowActive: {
     backgroundColor: "rgba(255, 255, 255, 0.62)",
