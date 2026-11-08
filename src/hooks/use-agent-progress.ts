@@ -30,7 +30,6 @@ function oneLine(text: string, max = 140): string {
 // thought, and finally to the running tool. `head` holds the streaming items so
 // we look there first, then the finalized `tail`.
 function latestSummary(items: StreamItem[]): string | null {
-  let sawToolCall = false;
   for (let i = items.length - 1; i >= 0; i--) {
     const item = items[i]!;
     if (item.kind === "assistant_message" && item.text.trim()) {
@@ -39,13 +38,10 @@ function latestSummary(items: StreamItem[]): string | null {
     if (item.kind === "thought" && item.text.trim()) {
       return oneLine(item.text);
     }
-    // Tool names say nothing about what the agent is producing, so keep looking
-    // for its own words. A turn that is only running commands reads as thinking.
-    if (item.kind === "tool_call") {
-      sawToolCall = true;
-    }
+    // Tool names say nothing about what the agent is producing, so skip them and
+    // keep looking for its own words.
   }
-  return sawToolCall ? "Thinking…" : null;
+  return null;
 }
 
 // A short, live one-liner summarizing what the agent is doing right now. Drives
@@ -55,7 +51,9 @@ function latestSummary(items: StreamItem[]): string | null {
 export function useAgentProgressSummary(): string | null {
   return useSessionStore((state) =>
     // Returning the derived string lets Zustand skip the React render once the
-    // visible 140-character summary stops changing.
+    // visible 140-character summary stops changing. When the running turn has
+    // only produced tool calls so far, fall back to the last thing the agent
+    // actually said (or thought) rather than showing its command names.
     latestSummary(state.head) ?? latestSummary(state.tail),
   );
 }
