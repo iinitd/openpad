@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   },
   activityPreview: {
     marginTop: 4,
-    color: THEME.colors.textSecondary,
+    color: THEME.colors.textMuted,
     fontSize: 14,
     lineHeight: 19,
   },
