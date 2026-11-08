@@ -240,7 +240,9 @@ const styles = StyleSheet.create({
     color: THEME.colors.textMuted,
   },
   activityPreview: {
-    flex: 1,
+    // The row shrink-wraps to its content, so a flex:1 child collapses to zero
+    // width; let the text size itself and only shrink when the line is full.
+    flexShrink: 1,
     color: THEME.colors.textSecondary,
     fontSize: 14,
     lineHeight: 19,
