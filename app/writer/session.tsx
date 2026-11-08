@@ -435,6 +435,17 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   const pageRef = useRef(page);
   pageRef.current = page;
 
+  // Mount both drawers after the first screen settles. A swipe then only moves
+  // existing views; mounting the file tree and project list mid-gesture was the
+  // main source of stutter on the first pull.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilesMounted(true);
+      setProjectsMounted(true);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, []);
+
   const openFiles = useCallback(() => {
     setProjectsOpen(false);
     setFilesMounted(true);
@@ -495,9 +506,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         duration: 220,
         easing: Easing.bezier(0.32, 0.72, 0, 1),
         useNativeDriver: Platform.OS !== "web",
-      }).start(({ finished }) => {
-        if (finished) setFilesMounted(false);
-      });
+      }).start();
     }
   }, [drawerWidth, filesOpen, slideX]);
 
@@ -505,7 +514,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   // files drawer while the document page is showing, so the page swipe leaves
   // that gesture alone.
   const shouldClaimPageSwipe = (_evt: unknown, g: { dx: number; dy: number; moveX: number }) => {
-    if (filesMountedRef.current || projectsMountedRef.current) return false;
+    if (filesOpenRef.current || projectsOpenRef.current) return false;
     const horizontal = Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5;
     if (!horizontal) return false;
     return true;
@@ -514,7 +523,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   // Mirror on the chat page: a leftward drag opens projects, since the only
   // page to the left is where a rightward drag already goes.
   const shouldClaimProjectsEdge = (_evt: unknown, g: { dx: number; dy: number }) => {
-    if (projectsMountedRef.current || filesMountedRef.current) return false;
+    if (projectsOpenRef.current || filesOpenRef.current) return false;
     if (pageRef.current !== 1) return false;
     const horizontal = Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6;
     if (!horizontal) return false;
@@ -536,9 +545,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         duration: 220,
         easing: Easing.bezier(0.32, 0.72, 0, 1),
         useNativeDriver: Platform.OS !== "web",
-      }).start(({ finished }) => {
-        if (finished) setProjectsMounted(false);
-      });
+      }).start();
     }
   }, [drawerWidth, projectsMounted, projectsOpen, projectsX]);
 
@@ -555,7 +562,11 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
 
   const filesMountedRef = useRef(filesMounted);
   filesMountedRef.current = filesMounted;
-  useEffect(() => installWebEdgeSwipeGuard(() => filesMountedRef.current), []);
+  const filesOpenRef = useRef(filesOpen);
+  filesOpenRef.current = filesOpen;
+  const projectsOpenRef = useRef(projectsOpen);
+  projectsOpenRef.current = projectsOpen;
+  useEffect(() => installWebEdgeSwipeGuard(() => filesOpenRef.current), []);
   // Edge-swipe drives the slide value directly so the drawer tracks the finger
   // instead of snapping at release — iOS-style. Ref keeps us out of PanResponder
   // closure staleness.
@@ -599,7 +610,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   // A rightward drag anywhere on the document page opens the files drawer;
   // there is no page to the right, so that direction is free.
   const shouldClaimEdgeSwipe = (_evt: unknown, g: { dx: number; dy: number }) => {
-    if (filesMountedRef.current) return false;
+    if (filesOpenRef.current || projectsOpenRef.current) return false;
     if (pageRef.current !== 0) return false;
     const horizontal = Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6;
     if (!horizontal) return false;
@@ -639,6 +650,11 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
       onMoveShouldSetPanResponder: claimSwipe,
       onMoveShouldSetPanResponderCapture: claimSwipe,
       onPanResponderGrant: () => {
+        // A settle animation may still be running from the previous gesture;
+        // let the finger take over instead of fighting it frame by frame.
+        slideX.stopAnimation();
+        projectsX.stopAnimation();
+        pageX.stopAnimation();
         if (activeSwipeRef.current === "projects") {
           setProjectsMounted(true);
           projectsX.setValue(drawerWidthRef.current);
@@ -679,9 +695,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
             duration: 180,
             easing: Easing.bezier(0.32, 0.72, 0, 1),
             useNativeDriver: Platform.OS !== "web",
-          }).start(({ finished }) => {
-            if (finished) setProjectsMounted(false);
-          });
+          }).start();
           return;
         }
         if (activeSwipeRef.current === "page") {
@@ -709,9 +723,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
             duration: 180,
             easing: Easing.bezier(0.32, 0.72, 0, 1),
             useNativeDriver: Platform.OS !== "web",
-          }).start(({ finished }) => {
-            if (finished) setFilesMounted(false);
-          });
+          }).start();
         }
       },
       onPanResponderTerminate: () => {
@@ -721,9 +733,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
             toValue: drawerWidthRef.current,
             duration: 160,
             useNativeDriver: Platform.OS !== "web",
-          }).start(({ finished }) => {
-            if (finished) setProjectsMounted(false);
-          });
+          }).start();
           return;
         }
         if (activeSwipeRef.current === "page") {
@@ -737,9 +747,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
           toValue: -drawerWidthRef.current,
           duration: 160,
           useNativeDriver: Platform.OS !== "web",
-        }).start(({ finished }) => {
-          if (finished) setFilesMounted(false);
-        });
+        }).start();
       },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
