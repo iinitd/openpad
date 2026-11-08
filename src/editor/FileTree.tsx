@@ -341,6 +341,8 @@ export const FileTree = memo(function FileTree({
                 depth={0}
                 activePath={activeContent.path}
                 onOpenFile={handleOpenFile}
+                onSelectFolder={onSelectFolder}
+                selectedFolder={selectedFolder}
               />
             ))
           )}
