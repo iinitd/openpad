@@ -46,17 +46,41 @@ export function HalfSheet({
   // panel climbing the screen.
   const [mounted, setMounted] = useState(visible);
   const progress = useRef(new Animated.Value(0)).current;
+  const closingRef = useRef(false);
+
   useEffect(() => {
-    if (visible) {
-      setMounted(true);
-      Animated.timing(progress, {
-        toValue: 1,
-        duration: 260,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }).start();
-      return;
-    }
+    if (!visible) return;
+    closingRef.current = false;
+    setMounted(true);
+    Animated.timing(progress, {
+      toValue: 1,
+      duration: 260,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [visible, progress]);
+
+  // Closing through the sheet's own controls starts the animation in the touch
+  // handler: going through a state update first adds a frame of delay, and more
+  // when the transcript is busy streaming.
+  const closeNow = () => {
+    if (closingRef.current) return;
+    closingRef.current = true;
+    Animated.timing(progress, {
+      toValue: 0,
+      duration: 200,
+      easing: Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    }).start(() => {
+      closingRef.current = false;
+      setMounted(false);
+    });
+    onClose();
+  };
+
+  // Closing from the outside (the parent flipped `visible`) still animates out.
+  useEffect(() => {
+    if (visible || !mounted || closingRef.current) return;
     Animated.timing(progress, {
       toValue: 0,
       duration: 200,
@@ -65,7 +89,7 @@ export function HalfSheet({
     }).start(({ finished }) => {
       if (finished) setMounted(false);
     });
-  }, [visible, progress]);
+  }, [visible, mounted, progress]);
 
   useEffect(() => {
     userTookOver.current = false;
@@ -90,7 +114,7 @@ export function HalfSheet({
   });
 
   return (
-    <Modal visible transparent animationType="none" onRequestClose={onClose}>
+    <Modal visible transparent animationType="none" onRequestClose={closeNow}>
       <View style={styles.overlay}>
         <Animated.View
           pointerEvents="none"
@@ -100,7 +124,7 @@ export function HalfSheet({
           style={StyleSheet.absoluteFill}
           onPress={() => {
             hapticTap("light");
-            onClose();
+            closeNow();
           }}
           accessibilityRole="button"
           accessibilityLabel="Close"
@@ -118,7 +142,7 @@ export function HalfSheet({
             </Text>
             <PressableRow
               style={styles.close}
-              onPress={onClose}
+              onPress={closeNow}
               haptic="light"
               accessibilityLabel="Close"
             >
