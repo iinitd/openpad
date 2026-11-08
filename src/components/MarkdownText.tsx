@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from "react";
-import { Linking, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Linking, StyleSheet, Text, View, type StyleProp, type TextStyle } from "react-native";
 import { marked, type Token, type Tokens } from "marked";
 import { THEME } from "../styles/theme";
 
@@ -23,11 +23,9 @@ function renderInline(
     switch (token.type) {
       case "text": {
         const text = token as Tokens.Text;
-        return text.tokens ? (
-          <Text key={key}>{renderInline(text.tokens, depth + 1)}</Text>
-        ) : (
-          <Text key={key}>{text.text}</Text>
-        );
+        // Plain runs stay strings: fewer nested Text nodes, and a paragraph
+        // made only of them can stay one selectable node.
+        return text.tokens ? renderInline(text.tokens, depth + 1) : text.text;
       }
       case "strong":
         return (
@@ -90,9 +88,31 @@ function renderInline(
   });
 }
 
-function renderInlineOrText(token: Tokens.Text | Tokens.Paragraph): ReactNode[] {
-  const nodes = renderInline(token.tokens);
-  return nodes.length > 0 ? nodes : [token.text];
+/**
+ * iOS 26 draws `<Text selectable>` nodes that hold nested styled text without
+ * any of the glyphs, so styling and selection cannot coexist in one node. A
+ * block that is a single plain run keeps selection; anything with bold, code
+ * or links renders as ordinary text.
+ */
+function StyledText({
+  tokens,
+  fallback,
+  style,
+  selectable = true,
+}: {
+  tokens: Token[] | undefined;
+  fallback?: string;
+  style: StyleProp<TextStyle>;
+  selectable?: boolean;
+}) {
+  const nodes = renderInline(tokens);
+  const content = nodes.length > 0 ? nodes : fallback ? [fallback] : [];
+  const plain = selectable && content.length > 0 && content.every((node) => typeof node === "string");
+  return (
+    <Text selectable={plain} style={style}>
+      {content.length > 0 ? content : undefined}
+    </Text>
+  );
 }
 
 function inlinePlain(tokens: Token[] | undefined): string {
@@ -124,25 +144,34 @@ function renderBlocks(tokens: Token[]): ReactNode[] {
               ? styles.h2
               : styles.h3;
         return (
-          <Text key={key} selectable style={[styles.blockText, size, styles.heading]}>
-            {renderInline(heading.tokens)}
-          </Text>
+          <StyledText
+            key={key}
+            tokens={heading.tokens}
+            fallback={heading.text}
+            style={[styles.blockText, size, styles.heading]}
+          />
         );
       }
       case "paragraph": {
         const paragraph = token as Tokens.Paragraph;
         return (
-          <Text key={key} selectable style={styles.blockText}>
-            {renderInline(paragraph.tokens)}
-          </Text>
+          <StyledText
+            key={key}
+            tokens={paragraph.tokens}
+            fallback={paragraph.text}
+            style={styles.blockText}
+          />
         );
       }
       case "text": {
         const text = token as Tokens.Text;
         return (
-          <Text key={key} selectable style={styles.blockText}>
-            {text.tokens ? renderInline(text.tokens) : text.text}
-          </Text>
+          <StyledText
+            key={key}
+            tokens={text.tokens}
+            fallback={text.text}
+            style={styles.blockText}
+          />
         );
       }
       case "code": {
@@ -152,11 +181,9 @@ function renderBlocks(tokens: Token[]): ReactNode[] {
             {code.lang ? (
               <Text style={styles.codeLang}>{code.lang}</Text>
             ) : null}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <Text selectable style={styles.codeText}>
-                {code.text}
-              </Text>
-            </ScrollView>
+            <Text selectable style={styles.codeText}>
+              {code.text}
+            </Text>
           </View>
         );
       }
@@ -187,11 +214,15 @@ function renderBlocks(tokens: Token[]): ReactNode[] {
                   {item.tokens.length > 0 &&
                   (item.tokens[0]!.type === "text" ||
                     item.tokens[0]!.type === "paragraph") ? (
-                    <Text selectable style={styles.blockText}>
-                      {renderInlineOrText(
-                        item.tokens[0] as Tokens.Text | Tokens.Paragraph,
-                      )}
-                    </Text>
+                    <StyledText
+                      tokens={
+                        (item.tokens[0] as Tokens.Text | Tokens.Paragraph).tokens
+                      }
+                      fallback={
+                        (item.tokens[0] as Tokens.Text | Tokens.Paragraph).text
+                      }
+                      style={styles.blockText}
+                    />
                   ) : null}
                   {renderBlocks(
                     item.tokens.filter(
