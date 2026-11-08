@@ -95,6 +95,21 @@ const SYSTEM_PROMPT_MARKER = "\u200b[kel-writer-system]";
 const WRITING_SYSTEM_PROMPT = `${SYSTEM_PROMPT_MARKER}
 You are a writing assistant working inside the user's workspace directory. The user is editing documents there and will send you requests, often referencing a specific file and a highlighted passage with a comment.`;
 
+/**
+ * A sent message can sit silent when the live event stream stalls: the turn is
+ * running, but nothing arrives, so the transcript looks like it swallowed the
+ * message. If the stream has produced no step a few seconds in, read history
+ * once so the turn becomes visible.
+ */
+function watchFirstStreamStep(agentId: string, get: () => SessionStore): void {
+  setTimeout(() => {
+    const state = get();
+    if (state.agentId !== agentId || !state.isStreaming) return;
+    if (state.head.length > 0) return;
+    void state.catchUpAgent();
+  }, 5000);
+}
+
 function createClientMessageId(): string {
   return `kel-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
@@ -1059,6 +1074,7 @@ export const useSessionStore = create<SessionStore>()(
 
       try {
         await client.sendAgentMessage(agentId, text, { messageId, attachments });
+        watchFirstStreamStep(agentId, get);
       } catch {
         if (
           get().agentId !== agentId ||
@@ -1152,6 +1168,7 @@ export const useSessionStore = create<SessionStore>()(
       const backendKey = usePreferencesStore.getState().activeBackendKey;
       try {
         await client.sendAgentMessage(agentId, merged, { messageId });
+        watchFirstStreamStep(agentId, get);
         removePersistedQueueEntries(agentId, new Set([inFlightEntry.id]), new Set(), backendKey);
       } catch {
         if (

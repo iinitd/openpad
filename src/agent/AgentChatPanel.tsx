@@ -27,6 +27,7 @@ import { usePreferencesStore } from "../stores/preferences-store";
 import { useWriterOpeningStore } from "../stores/writer-opening-store";
 import { normalizeWorkspaceCwd } from "../stores/workspace-session-key";
 import { ActivityRow, ChatMessageItem } from "./ChatMessageItem";
+import { ActivityDot } from "../components/TypingDots";
 import { ChatInput } from "./ChatInput";
 import {
   ModelSwitcher,
@@ -44,7 +45,10 @@ import type { BackendAgentEntry } from "../backend";
 // stacking one bulky row per call.
 type DisplayRow =
   | { type: "item"; key: string; item: StreamItem }
-  | { type: "activity"; key: string; items: Array<ThoughtItem | ToolCallItem> };
+  | { type: "activity"; key: string; items: Array<ThoughtItem | ToolCallItem> }
+  // Shown between sending and the first streamed step, so the turn never looks
+  // like it was swallowed.
+  | { type: "pending"; key: string };
 
 function groupRows(items: StreamItem[]): DisplayRow[] {
   const rows: DisplayRow[] = [];
@@ -146,6 +150,14 @@ const DisplayRowItem = memo(function DisplayRowItem({
   if (row.type === "activity") {
     return <ActivityRow items={row.items} streaming={streaming} />;
   }
+  if (row.type === "pending") {
+    return (
+      <View style={styles.pendingRow} accessible={false}>
+        <ActivityDot running color="#c6c6ce" />
+        <Text style={styles.pendingLabel}>Thinking</Text>
+      </View>
+    );
+  }
   return <ChatMessageItem item={row.item} />;
 });
 
@@ -158,13 +170,18 @@ function AgentTranscript() {
   // copied and regrouped the entire transcript for every incoming fragment.
   const committedRows = useMemo(() => groupRows(tail), [tail]);
   const activeRows = useMemo(() => groupRows(head), [head]);
-  const rows = useMemo(
-    () => [
+  const rows = useMemo(() => {
+    const list: DisplayRow[] = [
       ...activeRows.slice().reverse(),
       ...committedRows.slice().reverse(),
-    ],
-    [activeRows, committedRows],
-  );
+    ];
+    // Inverted list: index 0 is the newest row. Until the backend streams its
+    // first step there is nothing to show, which reads as a dropped message.
+    if (isStreaming && head.length === 0) {
+      list.unshift({ type: "pending", key: "pending" });
+    }
+    return list;
+  }, [activeRows, committedRows, isStreaming, head.length]);
   const renderItem = useCallback(
     // The list is inverted, so index 0 is the newest row. Only that row may
     // animate: older activity in the transcript is history, not progress.
@@ -887,6 +904,19 @@ const styles = StyleSheet.create({
   },
   messageList: {
     flex: 1,
+  },
+  pendingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginHorizontal: THEME.spacing.sm,
+    paddingHorizontal: THEME.spacing.xs,
+    paddingVertical: 7,
+  },
+  pendingLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: THEME.colors.textMuted,
   },
   messageListContent: {
     paddingVertical: THEME.spacing.lg,
