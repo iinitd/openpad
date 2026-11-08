@@ -26,23 +26,17 @@ import { THEME } from "../styles/theme";
  *
  * Selection is the platform's weak spot: iOS `<Text selectable>` copies a whole
  * block with no highlight or handles, and a selectable node holding styled runs
- * draws nothing at all on iOS 26. So a long press on a block opens it as plain
- * text in a half sheet, where a real text view takes over and range selection,
- * handles and the edit menu all behave normally.
+ * draws nothing at all on iOS 26. So a long press anywhere in the bubble opens
+ * the whole reply as plain text in a half sheet, where a real text view takes
+ * over and range selection, handles and the edit menu all behave normally.
  */
 
-interface BlockSheet {
-  text: string;
-  mono: boolean;
-}
-
-type OpenSheet = (block: BlockSheet) => void;
-
-function openBlockSheet(open: OpenSheet, token: Token) {
+/** The bubble is one piece of writing: a long press anywhere reads all of it. */
+function openBubbleSheet(open: () => void) {
   if (Platform.OS !== "web") {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }
-  open({ text: blockPlain(token), mono: token.type === "code" });
+  open();
 }
 
 function renderInline(tokens: Token[] | undefined, depth = 0): ReactNode[] {
@@ -200,10 +194,10 @@ function BlockText({
   );
 }
 
-function renderBlocks(tokens: Token[], open: OpenSheet): ReactNode[] {
+function renderBlocks(tokens: Token[], open: () => void): ReactNode[] {
   return tokens.map((token, index) => {
     const key = `${token.type}-${index}`;
-    const openThis = () => openBlockSheet(open, token);
+    const openThis = () => openBubbleSheet(open);
     switch (token.type) {
       case "space":
         return null;
@@ -376,10 +370,14 @@ function renderBlocks(tokens: Token[], open: OpenSheet): ReactNode[] {
 }
 
 export function MarkdownText({ text }: { text: string }) {
-  const [sheet, setSheet] = useState<BlockSheet | null>(null);
-  const blocks = useMemo(() => {
-    const lexed = marked.lexer(text);
-    return renderBlocks(lexed, setSheet);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const { blocks, plain } = useMemo(() => {
+    const tokens = marked.lexer(text);
+    const open = () => setSheetOpen(true);
+    return {
+      blocks: renderBlocks(tokens, open),
+      plain: tokens.map(blockPlain).filter(Boolean).join("\n\n"),
+    };
   }, [text]);
   return (
     <>
@@ -389,18 +387,15 @@ export function MarkdownText({ text }: { text: string }) {
         ) : (
           <Text
             style={styles.blockText}
-            onLongPress={() => setSheet({ text, mono: false })}
+            onLongPress={() => openBubbleSheet(() => setSheetOpen(true))}
           >
             {text}
           </Text>
         )}
       </View>
-      {sheet ? (
-        <HalfSheet visible title="Text" onClose={() => setSheet(null)}>
-          <SelectableText
-            text={sheet.text}
-            style={sheet.mono ? styles.sheetMono : styles.sheetText}
-          />
+      {sheetOpen ? (
+        <HalfSheet visible title="Text" onClose={() => setSheetOpen(false)}>
+          <SelectableText text={plain || text} style={styles.sheetText} />
         </HalfSheet>
       ) : null}
     </>
@@ -508,12 +503,6 @@ const styles = StyleSheet.create({
   sheetText: {
     fontSize: 16,
     lineHeight: 24,
-    color: THEME.colors.text,
-  },
-  sheetMono: {
-    fontFamily: THEME.fonts.mono,
-    fontSize: 14,
-    lineHeight: 21,
     color: THEME.colors.text,
   },
   hr: {
