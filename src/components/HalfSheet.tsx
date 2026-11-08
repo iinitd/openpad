@@ -22,14 +22,19 @@ export function HalfSheet({
 }) {
   const { height } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
+  const userTookOver = useRef(false);
   useEffect(() => {
+    userTookOver.current = false;
     if (!visible) return;
-    // The newest step is the one being read, so open at the end. The modal
-    // mounts and lays its content out across a few frames, hence the retries.
-    // Deliberately not driven by content-size changes: a row expanding later
-    // would otherwise yank the list back down.
-    const timers = [0, 60, 180, 350].map((delay) =>
-      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), delay),
+    // One jump per open, so the newest step is in view. Never again while the
+    // sheet stays open: streaming steps keep changing the content height, and
+    // following them would drag a reader who has scrolled up back down. Any
+    // touch on the list cancels the remaining retries.
+    const timers = [0, 50, 120, 250].map((delay) =>
+      setTimeout(() => {
+        if (userTookOver.current) return;
+        scrollRef.current?.scrollToEnd({ animated: false });
+      }, delay),
     );
     return () => timers.forEach(clearTimeout);
   }, [visible]);
@@ -61,6 +66,12 @@ export function HalfSheet({
             ref={scrollRef}
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled"
+            onScrollBeginDrag={() => {
+              userTookOver.current = true;
+            }}
+            onTouchStart={() => {
+              userTookOver.current = true;
+            }}
           >
             {children}
           </ScrollView>
