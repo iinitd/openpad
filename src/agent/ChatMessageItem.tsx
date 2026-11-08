@@ -47,12 +47,16 @@ export const ActivityRow = memo(function ActivityRow({
 }) {
   const [open, setOpen] = useState(false);
   const latest = items[items.length - 1]!;
-  const live = Boolean(streaming) && latest.kind === "tool_call" && latest.status === "running";
-  const preview =
-    latest.kind === "thought"
-      ? latest.text.trim() || "Thinking…"
-      : latest.name;
-  const prefix = items.length > 1 ? `${items.length} steps · ` : "";
+  // While the turn is running the row is live regardless of whether the newest
+  // step is a thought or a command, so the dots track the agent, not the step.
+  const live = Boolean(streaming);
+  const isThought = latest.kind === "thought";
+  const preview = isThought
+    ? latest.text.trim() || "Thinking…"
+    : latest.name;
+  // The count matters when the newest step is a command; when the agent is
+  // thinking, its own words are the useful part and get the whole width.
+  const prefix = !isThought && items.length > 1 ? `${items.length} steps · ` : "";
 
   return (
     <>
@@ -71,7 +75,10 @@ export const ActivityRow = memo(function ActivityRow({
           ) : (
             <View style={styles.statusDot} />
           )}
-          <Text style={styles.toolText} numberOfLines={2}>
+          <Text
+            style={isThought ? styles.activityPreview : styles.toolText}
+            numberOfLines={2}
+          >
             {prefix}
             {preview}
           </Text>
@@ -242,6 +249,12 @@ const styles = StyleSheet.create({
     color: THEME.colors.textMuted,
     fontSize: 13,
     opacity: 0.8,
+  },
+  activityPreview: {
+    flex: 1,
+    color: THEME.colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 19,
   },
   errorMessage: {
     alignSelf: "flex-start",
