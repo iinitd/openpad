@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { Animated, Easing, Platform, StyleSheet, View } from "react-native";
 import { THEME } from "../styles/theme";
 
-const DOT = 5;
+const DOT = 4;
 const SLOT = 20;
 const SIDE_OFFSET = (SLOT - DOT) / 2;
 

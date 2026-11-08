@@ -43,9 +43,14 @@ export const ActivityRow = memo(function ActivityRow({
 }) {
   const [open, setOpen] = useState(false);
   const latest = items[items.length - 1]!;
-  // While the turn is running the row is live regardless of whether the newest
-  // step is a thought or a command, so the dots track the agent, not the step.
-  const live = Boolean(streaming);
+  // The row is live while the turn runs, and also while the newest step itself
+  // is still being produced — a thought can arrive before the streaming flag
+  // settles, and that should still read as working.
+  const live =
+    Boolean(streaming) ||
+    (latest.kind === "thought"
+      ? latest.status === "loading"
+      : latest.status === "running");
   const isThought = latest.kind === "thought";
   const preview = isThought
     ? latest.text.trim() || "Thinking…"
@@ -205,9 +210,9 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   statusDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
     backgroundColor: THEME.colors.border,
   },
   statusDotFailed: {
