@@ -26,7 +26,7 @@ import {
 import { usePreferencesStore } from "../stores/preferences-store";
 import { useWriterOpeningStore } from "../stores/writer-opening-store";
 import { normalizeWorkspaceCwd } from "../stores/workspace-session-key";
-import { ChatMessageItem, ThoughtActivityRow, ToolActivityRow } from "./ChatMessageItem";
+import { ActivityRow, ChatMessageItem } from "./ChatMessageItem";
 import { ChatInput } from "./ChatInput";
 import {
   ModelSwitcher,
@@ -44,45 +44,30 @@ import type { BackendAgentEntry } from "../backend";
 // stacking one bulky row per call.
 type DisplayRow =
   | { type: "item"; key: string; item: StreamItem }
-  | { type: "tools"; key: string; count: number; latest: ToolCallItem; items: ToolCallItem[] }
-  | { type: "thoughts"; key: string; items: ThoughtItem[] };
+  | { type: "activity"; key: string; items: Array<ThoughtItem | ToolCallItem> };
 
 function groupRows(items: StreamItem[]): DisplayRow[] {
   const rows: DisplayRow[] = [];
-  let run: ToolCallItem[] = [];
-  let thoughts: ThoughtItem[] = [];
+  let run: Array<ThoughtItem | ToolCallItem> = [];
 
   const flushRun = () => {
     if (run.length === 0) return;
-    const latest = run[run.length - 1]!;
-    rows.push({ type: "tools", key: `tools-${latest.id}`, count: run.length, latest, items: run });
+    const last = run[run.length - 1]!;
+    rows.push({ type: "activity", key: `activity-${last.id}`, items: run });
     run = [];
-  };
-  const flushThoughts = () => {
-    if (thoughts.length === 0) return;
-    const last = thoughts[thoughts.length - 1]!;
-    rows.push({ type: "thoughts", key: `thoughts-${last.id}`, items: thoughts });
-    thoughts = [];
   };
 
   for (const item of items) {
-    if (item.kind === "tool_call") {
-      // A thought run ends when the agent starts acting.
-      flushThoughts();
+    // Reasoning and tool calls are one continuous activity stream: the agent
+    // thinks, acts, thinks again, and the transcript reads better as one row.
+    if (item.kind === "thought" || item.kind === "tool_call") {
       run.push(item);
       continue;
     }
-    if (item.kind === "thought") {
-      flushRun();
-      thoughts.push(item);
-      continue;
-    }
     flushRun();
-    flushThoughts();
     rows.push({ type: "item", key: item.id, item });
   }
   flushRun();
-  flushThoughts();
   return rows;
 }
 
@@ -158,21 +143,11 @@ const DisplayRowItem = memo(function DisplayRowItem({
   row: DisplayRow;
   streaming: boolean;
 }) {
-  if (row.type === "tools") {
-    return (
-      <ToolActivityRow
-        count={row.count}
-        latest={row.latest}
-        items={row.items}
-        streaming={streaming}
-      />
-    );
-  }
-  if (row.type === "thoughts") {
-    return row.items.length === 1 ? (
+  if (row.type === "activity") {
+    return row.items.length === 1 && row.items[0]!.kind === "thought" ? (
       <ChatMessageItem item={row.items[0]!} />
     ) : (
-      <ThoughtActivityRow items={row.items} />
+      <ActivityRow items={row.items} streaming={streaming} />
     );
   }
   return <ChatMessageItem item={row.item} />;

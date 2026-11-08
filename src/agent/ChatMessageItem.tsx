@@ -15,20 +15,33 @@ interface Props {
 // still streaming (and this is the newest row), the leading glyph is a spinner
 // so the step row itself doubles as the "AI is working" indicator — no
 // separate badge needed below the list.
-export const ToolActivityRow = memo(function ToolActivityRow({
-  count,
-  latest,
+type ActivityItem = ThoughtItem | ToolCallItem;
+
+function toolGlyph(status: ToolCallItem["status"]): string {
+  return status === "failed" ? "✕" : status === "running" ? "⚙" : "✓";
+}
+
+/**
+ * A run of reasoning and tool calls, in the order they happened. Collapsed it
+ * is one two-line row built from the newest step; expanding opens a half sheet
+ * with the whole run, each step labelled and separated.
+ */
+export const ActivityRow = memo(function ActivityRow({
   items,
   streaming,
 }: {
-  count: number;
-  latest: ToolCallItem;
-  items?: ToolCallItem[];
+  items: ActivityItem[];
   streaming?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const stepLabel = count > 1 ? `${count} steps · ` : "";
-  const isLive = streaming && latest.status === "running";
+  const latest = items[items.length - 1]!;
+  const live = Boolean(streaming) && latest.kind === "tool_call" && latest.status === "running";
+  const preview =
+    latest.kind === "thought"
+      ? latest.text.trim() || "Thinking…"
+      : latest.name;
+  const prefix = items.length > 1 ? `${items.length} steps · ` : "";
+
   return (
     <>
       <PressableRow
@@ -36,69 +49,40 @@ export const ToolActivityRow = memo(function ToolActivityRow({
         onPress={() => setOpen(true)}
         haptic="light"
         accessibilityRole="button"
-        accessibilityLabel="Show tool steps"
+        accessibilityLabel="Show agent activity"
       >
         <View style={styles.toolMessage}>
-          {isLive ? (
+          {live ? (
             <ActivityIndicator size="small" color={THEME.colors.textMuted} style={styles.toolSpinner} />
+          ) : latest.kind === "tool_call" ? (
+            <Text style={styles.toolGlyph}>{toolGlyph(latest.status)}</Text>
           ) : (
-            <Text style={styles.toolGlyph}>
-              {latest.status === "failed" ? "✕" : "✓"}
-            </Text>
+            <Text style={styles.toolGlyph}>✳</Text>
           )}
           <Text style={styles.toolText} numberOfLines={2}>
-            {stepLabel}
-            {latest.name}
+            {prefix}
+            {preview}
           </Text>
         </View>
       </PressableRow>
-      <HalfSheet visible={open} title="Tool steps" onClose={() => setOpen(false)}>
-        {(items ?? [latest]).map((tool) => (
-          <View key={tool.id} style={styles.sheetRow}>
-            <Text style={styles.sheetGlyph}>
-              {tool.status === "failed" ? "✕" : tool.status === "running" ? "⚙" : "✓"}
-            </Text>
-            <Text style={styles.sheetRowText}>{tool.name}</Text>
-          </View>
-        ))}
-      </HalfSheet>
-    </>
-  );
-});
-
-/**
- * A run of consecutive reasoning segments. Collapsed it shows how many pieces
- * the agent emitted and the newest one; expanding lists them all in order.
- */
-export const ThoughtActivityRow = memo(function ThoughtActivityRow({
-  items,
-}: {
-  items: ThoughtItem[];
-}) {
-  const [open, setOpen] = useState(false);
-  const latest = items[items.length - 1]!;
-  const preview = latest.text.trim() || "Thinking…";
-  return (
-    <>
-      <PressableRow
-        style={[styles.message, styles.thoughtMessage]}
-        onPress={() => setOpen(true)}
-        haptic="light"
-        scale={false}
-        accessibilityRole="button"
-        accessibilityLabel="Show all reasoning"
-      >
-        <Text style={styles.thoughtText} numberOfLines={2}>
-          {items.length > 1 ? `${items.length} thoughts · ` : ""}
-          {preview}
-        </Text>
-      </PressableRow>
-      <HalfSheet visible={open} title="Reasoning" onClose={() => setOpen(false)}>
+      <HalfSheet visible={open} title="Activity" onClose={() => setOpen(false)}>
         {items.map((item, index) => (
           <View key={item.id} style={index > 0 ? styles.sheetSegment : undefined}>
-            <Text style={styles.sheetText} selectable>
-              {item.text.trim() || "…"}
+            <Text style={styles.sheetLabel}>
+              {item.kind === "thought" ? "Thinking" : "Tool"}
             </Text>
+            {item.kind === "thought" ? (
+              <Text style={styles.sheetText} selectable>
+                {item.text.trim() || "…"}
+              </Text>
+            ) : (
+              <View style={styles.sheetToolRow}>
+                <Text style={styles.sheetToolGlyph}>{toolGlyph(item.status)}</Text>
+                <Text style={styles.sheetToolName} selectable>
+                  {item.name}
+                </Text>
+              </View>
+            )}
           </View>
         ))}
       </HalfSheet>
@@ -249,6 +233,31 @@ const styles = StyleSheet.create({
     color: THEME.colors.error,
     fontSize: 15,
     lineHeight: 22,
+  },
+  sheetLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.08,
+    textTransform: "uppercase",
+    color: THEME.colors.textMuted,
+    marginBottom: 4,
+  },
+  sheetToolRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: THEME.spacing.sm,
+  },
+  sheetToolGlyph: {
+    width: 16,
+    fontSize: 13,
+    lineHeight: 21,
+    color: THEME.colors.textMuted,
+  },
+  sheetToolName: {
+    flex: 1,
+    fontSize: 15,
+    lineHeight: 21,
+    color: THEME.colors.text,
   },
   sheetSegment: {
     marginTop: THEME.spacing.lg,
