@@ -246,7 +246,8 @@ const styles = StyleSheet.create({
   },
   activityPreview: {
     marginTop: 4,
-    color: THEME.colors.textMuted,
+    // One step lighter than the muted token: the preview is context, not copy.
+    color: "#b3b3bc",
     fontSize: 14,
     lineHeight: 19,
   },
