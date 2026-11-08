@@ -44,7 +44,7 @@ import type { BackendAgentEntry } from "../backend";
 // stacking one bulky row per call.
 type DisplayRow =
   | { type: "item"; key: string; item: StreamItem }
-  | { type: "tools"; key: string; count: number; latest: ToolCallItem };
+  | { type: "tools"; key: string; count: number; latest: ToolCallItem; items: ToolCallItem[] };
 
 function groupRows(items: StreamItem[]): DisplayRow[] {
   const rows: DisplayRow[] = [];
@@ -53,7 +53,7 @@ function groupRows(items: StreamItem[]): DisplayRow[] {
   const flushRun = () => {
     if (run.length === 0) return;
     const latest = run[run.length - 1]!;
-    rows.push({ type: "tools", key: `tools-${latest.id}`, count: run.length, latest });
+    rows.push({ type: "tools", key: `tools-${latest.id}`, count: run.length, latest, items: run });
     run = [];
   };
 
@@ -142,7 +142,12 @@ const DisplayRowItem = memo(function DisplayRowItem({
   streaming: boolean;
 }) {
   return row.type === "tools" ? (
-    <ToolActivityRow count={row.count} latest={row.latest} streaming={streaming} />
+    <ToolActivityRow
+      count={row.count}
+      latest={row.latest}
+      items={row.items}
+      streaming={streaming}
+    />
   ) : (
     <ChatMessageItem item={row.item} />
   );
