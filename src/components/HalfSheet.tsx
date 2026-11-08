@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { Icon } from "./Icon";
 import { PressableRow } from "./PressableRow";
@@ -22,18 +22,17 @@ export function HalfSheet({
 }) {
   const { height } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
-  // The newest step is the one being read; open the sheet at the end instead of
-  // at the start of a long run.
-  const scrollToEnd = useCallback(() => {
-    scrollRef.current?.scrollToEnd({ animated: false });
-  }, []);
   useEffect(() => {
     if (!visible) return;
-    // Content mounts with the modal, so its measured height lands a frame or
-    // two later than the visible flag flips.
-    const handle = setTimeout(scrollToEnd, 320);
-    return () => clearTimeout(handle);
-  }, [visible, scrollToEnd]);
+    // The newest step is the one being read, so open at the end. The modal
+    // mounts and lays its content out across a few frames, hence the retries.
+    // Deliberately not driven by content-size changes: a row expanding later
+    // would otherwise yank the list back down.
+    const timers = [0, 60, 180, 350].map((delay) =>
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), delay),
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [visible]);
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
@@ -62,7 +61,6 @@ export function HalfSheet({
             ref={scrollRef}
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled"
-            onContentSizeChange={scrollToEnd}
           >
             {children}
           </ScrollView>
