@@ -127,6 +127,10 @@ export const ActivityRow = memo(function ActivityRow({
       <PressableRow
         style={styles.activityRow}
         onPress={() => setOpen(true)}
+        // Either gesture opens the run; a tap is the quick one, a hold is what
+        // people try when they want to read without navigating.
+        onLongPress={() => setOpen(true)}
+        delayLongPress={300}
         haptic="light"
         scale={false}
         accessibilityRole="button"
