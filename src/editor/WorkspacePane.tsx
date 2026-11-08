@@ -286,7 +286,7 @@ export function WorkspacePane({
               <Text style={styles.loadingText}>Retry {source.label}</Text>
             </PressableRow>
           ) : null}
-          {/* A dashed outline reads as "create", so it never competes with the
+          {/* An outlined row reads as "create" and never competes with the
               filled row that marks the project you are currently in. */}
           {source.workspacesLoaded && !source.workspacesError ? (
             <PressableRow
@@ -422,7 +422,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 8,
     borderWidth: 1,
-    borderStyle: "dashed",
     borderColor: THEME.colors.border,
   },
   addRowPressed: {
