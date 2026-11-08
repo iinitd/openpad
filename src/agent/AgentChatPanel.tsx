@@ -213,6 +213,8 @@ export const AgentChatPanel = memo(function AgentChatPanel({
   avoidKeyboard = true,
   showHeader = true,
   onRequestClose,
+  onSwitcherOpenChange,
+  switcherControl,
 }: {
   // On mobile the chat input is hoisted into the shared floating dock, so the
   // panel renders just the header + message list. Desktop keeps its own input.
@@ -223,6 +225,11 @@ export const AgentChatPanel = memo(function AgentChatPanel({
   // Desktop renders the full title/status/model header. Mobile keeps model
   // selection inside the compact session picker opened from its title bar.
   showHeader?: boolean;
+  // The session list floats inside this panel, so a page-level dock (the shared
+  // composer) sits outside its bounds. These two let the host mirror the open
+  // state and dim that dock with the same scrim.
+  onSwitcherOpenChange?: (open: boolean) => void;
+  switcherControl?: { current: (() => void) | null };
   // Mobile's agent pane passes its pane toggle here. It enables the compact
   // header and the header's right-side agent button, which switches back to the
   // document pane. Desktop keeps the full title/status/model header.
@@ -250,6 +257,18 @@ export const AgentChatPanel = memo(function AgentChatPanel({
   const [newSessionPickerOpen, setNewSessionPickerOpen] = useState(false);
   const [newSessionBusy, setNewSessionBusy] = useState(false);
   const [newSessionError, setNewSessionError] = useState<string | null>(null);
+  useEffect(() => {
+    onSwitcherOpenChange?.(switcherOpen);
+  }, [onSwitcherOpenChange, switcherOpen]);
+
+  useEffect(() => {
+    if (!switcherControl) return;
+    switcherControl.current = () => setSwitcherOpen(false);
+    return () => {
+      switcherControl.current = null;
+    };
+  }, [switcherControl]);
+
   const operationInFlight = useRef(false);
   const operationGeneration = useRef(0);
   const mounted = useRef(true);

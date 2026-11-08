@@ -331,6 +331,9 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   // pager. The header tabs and a horizontal swipe both slide between them, and
   // both stay mounted so a switch never reloads the document or the transcript.
   const [page, setPage] = useState(0);
+  // The conversation's session list dims the dock that lives outside the panel.
+  const [chatSwitcherOpen, setChatSwitcherOpen] = useState(false);
+  const chatSwitcherControl = useRef<(() => void) | null>(null);
   const pageX = useRef(new Animated.Value(0)).current;
   const pageRef = useRef(page);
   pageRef.current = page;
@@ -528,6 +531,8 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
               avoidKeyboard={false}
               showHeader={false}
               onRequestClose={closeAgent}
+              onSwitcherOpenChange={setChatSwitcherOpen}
+              switcherControl={chatSwitcherControl}
             />
           </View>
           {/* Same dock and same embedded composer as the document page. */}
@@ -539,6 +544,16 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
             ]}
           >
             <ChatInput variant="embedded" />
+            {chatSwitcherOpen ? (
+              <Pressable
+                style={StyleSheet.absoluteFill}
+                onPress={() => chatSwitcherControl.current?.()}
+                accessibilityRole="button"
+                accessibilityLabel="Close session list"
+              >
+                <View style={styles.dockScrim} />
+              </Pressable>
+            ) : null}
           </View>
         </View>
       </Animated.View>
@@ -790,6 +805,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: THEME.colors.text,
+  },
+  dockScrim: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(15,23,42,0.18)",
   },
   pageSheet: {
     flex: 1,
