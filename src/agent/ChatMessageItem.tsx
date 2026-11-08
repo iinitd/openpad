@@ -38,17 +38,17 @@ function StatusDot({ status }: { status: ToolCallItem["status"] }) {
  */
 const ActivityStep = memo(function ActivityStep({
   item,
-  latest,
+  defaultOpen,
   first,
 }: {
   item: ActivityItem;
-  latest: boolean;
+  defaultOpen: boolean;
   first: boolean;
 }) {
   const isThought = item.kind === "thought";
   const text = isThought ? item.text.trim() || "…" : item.name;
   const failed = item.kind === "tool_call" && item.status === "failed";
-  const [open, setOpen] = useState(latest);
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <View style={first ? undefined : styles.stepDivider}>
       <PressableRow
@@ -116,11 +116,10 @@ export const ActivityRow = memo(function ActivityRow({
   const summary = summarizeActivity(items);
   const headerLabel = summary?.label ?? "";
   const preview = summary?.preview ?? "";
-  // The sheet expands only the newest reasoning; earlier thinking stays clamped
-  // so a long run is still skimmable.
-  const latestThoughtId = [...items]
-    .reverse()
-    .find((entry) => entry.kind === "thought")?.id;
+  // The sheet opens the step the turn is actually on, and only when that step
+  // is reasoning: a run that ends on a command has nothing to read past its
+  // one-line row.
+  const autoOpenId = latest.kind === "thought" ? latest.id : null;
 
   return (
     <>
@@ -161,7 +160,7 @@ export const ActivityRow = memo(function ActivityRow({
           <ActivityStep
             key={item.id}
             item={item}
-            latest={item.id === latestThoughtId}
+            defaultOpen={item.id === autoOpenId}
             first={index === 0}
           />
         ))}
