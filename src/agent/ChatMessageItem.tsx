@@ -1,5 +1,5 @@
 import { memo, useState } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { Pressable, View, Text, StyleSheet } from "react-native";
 import { THEME } from "../styles/theme";
 import { PressableRow } from "../components/PressableRow";
 import { HalfSheet } from "../components/HalfSheet";
@@ -7,6 +7,7 @@ import { ActivityDot } from "../components/TypingDots";
 import { Icon } from "../components/Icon";
 import { MarkdownText } from "../components/MarkdownText";
 import { SelectableText } from "../components/SelectableText";
+import { hapticLongPress, SelectableSheet } from "../components/SelectableSheet";
 import { summarizeActivity } from "../hooks/use-agent-progress";
 import type { StreamItem, ThoughtItem, ToolCallItem } from "../types/stream";
 
@@ -34,57 +35,54 @@ function StatusDot({ status }: { status: ToolCallItem["status"] }) {
 }
 
 /**
- * One step inside the activity sheet: the kind on the left, the content on the
- * right, one line each. Reasoning expands in place (the newest starts open);
- * a tool call is already as long as it needs to be.
+ * The header line of one step in the activity sheet: the kind on the left, the
+ * content on the right, one line each. It is its own child of the sheet's
+ * scroll view so it can stay pinned while a long reasoning body scrolls under
+ * it.
  */
-const ActivityStep = memo(function ActivityStep({
+const ActivityStepHeader = memo(function ActivityStepHeader({
   item,
-  defaultOpen,
   first,
+  open,
+  onToggle,
 }: {
   item: ActivityItem;
-  defaultOpen: boolean;
   first: boolean;
+  open: boolean;
+  onToggle: () => void;
 }) {
   const isThought = item.kind === "thought";
   const text = isThought ? item.text.trim() || "…" : item.name;
   const failed = item.kind === "tool_call" && item.status === "failed";
-  const [open, setOpen] = useState(defaultOpen);
   return (
-    <View style={first ? undefined : styles.stepDivider}>
-      <PressableRow
-        style={styles.stepRow}
-        haptic="light"
-        scale={false}
-        disabled={!isThought}
-        onPress={() => setOpen((value) => !value)}
-        accessibilityRole={isThought ? "button" : undefined}
-        accessibilityLabel={
-          isThought ? (open ? "Collapse thinking" : "Expand thinking") : undefined
-        }
+    <PressableRow
+      style={[styles.stepRow, first ? null : styles.stepDivider]}
+      haptic="light"
+      scale={false}
+      disabled={!isThought}
+      onPress={onToggle}
+      accessibilityRole={isThought ? "button" : undefined}
+      accessibilityLabel={
+        isThought ? (open ? "Collapse thinking" : "Expand thinking") : undefined
+      }
+    >
+      <Text style={[styles.stepLabel, failed ? styles.stepFailed : null]}>
+        {isThought ? "Thinking" : "Tool"}
+      </Text>
+      <Text
+        style={[styles.stepPreview, failed ? styles.stepFailed : null]}
+        numberOfLines={1}
       >
-        <Text style={[styles.stepLabel, failed ? styles.stepFailed : null]}>
-          {isThought ? "Thinking" : "Tool"}
-        </Text>
-        <Text
-          style={[styles.stepPreview, failed ? styles.stepFailed : null]}
-          numberOfLines={1}
-        >
-          {text}
-        </Text>
-        {isThought ? (
-          <Icon
-            name={open ? "chevron-up" : "chevron-down"}
-            size={14}
-            color={THEME.colors.textMuted}
-          />
-        ) : null}
-      </PressableRow>
-      {isThought && open ? (
-        <SelectableText text={text} style={styles.stepBody} />
+        {text}
+      </Text>
+      {isThought ? (
+        <Icon
+          name={open ? "chevron-up" : "chevron-down"}
+          size={14}
+          color={THEME.colors.textMuted}
+        />
       ) : null}
-    </View>
+    </PressableRow>
   );
 });
 
@@ -120,6 +118,9 @@ export const ActivityRow = memo(function ActivityRow({
   // is reasoning: a run that ends on a command has nothing to read past its
   // one-line row.
   const autoOpenId = latest.kind === "thought" ? latest.id : null;
+  // Steps the reader has opened or closed by hand; everything else follows the
+  // automatic rule above.
+  const [manualOpen, setManualOpen] = useState<Record<string, boolean>>({});
 
   return (
     <>
@@ -160,16 +161,56 @@ export const ActivityRow = memo(function ActivityRow({
         title="Activity"
         onClose={() => setOpen(false)}
         scrollToEndOnOpen
+        // Header and body are separate children, two per step, so the headers
+        // sit at the even indices and stay pinned while their body scrolls.
+        stickyHeaderIndices={items.map((_, index) => index * 2)}
       >
-        {items.map((item, index) => (
-          <ActivityStep
-            key={item.id}
-            item={item}
-            defaultOpen={item.id === autoOpenId}
-            first={index === 0}
-          />
-        ))}
+        {items.flatMap((item, index) => {
+          const isThought = item.kind === "thought";
+          const expanded =
+            isThought && (manualOpen[item.id] ?? item.id === autoOpenId);
+          return [
+            <ActivityStepHeader
+              key={`${item.id}-header`}
+              item={item}
+              first={index === 0}
+              open={expanded}
+              onToggle={() => {
+                if (!isThought) return;
+                setManualOpen((prev) => ({ ...prev, [item.id]: !expanded }));
+              }}
+            />,
+            expanded ? (
+              <SelectableText
+                key={`${item.id}-body`}
+                text={item.text.trim() || "…"}
+                style={styles.stepBody}
+              />
+            ) : (
+              <View key={`${item.id}-body`} />
+            ),
+          ];
+        })}
       </HalfSheet>
+    </>
+  );
+});
+
+const UserBubble = memo(function UserBubble({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Pressable
+        style={[styles.message, styles.userMessage]}
+        delayLongPress={300}
+        onLongPress={() => {
+          hapticLongPress();
+          setOpen(true);
+        }}
+      >
+        <Text style={styles.userText}>{text}</Text>
+      </Pressable>
+      {open ? <SelectableSheet text={text} onClose={() => setOpen(false)} /> : null}
     </>
   );
 });
@@ -177,11 +218,9 @@ export const ActivityRow = memo(function ActivityRow({
 export const ChatMessageItem = memo(function ChatMessageItem({ item }: Props) {
   switch (item.kind) {
     case "user_message":
-      return (
-        <View style={[styles.message, styles.userMessage]}>
-          <Text style={styles.userText} selectable>{item.text}</Text>
-        </View>
-      );
+      // An image-only prompt carries no text; an empty bubble would read as a
+      // rendering fault.
+      return item.text.trim() ? <UserBubble text={item.text} /> : null;
     case "assistant_message":
       return (
         <View style={[styles.message, styles.assistantMessage]}>
@@ -330,6 +369,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: THEME.spacing.sm,
     paddingVertical: 9,
+    // Pinned headers must cover the text scrolling underneath them.
+    backgroundColor: THEME.colors.background,
   },
   // Fixed width so every step's content starts on the same column.
   stepLabel: {

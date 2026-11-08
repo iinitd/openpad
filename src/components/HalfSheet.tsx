@@ -15,6 +15,7 @@ export function HalfSheet({
   onClose,
   children,
   scrollToEndOnOpen = false,
+  stickyHeaderIndices,
 }: {
   visible: boolean;
   title: string;
@@ -22,6 +23,8 @@ export function HalfSheet({
   children: ReactNode;
   /** Progress sheets read newest-last; a text sheet starts at the top. */
   scrollToEndOnOpen?: boolean;
+  /** Pin the given children while the rest of the sheet scrolls. */
+  stickyHeaderIndices?: number[];
 }) {
   const { height } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
@@ -50,7 +53,7 @@ export function HalfSheet({
           accessibilityRole="button"
           accessibilityLabel="Close"
         />
-        <View style={[styles.sheet, { height: Math.round(height * 0.52) }]}>
+        <View style={[styles.sheet, { height: Math.round(height * 0.75) }]}>
           <View style={styles.handle} />
           <View style={styles.header}>
             <Text style={styles.title} numberOfLines={1}>
@@ -68,6 +71,7 @@ export function HalfSheet({
           <ScrollView
             ref={scrollRef}
             contentContainerStyle={styles.content}
+            stickyHeaderIndices={stickyHeaderIndices}
             keyboardShouldPersistTaps="handled"
             onScrollBeginDrag={() => {
               userTookOver.current = true;

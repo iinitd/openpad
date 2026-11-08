@@ -1,7 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import {
   Linking,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -9,10 +8,8 @@ import {
   type StyleProp,
   type TextStyle,
 } from "react-native";
-import * as Haptics from "expo-haptics";
 import { marked, type Token, type Tokens } from "marked";
-import { HalfSheet } from "./HalfSheet";
-import { SelectableText } from "./SelectableText";
+import { hapticLongPress, SelectableSheet } from "./SelectableSheet";
 import { THEME } from "../styles/theme";
 
 /**
@@ -30,14 +27,6 @@ import { THEME } from "../styles/theme";
  * the whole reply as plain text in a half sheet, where a real text view takes
  * over and range selection, handles and the edit menu all behave normally.
  */
-
-/** The bubble is one piece of writing: a long press anywhere reads all of it. */
-function openBubbleSheet(open: () => void) {
-  if (Platform.OS !== "web") {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  }
-  open();
-}
 
 function renderInline(tokens: Token[] | undefined, depth = 0): ReactNode[] {
   if (!tokens || depth > 8) return [];
@@ -366,7 +355,10 @@ export function MarkdownText({ text }: { text: string }) {
       <Pressable
         style={styles.root}
         delayLongPress={300}
-        onLongPress={() => openBubbleSheet(() => setSheetOpen(true))}
+        onLongPress={() => {
+          hapticLongPress();
+          setSheetOpen(true);
+        }}
       >
         {blocks.length > 0 ? (
           blocks
@@ -375,9 +367,7 @@ export function MarkdownText({ text }: { text: string }) {
         )}
       </Pressable>
       {sheetOpen ? (
-        <HalfSheet visible title="Text" onClose={() => setSheetOpen(false)}>
-          <SelectableText text={plain || text} style={styles.sheetText} />
-        </HalfSheet>
+        <SelectableSheet text={plain || text} onClose={() => setSheetOpen(false)} />
       ) : null}
     </>
   );
@@ -479,11 +469,6 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     fontSize: 13,
     lineHeight: 18,
-    color: THEME.colors.text,
-  },
-  sheetText: {
-    fontSize: 16,
-    lineHeight: 24,
     color: THEME.colors.text,
   },
   hr: {
