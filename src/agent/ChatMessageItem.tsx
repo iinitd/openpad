@@ -4,6 +4,7 @@ import { THEME } from "../styles/theme";
 import { PressableRow } from "../components/PressableRow";
 import { HalfSheet } from "../components/HalfSheet";
 import { ActivityDot } from "../components/TypingDots";
+import { summarizeActivity } from "../hooks/use-agent-progress";
 import type { StreamItem, ThoughtItem, ToolCallItem } from "../types/stream";
 
 interface Props {
@@ -51,20 +52,12 @@ export const ActivityRow = memo(function ActivityRow({
     (latest.kind === "thought"
       ? latest.status === "loading"
       : latest.status === "running");
-  // Prefer the newest thing the agent actually said over whatever it happens to
-  // be running: a row that only ever shows command names tells the reader
-  // nothing about the work.
-  const lastThought = [...items]
-    .reverse()
-    .find(
-      (entry): entry is ThoughtItem =>
-        entry.kind === "thought" && entry.text.trim().length > 0,
-    );
-  // The header reports the newest action honestly: reasoning says Thinking, a
-  // command says its own name. The quoted body is whatever the agent most
-  // recently reasoned about, so a command run still shows useful text.
-  const headerLabel = latest.kind === "thought" ? "Thinking" : latest.name;
-  const preview = lastThought ? lastThought.text.trim() : "";
+  // One implementation for the transcript row and the document banner: the
+  // header names the newest action honestly, the body carries the most recent
+  // reasoning, and a command name never stands in for the agent's own words.
+  const summary = summarizeActivity(items);
+  const headerLabel = summary?.label ?? "";
+  const preview = summary?.preview ?? "";
 
   return (
     <>
