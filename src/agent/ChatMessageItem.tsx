@@ -6,6 +6,7 @@ import { HalfSheet } from "../components/HalfSheet";
 import { ActivityDot } from "../components/TypingDots";
 import { Icon } from "../components/Icon";
 import { MarkdownText } from "../components/MarkdownText";
+import { SelectableText } from "../components/SelectableText";
 import { summarizeActivity } from "../hooks/use-agent-progress";
 import type { StreamItem, ThoughtItem, ToolCallItem } from "../types/stream";
 
@@ -81,9 +82,7 @@ const ActivityStep = memo(function ActivityStep({
         ) : null}
       </PressableRow>
       {isThought && open ? (
-        <Text style={styles.stepBody} selectable>
-          {text}
-        </Text>
+        <SelectableText text={text} style={styles.stepBody} />
       ) : null}
     </View>
   );
