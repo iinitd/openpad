@@ -30,6 +30,7 @@ function oneLine(text: string, max = 140): string {
 // thought, and finally to the running tool. `head` holds the streaming items so
 // we look there first, then the finalized `tail`.
 function latestSummary(items: StreamItem[]): string | null {
+  let sawToolCall = false;
   for (let i = items.length - 1; i >= 0; i--) {
     const item = items[i]!;
     if (item.kind === "assistant_message" && item.text.trim()) {
@@ -38,11 +39,13 @@ function latestSummary(items: StreamItem[]): string | null {
     if (item.kind === "thought" && item.text.trim()) {
       return oneLine(item.text);
     }
+    // Tool names say nothing about what the agent is producing, so keep looking
+    // for its own words. A turn that is only running commands reads as thinking.
     if (item.kind === "tool_call") {
-      return `Running ${item.name}…`;
+      sawToolCall = true;
     }
   }
-  return null;
+  return sawToolCall ? "Thinking…" : null;
 }
 
 // A short, live one-liner summarizing what the agent is doing right now. Drives
