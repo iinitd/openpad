@@ -351,7 +351,6 @@ export class OpenCodeEvents {
     // the snapshot, so the snapshot itself must not also contain assistant
     // messages that were still in flight when capture began.
     const captureSeq = journal.seq;
-    const startedAt = Date.now();
     let rows: unknown[] = [];
     // History must not claim coverage of events that arrived while it was being
     // read. Re-read once (twice at most) until the live sequence is stable.
@@ -360,14 +359,15 @@ export class OpenCodeEvents {
       rows = await this.sessions.fetchMessages(id, limit);
       if (journal.seq === seqBefore || attempt >= 2) break;
     }
-    // A message completed after capture started is rebuilt from its captured
-    // events. Keeping it here as well would duplicate text, reasoning or tool
-    // rows when the writer replays those events.
+    // Only a message that is still being written has nothing to offer: it has
+    // no completion time yet, and the live events will finish it. A completed
+    // message is fully persisted and belongs in the snapshot. Dropping the ones
+    // that finished just after the fetch began used to lose the final reply
+    // whenever a catch-up landed at the end of a turn.
     rows = rows.filter((row) => {
       const message = asRecord(row);
       if (asString(message.type) !== "assistant") return true;
-      const completed = asNumber(asRecord(message.time).completed);
-      return completed !== undefined && completed < startedAt;
+      return asNumber(asRecord(message.time).completed) !== undefined;
     });
     const entries: BackendTimelineEntry[] = [];
     for (const row of rows) {

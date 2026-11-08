@@ -601,6 +601,29 @@ async function hydrateAgentTimeline(args: {
     }
   }
 
+  // A reply that completed while history was being read can arrive twice: as a
+  // snapshot row and as a replayed live event. Keep the snapshot copy, which is
+  // the complete one.
+  const snapshotReplyIds = new Set(
+    restored.tail
+      .filter(
+        (item): item is Extract<StreamItem, { kind: "assistant_message" }> =>
+          item.kind === "assistant_message" && Boolean(item.messageId),
+      )
+      .map((item) => item.messageId!),
+  );
+  if (snapshotReplyIds.size > 0) {
+    restored = {
+      ...restored,
+      head: restored.head.filter(
+        (item) =>
+          item.kind !== "assistant_message" ||
+          !item.messageId ||
+          !snapshotReplyIds.has(item.messageId),
+      ),
+    };
+  }
+
   const canonicalMessageIds = new Set(
     [...restored.tail, ...restored.head]
       .filter(
