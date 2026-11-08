@@ -117,6 +117,7 @@ export function WorkspacePane({
     return () => { mounted.current = false; };
   }, []);
 
+  const singleSource = entries.length === 1;
   const sources = useMemo(() => entries.map((source) => {
     const contextKey = connections.find((connection) => connection.id === source.connectionId)?.contextKey;
     const recents = getBackendPreferences(contextKey ?? null).recentWorkspaces;
@@ -258,22 +259,25 @@ export function WorkspacePane({
         const addDisabled = Boolean(busyKey) || opening || isSwitchingConnection || !connected;
         return (
         <View key={source.connectionId} style={styles.sourceBlock}>
-          <Pressable
-            style={({ pressed }) => [styles.sourceHeader, pressed && styles.sourceHeaderPressed]}
-            onPress={() => preferences.toggleProjectSource(source.connectionId)}
-            accessibilityRole="button"
-            accessibilityLabel={`${collapsed ? "Expand" : "Collapse"} ${source.label}`}
-            accessibilityState={{ expanded: !collapsed }}
-            hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }}
-          >
-            <View pointerEvents="none">
-              <Icon name={collapsed ? "chevron-right" : "chevron-down"} size={15} color={THEME.colors.textSecondary} />
-            </View>
-            <View style={styles.sourceHeaderText} pointerEvents="none">
-              <Text style={styles.sourceLabel} numberOfLines={1}>{source.label}</Text>
-              <Text style={styles.rowAlias} numberOfLines={1}>{source.endpoint}</Text>
-            </View>
-          </Pressable>
+          {/* One connection is the normal case: the label already carries the
+              backend and host, and the endpoint line repeats it. */}
+          {singleSource ? null : (
+            <Pressable
+              style={({ pressed }) => [styles.sourceHeader, pressed && styles.sourceHeaderPressed]}
+              onPress={() => preferences.toggleProjectSource(source.connectionId)}
+              accessibilityRole="button"
+              accessibilityLabel={`${collapsed ? "Expand" : "Collapse"} ${source.label}`}
+              accessibilityState={{ expanded: !collapsed }}
+              hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }}
+            >
+              <View pointerEvents="none">
+                <Icon name={collapsed ? "chevron-right" : "chevron-down"} size={15} color={THEME.colors.textSecondary} />
+              </View>
+              <View style={styles.sourceHeaderText} pointerEvents="none">
+                <Text style={styles.sourceLabel} numberOfLines={1}>{source.label}</Text>
+              </View>
+            </Pressable>
+          )}
           {!collapsed ? <>
           {!source.workspacesLoaded ? <Text style={styles.loadingText}>Loading projects…</Text> : null}
           {source.workspacesError ? <Text style={styles.error}>Projects: {source.workspacesError}</Text> : null}
