@@ -736,7 +736,7 @@ const styles = StyleSheet.create({
     paddingBottom: THEME.spacing.sm,
     backgroundColor: THEME.colors.background,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#f0f0f2",
+    borderBottomColor: "#e6e6ea",
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
     shadowColor: "#18181b",

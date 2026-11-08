@@ -716,7 +716,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
     backgroundColor: THEME.colors.background,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#f0f0f2",
+    borderBottomColor: "#e6e6ea",
     zIndex: 40,
   },
   mobileTabAction: {
@@ -778,7 +778,7 @@ const styles = StyleSheet.create({
   composerDock: {
     backgroundColor: THEME.colors.background,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#f0f0f2",
+    borderTopColor: "#e6e6ea",
     paddingHorizontal: THEME.spacing.xl,
     paddingTop: THEME.spacing.md,
   },
@@ -809,7 +809,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: THEME.spacing.sm,
     paddingVertical: THEME.spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#f0f0f2",
+    borderBottomColor: "#e6e6ea",
   },
   filesColumnBackSpacer: {
     width: 26,
@@ -840,7 +840,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: THEME.spacing.lg,
     paddingVertical: THEME.spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#f0f0f2",
+    borderBottomColor: "#e6e6ea",
   },
   pageSheetClose: {
     width: 36,

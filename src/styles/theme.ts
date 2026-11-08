@@ -10,7 +10,7 @@ export const THEME = {
     background: "#ffffff",
     backgroundSecondary: "#fafafa",
     surface: "#f4f4f5",
-    border: "#e9e9ec",
+    border: "#e2e2e7",
     text: "#18181b",
     textSecondary: "#71717a",
     textMuted: "#a1a1aa",

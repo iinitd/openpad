@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     position: "relative",
     zIndex: 20,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#f0f0f2",
+    borderBottomColor: "#e6e6ea",
     backgroundColor: THEME.colors.background,
   },
   titleBar: {
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     zIndex: 21,
     borderWidth: StyleSheet.hairlineWidth,
     borderTopWidth: 0,
-    borderColor: "#f0f0f2",
+    borderColor: "#e6e6ea",
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
     backgroundColor: THEME.colors.background,

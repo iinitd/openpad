@@ -108,7 +108,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: THEME.colors.background,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#f0f0f2",
+    borderBottomColor: "#e6e6ea",
     zIndex: 30,
   },
   headerSide: {

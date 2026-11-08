@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
     backgroundColor: THEME.colors.background,
     borderLeftWidth: StyleSheet.hairlineWidth,
-    borderLeftColor: "#f0f0f2",
+    borderLeftColor: "#e6e6ea",
   },
   header: {
     flexDirection: "row",
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: THEME.spacing.sm,
     paddingVertical: THEME.spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#f0f0f2",
+    borderBottomColor: "#e6e6ea",
   },
   back: {
     width: 26,
