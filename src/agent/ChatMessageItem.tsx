@@ -1,8 +1,9 @@
 import { memo, useState } from "react";
-import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { THEME } from "../styles/theme";
 import { PressableRow } from "../components/PressableRow";
 import { HalfSheet } from "../components/HalfSheet";
+import { TypingDots } from "../components/TypingDots";
 import type { StreamItem, ThoughtItem, ToolCallItem } from "../types/stream";
 
 interface Props {
@@ -53,7 +54,7 @@ export const ActivityRow = memo(function ActivityRow({
       >
         <View style={styles.toolMessage}>
           {live ? (
-            <ActivityIndicator size="small" color={THEME.colors.textMuted} style={styles.toolSpinner} />
+            <TypingDots color={THEME.colors.textMuted} />
           ) : latest.kind === "tool_call" ? (
             <Text style={styles.toolGlyph}>{toolGlyph(latest.status)}</Text>
           ) : (
@@ -210,10 +211,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-  },
-  toolSpinner: {
-    transform: [{ scale: 0.7 }],
-    marginRight: -2,
   },
   toolGlyph: {
     color: THEME.colors.textMuted,

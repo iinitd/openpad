@@ -1,17 +1,9 @@
-import { useEffect, useRef } from "react";
-import {
-  Animated,
-  Easing,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Polygon, Polyline } from "react-native-svg";
 import { useSessionStore } from "../stores/session-store";
 import { useAgentProgressSummary } from "../hooks/use-agent-progress";
 import { THEME } from "../styles/theme";
+import { TypingDots } from "../components/TypingDots";
 
 // Host-level "agent is working" banner. Rendered above the active preview
 // Renderer (markdown, web-preview, lark-working-copy, …) so every plugin
@@ -23,50 +15,6 @@ interface ContentActivityBannerProps {
   onPress?: () => void;
 }
 
-function TypingIndicator() {
-  const phase = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    phase.setValue(0);
-    const animation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(phase, {
-          toValue: 3,
-          duration: 900,
-          easing: Easing.linear,
-          useNativeDriver: Platform.OS !== "web",
-        }),
-        Animated.delay(140),
-      ]),
-    );
-    animation.start();
-    return () => animation.stop();
-  }, [phase]);
-
-  return (
-    <View style={styles.typingIndicator} accessible={false}>
-      {[0, 1, 2].map((index) => {
-        const peak = 0.4 + index * 0.8;
-        const inputRange = [0, peak - 0.3, peak, peak + 0.3, 3];
-        const opacity = phase.interpolate({
-          inputRange,
-          outputRange: [0.38, 0.38, 1, 0.38, 0.38],
-        });
-        const translateY = phase.interpolate({
-          inputRange,
-          outputRange: [0, 0, -2, 0, 0],
-        });
-        return (
-          <Animated.View
-            key={index}
-            style={[styles.typingDot, { opacity, transform: [{ translateY }] }]}
-          />
-        );
-      })}
-    </View>
-  );
-}
-
 export function ContentActivityBanner({ onPress }: ContentActivityBannerProps) {
   const running = useSessionStore((state) => state.isStreaming);
   const progress = useAgentProgressSummary();
@@ -75,7 +23,7 @@ export function ContentActivityBanner({ onPress }: ContentActivityBannerProps) {
   const tappable = !!onPress;
   const inner = (
     <>
-      <TypingIndicator />
+      <TypingDots />
       <Text style={styles.summary} numberOfLines={2} ellipsizeMode="tail">
         {summary}
       </Text>
@@ -145,19 +93,6 @@ const styles = StyleSheet.create({
   },
   contentPressed: {
     opacity: 0.68,
-  },
-  typingIndicator: {
-    width: 20,
-    height: 18,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  typingDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: THEME.colors.textSecondary,
   },
   // The 18px SVG sits 15px from the edge, so its centre lands exactly 24px
   // from the right — the centre of the Host's Agent action. Its outline is an

@@ -471,13 +471,6 @@ export const AgentChatPanel = memo(function AgentChatPanel({
                 <Text style={styles.mobileHeaderTitle} numberOfLines={1}>
                   {sessionTitle}
                 </Text>
-                {isStreaming ? (
-                  <ActivityIndicator
-                    size="small"
-                    color={THEME.colors.textMuted}
-                    style={styles.mobileHeaderSpinner}
-                  />
-                ) : null}
                 <Icon
                   name={switcherOpen ? "chevron-up" : "chevron-down"}
                   size={16}
@@ -714,10 +707,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: THEME.colors.text,
     maxWidth: 220,
-  },
-  mobileHeaderSpinner: {
-    transform: [{ scale: 0.7 }],
-    marginHorizontal: -2,
   },
   // Session switcher drops a slim list under the header when expanded. Lives
   // directly under the title bar, so switching feels contiguous with the title.
