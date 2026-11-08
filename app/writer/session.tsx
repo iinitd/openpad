@@ -508,22 +508,17 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
     if (filesMountedRef.current || projectsMountedRef.current) return false;
     const horizontal = Math.abs(g.dx) > 10 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5;
     if (!horizontal) return false;
-    const startX = g.moveX - g.dx;
-    if (pageRef.current === 0 && g.dx > 0 && startX <= SWIPE_EDGE_ZONE) return false;
-    if (pageRef.current === 1 && g.dx < 0 && startX >= screenWidthRef.current - SWIPE_EDGE_ZONE) {
-      return false;
-    }
     return true;
   };
 
-  // On the chat page the right edge belongs to the projects drawer.
-  const shouldClaimProjectsEdge = (_evt: unknown, g: { dx: number; dy: number; moveX: number }) => {
+  // Mirror on the chat page: a leftward drag opens projects, since the only
+  // page to the left is where a rightward drag already goes.
+  const shouldClaimProjectsEdge = (_evt: unknown, g: { dx: number; dy: number }) => {
     if (projectsMountedRef.current || filesMountedRef.current) return false;
     if (pageRef.current !== 1) return false;
     const horizontal = Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6;
     if (!horizontal) return false;
-    const startX = g.moveX - g.dx;
-    return g.dx < 0 && startX >= screenWidthRef.current - SWIPE_EDGE_ZONE;
+    return g.dx < 0;
   };
 
   useEffect(() => {
@@ -601,15 +596,14 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
     }
   }, []);
 
-  const shouldClaimEdgeSwipe = (_evt: unknown, g: { dx: number; dy: number; moveX: number }) => {
+  // A rightward drag anywhere on the document page opens the files drawer;
+  // there is no page to the right, so that direction is free.
+  const shouldClaimEdgeSwipe = (_evt: unknown, g: { dx: number; dy: number }) => {
     if (filesMountedRef.current) return false;
-    // The left edge is only the drawer edge while the document page is showing;
-    // on the chat page it pages back instead.
     if (pageRef.current !== 0) return false;
     const horizontal = Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6;
     if (!horizontal) return false;
-    const startX = g.moveX - g.dx;
-    return g.dx > 0 && startX <= SWIPE_EDGE_ZONE;
+    return g.dx > 0;
   };
 
   // One responder owns both edges: a rightward drag from the left edge opens the
@@ -793,27 +787,29 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         >
           <Icon name="folder" size={20} color={THEME.colors.textSecondary} />
         </PressableRow>
-        <View style={styles.mobileTabSegments}>
-          <PressableRow
-            style={[styles.mobileTab, page === 0 && styles.mobileTabActive]}
-            onPress={() => goToPage(0)}
-            haptic="light"
-            accessibilityLabel="Show document"
-          >
-            <Text style={[styles.mobileTabLabel, page === 0 && styles.mobileTabLabelActive]}>
-              Document
-            </Text>
-          </PressableRow>
-          <PressableRow
-            style={[styles.mobileTab, page === 1 && styles.mobileTabActive]}
-            onPress={() => goToPage(1)}
-            haptic="light"
-            accessibilityLabel="Show conversation"
-          >
-            <Text style={[styles.mobileTabLabel, page === 1 && styles.mobileTabLabelActive]}>
-              Chat
-            </Text>
-          </PressableRow>
+        <View style={styles.mobileTabCenter}>
+          <View style={styles.mobileTabSegments}>
+            <PressableRow
+              style={[styles.mobileTab, page === 0 && styles.mobileTabActive]}
+              onPress={() => goToPage(0)}
+              haptic="light"
+              accessibilityLabel="Show document"
+            >
+              <Text style={[styles.mobileTabLabel, page === 0 && styles.mobileTabLabelActive]}>
+                Document
+              </Text>
+            </PressableRow>
+            <PressableRow
+              style={[styles.mobileTab, page === 1 && styles.mobileTabActive]}
+              onPress={() => goToPage(1)}
+              haptic="light"
+              accessibilityLabel="Show conversation"
+            >
+              <Text style={[styles.mobileTabLabel, page === 1 && styles.mobileTabLabelActive]}>
+                Chat
+              </Text>
+            </PressableRow>
+          </View>
         </View>
         <PressableRow
           style={styles.mobileTabAction}
@@ -1002,7 +998,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     height: 44,
-    paddingHorizontal: THEME.spacing.xs,
+    paddingHorizontal: 0,
     backgroundColor: THEME.colors.background,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#f0f0f2",
@@ -1014,10 +1010,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  mobileTabSegments: {
+  mobileTabCenter: {
     flex: 1,
-    maxWidth: 240,
-    alignSelf: "center",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  mobileTabSegments: {
+    width: 220,
     flexDirection: "row",
     gap: 2,
     padding: 2,
