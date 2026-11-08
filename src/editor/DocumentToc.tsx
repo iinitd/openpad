@@ -55,11 +55,13 @@ export function DocumentToc({
           {title}
         </Text>
         {hasToc ? (
-          <Icon
-            name="list"
-            size={16}
-            color={open ? THEME.colors.text : THEME.colors.textMuted}
-          />
+          <View style={styles.titleIcon} pointerEvents="none">
+            <Icon
+              name="list"
+              size={16}
+              color={open ? THEME.colors.text : THEME.colors.textMuted}
+            />
+          </View>
         ) : null}
       </TouchableOpacity>
 
@@ -114,19 +116,28 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.background,
   },
   titleBar: {
-    flexDirection: "row",
+    position: "relative",
     alignItems: "center",
-    justifyContent: "space-between",
-    gap: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.sm,
+    justifyContent: "center",
+    paddingHorizontal: 48,
+    paddingVertical: THEME.spacing.xs + 2,
   },
   titleText: {
-    flex: 1,
+    width: "100%",
+    textAlign: "center",
     fontSize: 16,
     fontWeight: "600",
     letterSpacing: -0.01,
     color: THEME.colors.text,
+  },
+  // The outline toggle floats at the trailing edge so the title can sit on the
+  // screen's centre line, matching the conversation header.
+  titleIcon: {
+    position: "absolute",
+    right: THEME.spacing.lg,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
   },
   // Keep the title bar in the document flow, but float the outline over the
   // document so opening it never shifts the rendered Markdown.
