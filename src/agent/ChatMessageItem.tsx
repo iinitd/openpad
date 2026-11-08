@@ -31,6 +31,36 @@ function StatusDot({ status }: { status: ToolCallItem["status"] }) {
 }
 
 /**
+ * One reasoning step inside the activity sheet. The newest one is shown in
+ * full; older history is clamped and expands on tap, so a long run does not
+ * turn into a wall of text.
+ */
+const SheetThought = memo(function SheetThought({
+  text,
+  latest,
+}: {
+  text: string;
+  latest: boolean;
+}) {
+  const [open, setOpen] = useState(latest);
+  return (
+    <PressableRow
+      haptic="light"
+      scale={false}
+      disabled={latest}
+      onPress={() => setOpen((value) => !value)}
+      accessibilityRole={latest ? undefined : "button"}
+      accessibilityLabel={latest ? undefined : "Toggle thinking"}
+    >
+      <Text style={styles.sheetLabel}>Thinking</Text>
+      <Text style={styles.sheetText} numberOfLines={open ? undefined : 3}>
+        {text.trim() || "…"}
+      </Text>
+    </PressableRow>
+  );
+});
+
+/**
  * A run of reasoning and tool calls, in the order they happened. Collapsed it
  * is one two-line row built from the newest step; expanding opens a half sheet
  * with the whole run, each step labelled and separated.
@@ -58,6 +88,11 @@ export const ActivityRow = memo(function ActivityRow({
   const summary = summarizeActivity(items);
   const headerLabel = summary?.label ?? "";
   const preview = summary?.preview ?? "";
+  // The sheet expands only the newest reasoning; earlier thinking stays clamped
+  // so a long run is still skimmable.
+  const latestThoughtId = [...items]
+    .reverse()
+    .find((entry) => entry.kind === "thought")?.id;
 
   return (
     <>
@@ -94,27 +129,46 @@ export const ActivityRow = memo(function ActivityRow({
         ) : null}
       </PressableRow>
       <HalfSheet visible={open} title="Activity" onClose={() => setOpen(false)}>
-        {items.map((item, index) => (
-          <View key={item.id} style={index > 0 ? styles.sheetSegment : undefined}>
-            <Text style={styles.sheetLabel}>
-              {item.kind === "thought" ? "Thinking" : "Tool"}
-            </Text>
-            {item.kind === "thought" ? (
-              <Text style={styles.sheetText} selectable>
-                {item.text.trim() || "…"}
-              </Text>
-            ) : (
-              <View style={styles.sheetToolRow}>
-                <View style={styles.sheetToolDotWrap}>
-                  <StatusDot status={item.status} />
+        {items.map((item, index) => {
+          const previous = index > 0 ? items[index - 1]! : null;
+          // Consecutive tool calls read as one dense list; only a change of
+          // kind earns a divider and the room that comes with it.
+          const separated =
+            previous !== null &&
+            (previous.kind === "thought" || item.kind === "thought");
+          return (
+            <View
+              key={item.id}
+              style={
+                separated
+                  ? styles.sheetSegment
+                  : index > 0
+                    ? styles.sheetTight
+                    : undefined
+              }
+            >
+              {item.kind === "thought" ? (
+                <SheetThought
+                  text={item.text}
+                  latest={item.id === latestThoughtId}
+                />
+              ) : (
+                <View style={styles.sheetToolRow}>
+                  <View style={styles.sheetToolDotWrap}>
+                    <StatusDot status={item.status} />
+                  </View>
+                  <Text
+                    style={styles.sheetToolName}
+                    numberOfLines={1}
+                    selectable
+                  >
+                    {item.name}
+                  </Text>
                 </View>
-                <Text style={styles.sheetToolName} selectable>
-                  {item.name}
-                </Text>
-              </View>
-            )}
-          </View>
-        ))}
+              )}
+            </View>
+          );
+        })}
       </HalfSheet>
     </>
   );
@@ -286,6 +340,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 21,
     color: THEME.colors.text,
+  },
+  sheetTight: {
+    marginTop: 6,
   },
   sheetSegment: {
     marginTop: THEME.spacing.lg,
