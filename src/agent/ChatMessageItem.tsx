@@ -68,7 +68,7 @@ export const ActivityRow = memo(function ActivityRow({
         accessibilityRole="button"
         accessibilityLabel="Show agent activity"
       >
-        <View style={styles.toolMessage}>
+        <View style={[styles.toolMessage, { gap: live ? 8 : 4 }]}>
           <ActivityDot
             running={live}
             color={
@@ -208,7 +208,6 @@ const styles = StyleSheet.create({
   toolMessage: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
   },
   statusDot: {
     width: 4,
