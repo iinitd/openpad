@@ -5,6 +5,7 @@ import {
   Text,
   ActivityIndicator,
   Pressable,
+  Modal,
   StyleSheet,
   Animated,
   Easing,
@@ -420,18 +421,15 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
     screenWidth * MOBILE_DRAWER_SCREEN_RATIO,
     MOBILE_DRAWER_MAX_WIDTH,
   );
-  const { height: screenHeight } = useWindowDimensions();
-  const sheetHeight = Math.min(Math.round(screenHeight * 0.55), 560);
   const [filesOpen, setFilesOpen] = useState(false);
   const [filesMounted, setFilesMounted] = useState(false);
   // Shadows on a transformed layer are re-rasterised on iOS every frame; drop
   // the shadow while the finger is down and restore it on release.
   const [drawerDragging, setDrawerDragging] = useState(false);
   const slideX = useRef(new Animated.Value(-drawerWidth)).current;
-  // Projects live in a mirrored drawer on the right edge.
+  // Projects present as a native page sheet: the document stays visible, scaled
+  // back behind the card, and iOS owns the slide and the swipe-to-dismiss.
   const [projectsOpen, setProjectsOpen] = useState(false);
-  const [projectsMounted, setProjectsMounted] = useState(false);
-  const projectsY = useRef(new Animated.Value(sheetHeight)).current;
   // Two full-width pages — document and conversation — live side by side in a
   // pager. The header tabs and a horizontal swipe both slide between them, and
   // both stay mounted so a switch never reloads the document or the transcript.
@@ -446,7 +444,6 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   useEffect(() => {
     const timer = setTimeout(() => {
       setFilesMounted(true);
-      setProjectsMounted(true);
     }, 1200);
     return () => clearTimeout(timer);
   }, []);
@@ -462,7 +459,6 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   const openProjects = useCallback(() => {
     Keyboard.dismiss();
     setFilesOpen(false);
-    setProjectsMounted(true);
     setProjectsOpen(true);
   }, []);
   const closeProjects = useCallback(() => {
@@ -524,23 +520,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
 
 
 
-  useEffect(() => {
-    if (projectsOpen) {
-      Animated.timing(projectsY, {
-        toValue: 0,
-        duration: 260,
-        easing: Easing.bezier(0.32, 0.72, 0, 1),
-        useNativeDriver: Platform.OS !== "web",
-      }).start();
-    } else if (projectsMounted) {
-      Animated.timing(projectsY, {
-        toValue: sheetHeight,
-        duration: 220,
-        easing: Easing.bezier(0.32, 0.72, 0, 1),
-        useNativeDriver: Platform.OS !== "web",
-      }).start();
-    }
-  }, [projectsMounted, projectsOpen, projectsY, sheetHeight]);
+
 
   // Backdrop dims in step with the slide (0 when off-screen → 1 when open).
   const backdropOpacity = slideX.interpolate({
@@ -548,10 +528,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
     outputRange: [0, 1],
   });
 
-  const projectsBackdropOpacity = projectsY.interpolate({
-    inputRange: [0, sheetHeight],
-    outputRange: [1, 0],
-  });
+
 
   const filesMountedRef = useRef(filesMounted);
   filesMountedRef.current = filesMounted;
@@ -616,8 +593,6 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   const activeSwipeRef = useRef<"files" | "page" | null>(null);
   const screenWidthRef = useRef(screenWidth);
   screenWidthRef.current = screenWidth;
-  const projectsMountedRef = useRef(projectsMounted);
-  projectsMountedRef.current = projectsMounted;
   const dragPageStartRef = useRef(0);
   const goToPageRef = useRef(goToPage);
   goToPageRef.current = goToPage;
@@ -634,44 +609,6 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
     return false;
   };
 
-  // Drag the sheet down by its header to dismiss it. Attached to the header
-  // only, so the list underneath keeps its own vertical scrolling.
-  const sheetHeightRef = useRef(sheetHeight);
-  sheetHeightRef.current = sheetHeight;
-
-  const sheetCloseResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_evt, g) =>
-        g.dy > 6 && Math.abs(g.dy) > Math.abs(g.dx) * 1.2,
-      onMoveShouldSetPanResponderCapture: (_evt, g) =>
-        g.dy > 6 && Math.abs(g.dy) > Math.abs(g.dx) * 1.2,
-      onPanResponderMove: (_evt, g) => {
-        projectsY.setValue(Math.max(0, Math.min(sheetHeightRef.current, g.dy)));
-      },
-      onPanResponderRelease: (_evt, g) => {
-        if (g.dy > sheetHeightRef.current * 0.25 || g.vy > 0.5) {
-          setProjectsOpen(false);
-          return;
-        }
-        Animated.timing(projectsY, {
-          toValue: 0,
-          duration: 200,
-          easing: Easing.bezier(0.32, 0.72, 0, 1),
-          useNativeDriver: Platform.OS !== "web",
-        }).start();
-      },
-      onPanResponderTerminate: () => {
-        Animated.timing(projectsY, {
-          toValue: 0,
-          duration: 200,
-          easing: Easing.bezier(0.32, 0.72, 0, 1),
-          useNativeDriver: Platform.OS !== "web",
-        }).start();
-      },
-    }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  ).current;
-
   const swipeResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: claimSwipe,
@@ -680,7 +617,6 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         // A settle animation may still be running from the previous gesture;
         // let the finger take over instead of fighting it frame by frame.
         slideX.stopAnimation();
-        projectsY.stopAnimation();
         pageX.stopAnimation();
         if (activeSwipeRef.current === "files") {
           setDrawerDragging(true);
@@ -919,49 +855,39 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         </View>
       ) : null}
 
-      {/* Projects bottom sheet: half-height, rounded top corners, opened from
-          the header control. No edge gesture — horizontal swipes stay dedicated
-          to page switching. */}
-      {projectsMounted ? (
-        <View style={[StyleSheet.absoluteFill, styles.drawerLayer]} pointerEvents="box-none">
-          <Animated.View
-            style={[styles.drawerBackdrop, WEB_DRAWER_BACKDROP_STYLE, { opacity: projectsBackdropOpacity }]}
-            pointerEvents={projectsOpen ? "auto" : "none"}
-          >
-            <Pressable
-              style={styles.drawerBackdropTouch}
-              accessibilityRole="button"
+      {/* Projects as a native page sheet: iOS slides it up over the document,
+          scales the presenting screen back and owns the swipe-to-dismiss. */}
+      <Modal
+        visible={projectsOpen}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={closeProjects}
+      >
+        <View style={[styles.projectsModal, { paddingTop: insets.top }]}>
+          <View style={styles.projectsModalHeader}>
+            <Text style={styles.sheetTitle}>Projects</Text>
+            <PressableRow
+              style={styles.projectsModalClose}
+              onPress={closeProjects}
+              haptic="light"
               accessibilityLabel="Close projects"
-              onPressIn={closeProjects}
-            />
-          </Animated.View>
-          <Animated.View
-            style={[
-              styles.projectsSheet,
-              WEB_DRAWER_SURFACE_STYLE,
-              { height: sheetHeight, paddingBottom: insets.bottom, transform: [{ translateY: projectsY }] },
-            ]}
-          >
-            <View {...sheetCloseResponder.panHandlers}>
-              <View style={styles.sheetGrip} />
-              <View style={styles.sheetHeader}>
-                <Text style={styles.sheetTitle}>Projects</Text>
-              </View>
-            </View>
-            <FileTree
-              mode="projects"
-              showHeader={false}
-              showSettingsFooter
-              bottomInset={0}
-              onCloseDrawer={closeProjects}
-              onFileOpened={() => {
-                closeProjects();
-                showDocument();
-              }}
-            />
-          </Animated.View>
+            >
+              <Icon name="close" size={18} color={THEME.colors.textSecondary} />
+            </PressableRow>
+          </View>
+          <FileTree
+            mode="projects"
+            showHeader={false}
+            showSettingsFooter
+            bottomInset={insets.bottom}
+            onCloseDrawer={closeProjects}
+            onFileOpened={() => {
+              closeProjects();
+              showDocument();
+            }}
+          />
         </View>
-      ) : null}
+      </Modal>
     </View>
   );
 }
@@ -1096,29 +1022,25 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
     elevation: 0,
   },
-  projectsSheet: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
+  projectsModal: {
+    flex: 1,
     backgroundColor: THEME.colors.background,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#f0f0f2",
-    shadowColor: "#18181b",
-    shadowOffset: { width: 0, height: -8 },
-    shadowOpacity: 0.1,
-    shadowRadius: 20,
-    elevation: 12,
   },
-  sheetGrip: {
-    alignSelf: "center",
+  projectsModalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: THEME.spacing.lg,
+    paddingVertical: THEME.spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#f0f0f2",
+  },
+  projectsModalClose: {
     width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: THEME.colors.border,
-    marginTop: THEME.spacing.sm,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: THEME.radii.md,
   },
   drawerBackdrop: {
     position: "absolute",
