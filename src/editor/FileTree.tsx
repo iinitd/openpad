@@ -147,8 +147,12 @@ export const FileTree = memo(function FileTree({
   showSettingsFooter = false,
   onCloseDrawer,
   bottomInset = 0,
+  mode,
 }: {
   onFileOpened?: () => void;
+  // Pin the sidebar to one pane (the mobile drawers each show a single one) and
+  // hide the tab strip; without it the tree keeps its own Files/Projects tabs.
+  mode?: "files" | "projects";
   // The mobile overlay supplies its own header, so it hides the built-in one.
   showHeader?: boolean;
   // Mobile app sidebar pins a Settings entry at the bottom; the desktop pane
@@ -189,8 +193,9 @@ export const FileTree = memo(function FileTree({
   const agentEditingCwd = reviseTarget?.cwd ?? null;
 
   // Keep the selected tab across drawer remounts, projects and app restarts.
-  const tab = usePreferencesStore((state) => state.sidebarTab);
+  const storedTab = usePreferencesStore((state) => state.sidebarTab);
   const setTab = usePreferencesStore((state) => state.setSidebarTab);
+  const tab = mode ?? storedTab;
 
   // Reveal the currently-open document by expanding its ancestor directories,
   // so the tree opens focused on the active file rather than fully collapsed.
@@ -242,6 +247,7 @@ export const FileTree = memo(function FileTree({
         </View>
       ) : null}
 
+      {mode ? null : (
       <View style={styles.tabBar}>
         <TouchableOpacity
           onPress={() => setTab("files")}
@@ -262,6 +268,7 @@ export const FileTree = memo(function FileTree({
           </Text>
         </TouchableOpacity>
       </View>
+      )}
 
       {tab === "projects" ? (
         <WorkspacePane bottomInset={bottomInset} onSwitched={onFileOpened} />
