@@ -3,8 +3,8 @@ import { Animated, Easing, Platform, StyleSheet, View } from "react-native";
 import { THEME } from "../styles/theme";
 
 const DOT = 4;
-const SLOT = 16;
-const GAP = 2;
+const SLOT = 18;
+const GAP = 3;
 // Distance from the centre dot to where each outer dot rests.
 const SIDE_OFFSET = DOT + GAP;
 
@@ -95,11 +95,21 @@ export function ActivityDot({
     return () => animation.stop();
   }, [phase, running]);
 
+  const peakOf = (index: number) => 0.4 + index * 0.8;
+
   const pulse = (index: number) => {
-    const peak = 0.4 + index * 0.8;
+    const peak = peakOf(index);
     return phase.interpolate({
       inputRange: [0, peak - 0.3, peak, peak + 0.3, 3],
       outputRange: [0.45, 0.45, 1, 0.45, 0.45],
+    });
+  };
+
+  const bounce = (index: number) => {
+    const peak = peakOf(index);
+    return phase.interpolate({
+      inputRange: [0, peak - 0.3, peak, peak + 0.3, 3],
+      outputRange: [0, 0, -2, 0, 0],
     });
   };
 
@@ -121,11 +131,26 @@ export function ActivityDot({
   return (
     <View style={styles.slot} accessible={false}>
       <Animated.View style={{ opacity: expand, transform: [{ translateX: slide(-1) }] }}>
-        <Animated.View style={[styles.dot, { backgroundColor: color, opacity: pulse(0) }]} />
+        <Animated.View
+          style={[
+            styles.dot,
+            { backgroundColor: color, opacity: pulse(0), transform: [{ translateY: bounce(0) }] },
+          ]}
+        />
       </Animated.View>
-      <Animated.View style={[styles.dot, { backgroundColor: color, opacity: centerOpacity }]} />
+      <Animated.View
+        style={[
+          styles.dot,
+          { backgroundColor: color, opacity: centerOpacity, transform: [{ translateY: bounce(1) }] },
+        ]}
+      />
       <Animated.View style={{ opacity: expand, transform: [{ translateX: slide(1) }] }}>
-        <Animated.View style={[styles.dot, { backgroundColor: color, opacity: pulse(2) }]} />
+        <Animated.View
+          style={[
+            styles.dot,
+            { backgroundColor: color, opacity: pulse(2), transform: [{ translateY: bounce(2) }] },
+          ]}
+        />
       </Animated.View>
     </View>
   );
