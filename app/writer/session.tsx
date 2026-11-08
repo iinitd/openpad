@@ -425,8 +425,10 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   // covers the home-indicator area — drop the safe-area bottom then, so there
   // is no empty gap between the input and the keyboard.
   const keyboardOpen = keyboardInset > 0;
+  // With the keyboard up the dock's bottom padding is the visible gap between
+  // the pill and the keyboard, so match the 12pt above it.
   const dockPadBottom = keyboardOpen
-    ? keyboardInset + THEME.spacing.lg
+    ? keyboardInset + THEME.spacing.md
     : Math.max(insets.bottom, THEME.spacing.lg) + THEME.spacing.lg;
 
   // Plugin ids drive the composer selection: a file-scope plugin ("markdown",
