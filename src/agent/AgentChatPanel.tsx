@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Pressable,
   TouchableOpacity,
 } from "react-native";
 import {
@@ -394,6 +395,7 @@ export const AgentChatPanel = memo(function AgentChatPanel({
       ) : onRequestClose ? (
         <>
           <View style={styles.mobileHeader}>
+            <View style={styles.mobileHeaderSide} />
             <TouchableOpacity
               style={styles.mobileHeaderCenter}
               activeOpacity={0.6}
@@ -402,35 +404,40 @@ export const AgentChatPanel = memo(function AgentChatPanel({
               accessibilityState={{ expanded: switcherOpen }}
               onPress={() => setSwitcherOpen((v) => !v)}
             >
-              <Text style={styles.mobileHeaderTitle} numberOfLines={1}>
-                {sessionTitle}
-              </Text>
-              {isStreaming ? (
-                <ActivityIndicator
-                  size="small"
-                  color={THEME.colors.textMuted}
-                  style={styles.mobileHeaderSpinner}
+              {/* The caret hangs off the title without shifting it: the group is
+                  nudged right by half the caret width so the text itself sits on
+                  the screen's centre line. */}
+              <View style={styles.mobileHeaderTitleGroup}>
+                <Text style={styles.mobileHeaderTitle} numberOfLines={1}>
+                  {sessionTitle}
+                </Text>
+                {isStreaming ? (
+                  <ActivityIndicator
+                    size="small"
+                    color={THEME.colors.textMuted}
+                    style={styles.mobileHeaderSpinner}
+                  />
+                ) : null}
+                <Icon
+                  name={switcherOpen ? "chevron-up" : "chevron-down"}
+                  size={16}
+                  color={THEME.colors.textSecondary}
                 />
-              ) : null}
-              <Icon
-                name={switcherOpen ? "chevron-up" : "chevron-down"}
-                size={16}
-                color={THEME.colors.textSecondary}
-              />
+              </View>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.mobileHeaderAction}
-              activeOpacity={0.6}
-              accessibilityRole="button"
-              accessibilityLabel="Close conversation"
-              onPress={onRequestClose}
-            >
-              <Icon name="close" size={20} color={THEME.colors.textSecondary} />
-            </TouchableOpacity>
+            <View style={styles.mobileHeaderSide} />
           </View>
         </>
       ) : null}
 
+      {(showHeader || onRequestClose) && switcherOpen ? (
+        <Pressable
+          style={styles.switcherBackdrop}
+          onPress={() => setSwitcherOpen(false)}
+          accessibilityRole="button"
+          accessibilityLabel="Close session list"
+        />
+      ) : null}
       {(showHeader || onRequestClose) && switcherOpen ? (
         <View style={styles.switcherPanel}>
           <View style={styles.switcherHeading}>
@@ -593,19 +600,20 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: THEME.colors.border,
   },
-  mobileHeaderCenter: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: THEME.spacing.xs,
-  },
-  mobileHeaderAction: {
+  mobileHeaderSide: {
     width: 32,
     height: 32,
+  },
+  mobileHeaderCenter: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 8,
+  },
+  mobileHeaderTitleGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: THEME.spacing.xs,
+    transform: [{ translateX: 10 }],
   },
   mobileHeaderTitle: {
     fontSize: 17,
@@ -619,18 +627,35 @@ const styles = StyleSheet.create({
   },
   // Session switcher drops a slim list under the header when expanded. Lives
   // directly under the title bar, so switching feels contiguous with the title.
+  switcherBackdrop: {
+    position: "absolute",
+    top: 48,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 19,
+    backgroundColor: "rgba(15,23,42,0.18)",
+  },
   switcherPanel: {
     position: "absolute",
     top: 48,
     left: 0,
     right: 0,
     zIndex: 20,
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.sm,
+    paddingHorizontal: THEME.spacing.lg,
+    paddingTop: THEME.spacing.md,
+    paddingBottom: THEME.spacing.sm,
     backgroundColor: THEME.colors.background,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: THEME.colors.border,
-    gap: 3,
+    borderBottomColor: "#f0f0f2",
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    shadowColor: "#18181b",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 8,
+    gap: 6,
   },
   switcherHeading: {
     flexDirection: "row",
@@ -640,9 +665,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: THEME.spacing.xs,
   },
   switcherHeadingText: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: "600",
-    color: THEME.colors.textSecondary,
+    letterSpacing: 0.08,
+    textTransform: "uppercase",
+    color: THEME.colors.textMuted,
   },
   switcherList: {
     maxHeight: 280,
@@ -650,7 +677,7 @@ const styles = StyleSheet.create({
   },
   switcherSource: {
     paddingHorizontal: THEME.spacing.xs,
-    paddingTop: THEME.spacing.sm,
+    paddingTop: THEME.spacing.md,
     paddingBottom: THEME.spacing.xs,
   },
   switcherSourceHeader: {
@@ -681,7 +708,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: THEME.spacing.sm,
-    paddingVertical: 5,
+    paddingVertical: 9,
     paddingHorizontal: THEME.spacing.xs,
     borderRadius: 8,
   },
@@ -698,10 +725,11 @@ const styles = StyleSheet.create({
   switcherRowBody: {
     flex: 1,
     minWidth: 0,
-    gap: 2,
+    gap: 3,
   },
   switcherWorkspace: {
     fontSize: 13,
+    lineHeight: 18,
     color: THEME.colors.textMuted,
   },
   switcherDot: {
@@ -725,7 +753,8 @@ const styles = StyleSheet.create({
     paddingVertical: THEME.spacing.sm,
   },
   switcherNewRow: {
-    minHeight: 34,
+    minHeight: 40,
+    marginTop: THEME.spacing.xs,
   },
   switcherNewLabel: {
     flex: 1,
@@ -739,8 +768,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: THEME.spacing.md,
-    marginTop: THEME.spacing.xs,
-    paddingTop: THEME.spacing.sm,
+    marginTop: THEME.spacing.sm,
+    paddingTop: THEME.spacing.md,
     paddingHorizontal: THEME.spacing.xs,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: "rgba(15, 23, 42, 0.07)",
