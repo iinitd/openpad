@@ -317,7 +317,7 @@ export function SharedHtmlRendererWeb({
           title={documentTitle || "Document Preview"}
           srcDoc={html}
           sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox allow-downloads"
-          style={{ border: 0, width: "100%", flex: 1, minWidth: 0, minHeight: 0, background: "white" }}
+          style={{ border: 0, width: "100%", flex: 1, minWidth: 0, minHeight: 0, background: "#fafafa" }}
         />
         <ChangedBlockCursor
           count={changedCount}

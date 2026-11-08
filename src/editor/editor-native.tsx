@@ -228,7 +228,7 @@ function buildDocumentHtml(contentHtml: string, editable: boolean): string {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <style>
-    html, body { margin: 0; padding: 0; background: #ffffff; -webkit-text-size-adjust: 100%; }
+    html, body { margin: 0; padding: 0; background: #fafafa; -webkit-text-size-adjust: 100%; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       font-size: 16px;
@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
   },
   webview: {
     flex: 1,
-    backgroundColor: "#ffffff",
+    backgroundColor: "#fafafa",
   },
   topBar: {
     flexDirection: "row",

@@ -96,7 +96,7 @@ export const EDITOR_DOC_CSS = `
   .tiptap .kel-embed-card strong, .tiptap .kel-embed-card small { display: block; }
   .tiptap .kel-embed-card small { margin-top: 2px; color: #8f959e; font-size: 12px; }
   .tiptap code {
-    background-color: #f4f4f5;
+    background-color: #ededf0;
     border-radius: 6px;
     padding: 2px 6px;
     font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
@@ -275,9 +275,9 @@ export const EDITOR_DOC_CSS = `
     .tiptap h1.kel-document-title { font-size: 1.65em; }
   }
   .tiptap pre {
-    background-color: #fafafa;
+    background-color: #f1f1f3;
     color: #18181b;
-    border: 1px solid #ececef;
+    border: 1px solid #e6e6e9;
     border-radius: 12px;
     padding: 14px 16px;
     font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
