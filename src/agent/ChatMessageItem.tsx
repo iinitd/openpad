@@ -74,7 +74,7 @@ export const ActivityRow = memo(function ActivityRow({
             color={
               latest.kind === "tool_call" && latest.status === "failed"
                 ? THEME.colors.error
-                : THEME.colors.textSecondary
+                : THEME.colors.textMuted
             }
           />
           <Text
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   toolMessage: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 4,
   },
   statusDot: {
     width: 4,

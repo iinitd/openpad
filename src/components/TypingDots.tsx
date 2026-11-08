@@ -3,8 +3,10 @@ import { Animated, Easing, Platform, StyleSheet, View } from "react-native";
 import { THEME } from "../styles/theme";
 
 const DOT = 4;
-const SLOT = 20;
-const SIDE_OFFSET = (SLOT - DOT) / 2;
+const SLOT = 16;
+const GAP = 2;
+// Distance from the centre dot to where each outer dot rests.
+const SIDE_OFFSET = DOT + GAP;
 
 /** The three-dot "composing" indicator shared by the banner and activity rows. */
 export function TypingDots({ color = THEME.colors.textSecondary }: { color?: string }) {
@@ -101,10 +103,12 @@ export function ActivityDot({
     });
   };
 
+  // Collapsed, both outer dots sit on the centre; expanding slides them out to
+  // their resting positions, so one dot appears to split into three.
   const slide = (direction: -1 | 1) =>
     expand.interpolate({
       inputRange: [0, 1],
-      outputRange: [0, direction * SIDE_OFFSET],
+      outputRange: [direction * SIDE_OFFSET * -1, 0],
     });
 
   // The centre dot is fully opaque while collapsed and follows the pulse once
@@ -146,6 +150,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 2,
+    gap: GAP,
   },
 });
