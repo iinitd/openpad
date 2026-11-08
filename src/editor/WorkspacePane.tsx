@@ -298,7 +298,9 @@ export function WorkspacePane({
               accessibilityRole="button"
               accessibilityLabel={`Add a project to ${source.label}`}
             >
-              <Icon name="plus" size={16} color={THEME.colors.textSecondary} />
+              <View style={styles.addGlyph}>
+                <Icon name="plus" size={15} color={THEME.colors.textSecondary} />
+              </View>
               <Text style={styles.addRowText}>New working directory</Text>
             </PressableRow>
           ) : null}
@@ -414,15 +416,19 @@ const styles = StyleSheet.create({
   pinButtonPressed: {
     opacity: 0.6,
   },
+  // Matches a project row's geometry: the plus sits in the status-dot column,
+  // so the label lines up with the titles below it.
   addRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: THEME.spacing.sm,
     paddingHorizontal: THEME.spacing.md,
-    paddingVertical: 10,
+    paddingVertical: 9,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: THEME.colors.border,
+  },
+  addGlyph: {
+    width: 6,
+    alignItems: "center",
   },
   addRowPressed: {
     backgroundColor: THEME.colors.backgroundSecondary,
