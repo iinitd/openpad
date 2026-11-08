@@ -551,7 +551,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         onRequestClose={closeFiles}
         onDismiss={closeFiles}
       >
-        <View style={[styles.pageSheet, { paddingTop: insets.top }]}>
+        <View style={[styles.pageSheet, { paddingBottom: insets.bottom }]}>
           <View style={styles.pageSheetHeader}>
             <Text style={styles.sheetTitle}>Files</Text>
             <PressableRow
@@ -614,7 +614,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         onRequestClose={closeProjects}
         onDismiss={closeProjects}
       >
-        <View style={[styles.pageSheet, { paddingTop: insets.top }]}>
+        <View style={styles.pageSheet}>
           <View style={styles.pageSheetHeader}>
             <Text style={styles.sheetTitle}>Projects</Text>
             <PressableRow
