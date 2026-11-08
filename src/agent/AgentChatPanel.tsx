@@ -291,11 +291,11 @@ export const AgentChatPanel = memo(function AgentChatPanel({
     (item: CatalogSession) => {
       const title = item.agent.title?.trim() || "Untitled writing session";
       Alert.alert(
-        "Delete session",
+        "Archive session",
         `"${title}" will be archived on the server and disappear from this list.`,
         [
           { text: "Cancel", style: "cancel" },
-          { text: "Delete", style: "destructive", onPress: () => void deleteSession(item) },
+          { text: "Archive", style: "destructive", onPress: () => void deleteSession(item) },
         ],
       );
     },
@@ -577,11 +577,11 @@ export const AgentChatPanel = memo(function AgentChatPanel({
                           style={styles.switcherDelete}
                           activeOpacity={0.6}
                           accessibilityRole="button"
-                          accessibilityLabel={`Delete ${title}`}
+                          accessibilityLabel={`Archive ${title}`}
                           onPress={() => confirmDelete(item)}
                           hitSlop={8}
                         >
-                          <Icon name="close" size={14} color={THEME.colors.textMuted} />
+                          <Icon name="archive" size={15} color={THEME.colors.textMuted} />
                         </TouchableOpacity>
                       )}
                     </TouchableOpacity>

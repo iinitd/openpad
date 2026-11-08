@@ -27,7 +27,8 @@ export type IconName =
   | "arrow-down"
   | "image"
   | "grid"
-  | "list";
+  | "list"
+  | "archive";
 
 interface IconProps {
   name: IconName;
@@ -131,6 +132,13 @@ export function Icon({
           <Line x1="3" y1="6" x2="3.01" y2="6" {...common} />
           <Line x1="3" y1="12" x2="3.01" y2="12" {...common} />
           <Line x1="3" y1="18" x2="3.01" y2="18" {...common} />
+        </>
+      ) : null}
+      {name === "archive" ? (
+        <>
+          <Polyline points="21 8 21 21 3 21 3 8" {...common} />
+          <Rect x="1" y="3" width="22" height="5" rx="1" {...common} />
+          <Line x1="10" y1="12" x2="14" y2="12" {...common} />
         </>
       ) : null}
       {name === "grid" ? (
