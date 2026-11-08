@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { THEME } from "../styles/theme";
 import { PressableRow } from "../components/PressableRow";
 import { HalfSheet } from "../components/HalfSheet";
-import type { StreamItem, ToolCallItem } from "../types/stream";
+import type { StreamItem, ThoughtItem, ToolCallItem } from "../types/stream";
 
 interface Props {
   item: StreamItem;
@@ -59,6 +59,46 @@ export const ToolActivityRow = memo(function ToolActivityRow({
               {tool.status === "failed" ? "✕" : tool.status === "running" ? "⚙" : "✓"}
             </Text>
             <Text style={styles.sheetRowText}>{tool.name}</Text>
+          </View>
+        ))}
+      </HalfSheet>
+    </>
+  );
+});
+
+/**
+ * A run of consecutive reasoning segments. Collapsed it shows how many pieces
+ * the agent emitted and the newest one; expanding lists them all in order.
+ */
+export const ThoughtActivityRow = memo(function ThoughtActivityRow({
+  items,
+}: {
+  items: ThoughtItem[];
+}) {
+  const [open, setOpen] = useState(false);
+  const latest = items[items.length - 1]!;
+  const preview = latest.text.trim() || "Thinking…";
+  return (
+    <>
+      <PressableRow
+        style={[styles.message, styles.thoughtMessage]}
+        onPress={() => setOpen(true)}
+        haptic="light"
+        scale={false}
+        accessibilityRole="button"
+        accessibilityLabel="Show all reasoning"
+      >
+        <Text style={styles.thoughtText} numberOfLines={2}>
+          {items.length > 1 ? `${items.length} thoughts · ` : ""}
+          {preview}
+        </Text>
+      </PressableRow>
+      <HalfSheet visible={open} title="Reasoning" onClose={() => setOpen(false)}>
+        {items.map((item, index) => (
+          <View key={item.id} style={index > 0 ? styles.sheetSegment : undefined}>
+            <Text style={styles.sheetText} selectable>
+              {item.text.trim() || "…"}
+            </Text>
           </View>
         ))}
       </HalfSheet>
@@ -209,6 +249,12 @@ const styles = StyleSheet.create({
     color: THEME.colors.error,
     fontSize: 15,
     lineHeight: 22,
+  },
+  sheetSegment: {
+    marginTop: THEME.spacing.lg,
+    paddingTop: THEME.spacing.lg,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: THEME.colors.border,
   },
   sheetText: {
     fontSize: 15,
