@@ -212,7 +212,7 @@ const AssistantBubble = memo(function AssistantBubble({ text }: { text: string }
     <>
       <Pressable
         style={[styles.message, styles.assistantMessage]}
-        delayLongPress={300}
+        delayLongPress={250}
         onLongPress={() => {
           hapticLongPress();
           setOpen(true);
@@ -231,7 +231,7 @@ const UserBubble = memo(function UserBubble({ text }: { text: string }) {
     <>
       <Pressable
         style={[styles.message, styles.userMessage]}
-        delayLongPress={300}
+        delayLongPress={250}
         onLongPress={() => {
           hapticLongPress();
           setOpen(true);

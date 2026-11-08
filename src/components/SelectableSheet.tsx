@@ -4,10 +4,13 @@ import { HalfSheet } from "./HalfSheet";
 import { SelectableText } from "./SelectableText";
 import { THEME } from "../styles/theme";
 
-/** The tap that opens a sheet should be felt, not just seen. */
+/**
+ * The tick iOS gives when a press turns into a preview. Rigid is the closest
+ * match to that pop; Light reads as an ordinary tap.
+ */
 export function hapticLongPress() {
   if (Platform.OS !== "web") {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
   }
 }
 
