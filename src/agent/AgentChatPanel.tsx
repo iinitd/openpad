@@ -166,8 +166,10 @@ function AgentTranscript() {
     [activeRows, committedRows],
   );
   const renderItem = useCallback(
-    ({ item }: { item: DisplayRow }) => (
-      <DisplayRowItem row={item} streaming={isStreaming} />
+    // The list is inverted, so index 0 is the newest row. Only that row may
+    // animate: older activity in the transcript is history, not progress.
+    ({ item, index }: { item: DisplayRow; index: number }) => (
+      <DisplayRowItem row={item} streaming={isStreaming && index === 0} />
     ),
     [isStreaming],
   );

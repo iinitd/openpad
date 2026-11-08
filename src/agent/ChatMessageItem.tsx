@@ -81,6 +81,7 @@ export const ActivityRow = memo(function ActivityRow({
             style={isThought ? styles.activityPreview : styles.toolText}
             numberOfLines={2}
           >
+            {isThought ? <Text style={styles.activityLabel}>Thinking{"  "}</Text> : null}
             {prefix}
             {preview}
           </Text>
@@ -222,6 +223,11 @@ const styles = StyleSheet.create({
     color: THEME.colors.textMuted,
     fontSize: 13,
     opacity: 0.8,
+  },
+  activityLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: THEME.colors.textMuted,
   },
   activityPreview: {
     flex: 1,
