@@ -91,9 +91,11 @@ export const ActivityRow = memo(function ActivityRow({
             <Text style={styles.activityMeta}>{items.length} steps</Text>
           ) : null}
         </View>
-        <Text style={styles.activityPreview} numberOfLines={2}>
-          {preview}
-        </Text>
+        <View style={styles.activityQuote}>
+          <Text style={styles.activityPreview} numberOfLines={2}>
+            {preview}
+          </Text>
+        </View>
       </PressableRow>
       <HalfSheet visible={open} title="Activity" onClose={() => setOpen(false)}>
         {items.map((item, index) => (
@@ -209,9 +211,13 @@ const styles = StyleSheet.create({
   activityRow: {
     alignSelf: "stretch",
     marginHorizontal: THEME.spacing.sm,
-    paddingLeft: THEME.spacing.md,
-    paddingRight: THEME.spacing.xs,
+    paddingHorizontal: THEME.spacing.xs,
     paddingVertical: 7,
+  },
+  // Only the content sits inside the rule; the label line reads as a caption.
+  activityQuote: {
+    marginTop: 4,
+    paddingLeft: THEME.spacing.sm + 2,
     borderLeftWidth: 2,
     borderLeftColor: "#ececef",
   },
@@ -248,7 +254,6 @@ const styles = StyleSheet.create({
     color: THEME.colors.textMuted,
   },
   activityPreview: {
-    marginTop: 4,
     // One step lighter than the muted token: the preview is context, not copy.
     color: "#b3b3bc",
     fontSize: 14,
