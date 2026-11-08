@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Alert,
   Pressable,
   TouchableOpacity,
 } from "react-native";
@@ -269,6 +270,37 @@ export const AgentChatPanel = memo(function AgentChatPanel({
     setNewSessionError(null);
     setNewSessionPickerOpen(false);
   }, [client, activeConnectionId, cwd]);
+
+  const deleteSession = useCallback(
+    async (item: CatalogSession) => {
+      const activeClient = useConnectionStore.getState().client;
+      if (!activeClient) return;
+      try {
+        await activeClient.archiveAgent(item.agent.id);
+        await useBackendCatalogStore
+          .getState()
+          .refresh(item.connectionId, { workspaces: false });
+      } catch (error) {
+        setSwitcherError(error instanceof Error ? error.message : "Could not delete this session.");
+      }
+    },
+    [],
+  );
+
+  const confirmDelete = useCallback(
+    (item: CatalogSession) => {
+      const title = item.agent.title?.trim() || "Untitled writing session";
+      Alert.alert(
+        "Delete session",
+        `"${title}" will be archived on the server and disappear from this list.`,
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Delete", style: "destructive", onPress: () => void deleteSession(item) },
+        ],
+      );
+    },
+    [deleteSession],
+  );
 
   const sessionSources = useMemo(
     () => entries.flatMap((source) => {
@@ -540,6 +572,18 @@ export const AgentChatPanel = memo(function AgentChatPanel({
                           {title}
                         </Text>
                       </View>
+                      {active ? null : (
+                        <TouchableOpacity
+                          style={styles.switcherDelete}
+                          activeOpacity={0.6}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Delete ${title}`}
+                          onPress={() => confirmDelete(item)}
+                          hitSlop={8}
+                        >
+                          <Icon name="close" size={14} color={THEME.colors.textMuted} />
+                        </TouchableOpacity>
+                      )}
                     </TouchableOpacity>
                   );
                 })}
@@ -734,6 +778,13 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     gap: 3,
+  },
+  switcherDelete: {
+    width: 26,
+    height: 26,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 6,
   },
   switcherDot: {
     width: 6,
