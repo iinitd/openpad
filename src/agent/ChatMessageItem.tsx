@@ -209,8 +209,11 @@ const styles = StyleSheet.create({
   activityRow: {
     alignSelf: "stretch",
     marginHorizontal: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.xs,
+    paddingLeft: THEME.spacing.md,
+    paddingRight: THEME.spacing.xs,
     paddingVertical: 7,
+    borderLeftWidth: 2,
+    borderLeftColor: "#ececef",
   },
   activityHeader: {
     flexDirection: "row",
