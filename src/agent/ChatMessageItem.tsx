@@ -5,6 +5,7 @@ import { PressableRow } from "../components/PressableRow";
 import { HalfSheet } from "../components/HalfSheet";
 import { ActivityDot } from "../components/TypingDots";
 import { Icon } from "../components/Icon";
+import { MarkdownText } from "../components/MarkdownText";
 import { summarizeActivity } from "../hooks/use-agent-progress";
 import type { StreamItem, ThoughtItem, ToolCallItem } from "../types/stream";
 
@@ -180,7 +181,7 @@ export const ChatMessageItem = memo(function ChatMessageItem({ item }: Props) {
     case "assistant_message":
       return (
         <View style={[styles.message, styles.assistantMessage]}>
-          <Text style={styles.assistantText} selectable>{item.text || "..."}</Text>
+          <MarkdownText text={item.text || "..."} />
         </View>
       );
     case "thought":
