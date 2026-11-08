@@ -66,20 +66,18 @@ export const ActivityRow = memo(function ActivityRow({
     : latest.kind === "tool_call"
       ? latest.name
       : "Thinking…";
-  // The count matters when the newest step is a command; when the agent is
-  // thinking, its own words are the useful part and get the whole width.
-  const prefix = !isThought && items.length > 1 ? `${items.length} steps · ` : "";
 
   return (
     <>
       <PressableRow
-        style={styles.toolRow}
+        style={styles.activityRow}
         onPress={() => setOpen(true)}
         haptic="light"
+        scale={false}
         accessibilityRole="button"
         accessibilityLabel="Show agent activity"
       >
-        <View style={[styles.toolMessage, { gap: live ? 8 : 4 }]}>
+        <View style={styles.activityHeader}>
           <ActivityDot
             running={live}
             color={
@@ -88,15 +86,14 @@ export const ActivityRow = memo(function ActivityRow({
                 : "#c6c6ce"
             }
           />
-          <Text
-            style={isThought ? styles.activityPreview : styles.toolText}
-            numberOfLines={2}
-          >
-            {isThought ? <Text style={styles.activityLabel}>Thinking{"  "}</Text> : null}
-            {prefix}
-            {preview}
-          </Text>
+          <Text style={styles.activityLabel}>{isThought ? "Thinking" : "Tool"}</Text>
+          {items.length > 1 ? (
+            <Text style={styles.activityMeta}>{items.length} steps</Text>
+          ) : null}
         </View>
+        <Text style={styles.activityPreview} numberOfLines={2}>
+          {preview}
+        </Text>
       </PressableRow>
       <HalfSheet visible={open} title="Activity" onClose={() => setOpen(false)}>
         {items.map((item, index) => (
@@ -209,12 +206,20 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     lineHeight: 20,
   },
-  toolRow: {
-    alignSelf: "flex-start",
-    marginVertical: 2,
+  activityRow: {
+    alignSelf: "stretch",
+    marginHorizontal: THEME.spacing.sm,
     paddingHorizontal: THEME.spacing.xs,
-    paddingVertical: 2,
-    borderRadius: 6,
+    paddingVertical: 7,
+  },
+  activityHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  activityMeta: {
+    fontSize: 11,
+    color: THEME.colors.textMuted,
   },
   toolMessage: {
     flexDirection: "row",
@@ -240,9 +245,7 @@ const styles = StyleSheet.create({
     color: THEME.colors.textMuted,
   },
   activityPreview: {
-    // The row shrink-wraps to its content, so a flex:1 child collapses to zero
-    // width; let the text size itself and only shrink when the line is full.
-    flexShrink: 1,
+    marginTop: 4,
     color: THEME.colors.textSecondary,
     fontSize: 14,
     lineHeight: 19,
