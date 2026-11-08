@@ -38,14 +38,21 @@ export const ChatInput = memo(function ChatInput({
     const outgoing = toBackendAttachments(pending.images);
     if ((!trimmed && !outgoing) || !agentId) return;
 
+    // Clear the composer first: the transcript shows the message as soon as
+    // sendMessage starts, and an image upload keeps the request busy for a
+    // moment. Clearing afterwards left the same text in both places.
+    const draft = text;
+    const images = pending.images;
+    setText("");
+    pending.clear();
     try {
       // sendMessage transparently queues the message if a turn is already
       // running, so the user can fire off several in a row.
       await sendMessage(trimmed, outgoing);
-      setText("");
-      pending.clear();
     } catch (error) {
-      // Keep the draft and the images so a failed send can be retried.
+      // Put the draft and the images back so a failed send can be retried.
+      setText(draft);
+      pending.restore(images);
       if (outgoing) {
         Alert.alert("Image not sent", error instanceof Error ? error.message : "Try again.");
       }

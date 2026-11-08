@@ -75,8 +75,10 @@ export function usePendingImages() {
   }, []);
 
   const clear = useCallback(() => setImages([]), []);
+  // Put a failed send's images back into the strip.
+  const restore = useCallback((next: PendingImage[]) => setImages(next), []);
 
-  return { images, picking, pick, remove, clear };
+  return { images, picking, pick, remove, clear, restore };
 }
 
 export function toBackendAttachments(images: PendingImage[]): BackendAttachment[] | undefined {
