@@ -107,17 +107,21 @@ export function DirectoryColumn({
               }
               haptic="selection"
             >
-              <Icon
-                name={entry.kind === "directory" ? "folder" : "file"}
-                size={16}
-                color={THEME.colors.textSecondary}
-              />
-              <Text style={styles.name} numberOfLines={1}>
-                {entry.name}
-              </Text>
-              {entry.kind === "directory" ? (
-                <Icon name="chevron-right" size={14} color={THEME.colors.textMuted} />
-              ) : null}
+              {/* PressableRow wraps children in an animated view, so the row
+                  layout has to live on an inner view to stay horizontal. */}
+              <View style={styles.rowInner}>
+                <Icon
+                  name={entry.kind === "directory" ? "folder" : "file"}
+                  size={16}
+                  color={THEME.colors.textSecondary}
+                />
+                <Text style={styles.name} numberOfLines={1}>
+                  {entry.name}
+                </Text>
+                {entry.kind === "directory" ? (
+                  <Icon name="chevron-right" size={14} color={THEME.colors.textMuted} />
+                ) : null}
+              </View>
             </PressableRow>
           ))}
           {!loading && entries.length === 0 && !error ? (
@@ -165,10 +169,12 @@ const styles = StyleSheet.create({
     paddingVertical: THEME.spacing.xs,
   },
   row: {
+    paddingHorizontal: THEME.spacing.sm,
+  },
+  rowInner: {
     flexDirection: "row",
     alignItems: "center",
     gap: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.sm,
     paddingVertical: 9,
   },
   name: {
