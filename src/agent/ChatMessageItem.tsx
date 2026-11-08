@@ -260,9 +260,12 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
   },
   // Only the content sits inside the rule; the label line reads as a caption.
+  // The rule's centre sits on the indicator's centre: the 14pt dot slot centres
+  // its dot at 7, so a 2pt rule starts at 6. The text then lands on the label.
   activityQuote: {
     marginTop: 4,
-    paddingLeft: THEME.spacing.sm + 2,
+    marginLeft: 6,
+    paddingLeft: THEME.spacing.sm + 4,
     borderLeftWidth: 2,
     borderLeftColor: "#ececef",
   },
