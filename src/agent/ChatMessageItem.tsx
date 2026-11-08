@@ -60,12 +60,11 @@ export const ActivityRow = memo(function ActivityRow({
       (entry): entry is ThoughtItem =>
         entry.kind === "thought" && entry.text.trim().length > 0,
     );
-  const isThought = Boolean(lastThought);
-  const preview = lastThought
-    ? lastThought.text.trim()
-    : latest.kind === "tool_call"
-      ? latest.name
-      : "Thinking…";
+  // The header reports the newest action honestly: reasoning says Thinking, a
+  // command says its own name. The quoted body is whatever the agent most
+  // recently reasoned about, so a command run still shows useful text.
+  const headerLabel = latest.kind === "thought" ? "Thinking" : latest.name;
+  const preview = lastThought ? lastThought.text.trim() : "";
 
   return (
     <>
@@ -86,16 +85,20 @@ export const ActivityRow = memo(function ActivityRow({
                 : "#c6c6ce"
             }
           />
-          <Text style={styles.activityLabel}>{isThought ? "Thinking" : "Tool"}</Text>
+          <Text style={styles.activityLabel} numberOfLines={1}>
+            {headerLabel}
+          </Text>
           {items.length > 1 ? (
             <Text style={styles.activityMeta}>{items.length} steps</Text>
           ) : null}
         </View>
-        <View style={styles.activityQuote}>
-          <Text style={styles.activityPreview} numberOfLines={2}>
-            {preview}
-          </Text>
-        </View>
+        {preview ? (
+          <View style={styles.activityQuote}>
+            <Text style={styles.activityPreview} numberOfLines={2}>
+              {preview}
+            </Text>
+          </View>
+        ) : null}
       </PressableRow>
       <HalfSheet visible={open} title="Activity" onClose={() => setOpen(false)}>
         {items.map((item, index) => (
