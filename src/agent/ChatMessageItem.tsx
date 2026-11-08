@@ -74,7 +74,7 @@ export const ActivityRow = memo(function ActivityRow({
             color={
               latest.kind === "tool_call" && latest.status === "failed"
                 ? THEME.colors.error
-                : THEME.colors.textMuted
+                : "#c6c6ce"
             }
           />
           <Text

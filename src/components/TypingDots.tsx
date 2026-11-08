@@ -3,8 +3,8 @@ import { Animated, Easing, Platform, StyleSheet, View } from "react-native";
 import { THEME } from "../styles/theme";
 
 const DOT = 4;
-const SLOT = 18;
-const GAP = 3;
+const SLOT = 14;
+const GAP = 2;
 // Distance from the centre dot to where each outer dot rests.
 const SIDE_OFFSET = DOT + GAP;
 
