@@ -687,14 +687,14 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
                 : addConnectionOpen
                   ? "Add connection"
                   : projectsTab === "projects"
-                    ? "Projects"
+                    ? "Workspace"
                     : "Settings"}
             </Text>
             <PressableRow
               style={styles.pageSheetClose}
               onPress={closeProjects}
               haptic="light"
-              accessibilityLabel="Close projects"
+              accessibilityLabel="Close workspace"
             >
               <Icon name="close" size={18} color={THEME.colors.textSecondary} />
             </PressableRow>
@@ -722,7 +722,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
                         projectsTab === tab && styles.sheetTabLabelActive,
                       ]}
                     >
-                      {tab === "projects" ? "Projects" : "Settings"}
+                      {tab === "projects" ? "Workspace" : "Settings"}
                     </Text>
                   </PressableRow>
                 ))}

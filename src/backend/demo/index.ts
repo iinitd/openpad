@@ -40,7 +40,7 @@ messages and files live in memory and reset when the app restarts.
 
 - **Chat** — send a message and watch the agent think, run a step and answer.
 - **Files** — open a file in the document pane; the tree below this README is real.
-- **Projects** — this demo is one project. Add your own with *New project*.
+- **Workspace** — this demo is one project. Add your own with *New project*.
 
 When you are ready, add a real backend from the projects sheet.
 `;
