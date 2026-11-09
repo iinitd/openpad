@@ -59,8 +59,6 @@ export function WorkspacePane({
   // Also subscribe to inactive preference snapshots so pins update immediately.
   const preferences = usePreferencesStore();
   const [busyKey, setBusyKey] = useState<string | null>(null);
-  // Scoped to the connection that failed, so the message sits inside its group.
-  const [error, setError] = useState<{ connectionId: string; message: string } | null>(null);
   const [addSource, setAddSource] = useState<BackendCatalogEntry | null>(null);
   const [addRoot, setAddRoot] = useState<string | null>(null);
   const operationInFlight = useRef(false);
@@ -96,17 +94,12 @@ export function WorkspacePane({
     operationInFlight.current = true;
     const generation = ++operationGeneration.current;
     setBusyKey(key);
-    setError(null);
     try {
       const opened = await useWriterOpeningStore.getState().open({
         connectionId: source.connectionId, cwd: ws.cwd, workspaceId: ws.id, label: ws.label,
       });
       if (!mounted.current || generation !== operationGeneration.current) return;
       if (opened) onSwitched?.();
-      else setError({
-        connectionId: source.connectionId,
-        message: useWriterOpeningStore.getState().error ?? "Could not open this project.",
-      });
     } finally {
       if (generation === operationGeneration.current) {
         operationInFlight.current = false;
@@ -121,7 +114,6 @@ export function WorkspacePane({
     operationInFlight.current = true;
     const generation = ++operationGeneration.current;
     setBusyKey(key);
-    setError(null);
     try {
       const opened = await useWriterOpeningStore.getState().open({
         connectionId: source.connectionId, cwd: folder, workspaceId: null, label,
@@ -131,11 +123,6 @@ export function WorkspacePane({
         onSwitched?.();
         // A new directory only enters the catalog after it has a session.
         await useBackendCatalogStore.getState().refresh(source.connectionId, { workspaces: true });
-      } else {
-        setError({
-          connectionId: source.connectionId,
-          message: useWriterOpeningStore.getState().error ?? "Could not add this folder.",
-        });
       }
     } finally {
       if (generation === operationGeneration.current) {
@@ -148,16 +135,11 @@ export function WorkspacePane({
   async function openConnection(source: BackendCatalogEntry) {
     if (operationInFlight.current || opening || isSwitchingConnection) return;
     operationInFlight.current = true;
-    setError(null);
     try {
       const opened = await useWriterOpeningStore.getState().open({
         connectionId: source.connectionId,
       });
       if (opened) onSwitched?.();
-      else setError({
-        connectionId: source.connectionId,
-        message: useWriterOpeningStore.getState().error ?? "Could not reconnect.",
-      });
     } finally {
       operationInFlight.current = false;
     }
@@ -172,7 +154,6 @@ export function WorkspacePane({
 
   function openAddProject(source: BackendCatalogEntry) {
     if (operationInFlight.current || opening || isSwitchingConnection) return;
-    setError(null);
     setAddSource(source);
     setAddRoot(addRootFor(source));
     onAddProjectOpenChange?.(true);
@@ -360,21 +341,24 @@ export function WorkspacePane({
                   <Text style={styles.loadingText}>Loading projects…</Text>
                 ) : null}
                 {source.workspacesError ? (
-                  <>
-                    <Text style={styles.error}>Projects: {source.workspacesError}</Text>
+                  <View style={styles.groupError}>
+                    <Text style={styles.groupErrorTitle}>Couldn't load projects</Text>
+                    <Text style={styles.groupErrorText}>{source.workspacesError}</Text>
                     <PressableRow
+                      style={styles.groupErrorAction}
+                      haptic="light"
+                      scale={false}
                       onPress={() =>
                         void useBackendCatalogStore
                           .getState()
                           .refresh(source.connectionId, { workspaces: true })
                       }
+                      accessibilityRole="button"
+                      accessibilityLabel="Retry loading projects"
                     >
-                      <Text style={styles.loadingText}>Retry</Text>
+                      <Text style={styles.groupErrorActionText}>Retry</Text>
                     </PressableRow>
-                  </>
-                ) : null}
-                {error?.connectionId === source.connectionId ? (
-                  <Text style={styles.error}>{error.message}</Text>
+                  </View>
                 ) : null}
                 {source.workspacesLoaded && !source.workspacesError ? (
                   <PressableRow
@@ -600,6 +584,35 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
     color: THEME.colors.textSecondary,
+  },
+  groupError: {
+    gap: 3,
+    paddingHorizontal: THEME.spacing.md,
+    paddingVertical: THEME.spacing.sm + 2,
+    borderRadius: 10,
+    backgroundColor: "#fef2f2",
+  },
+  groupErrorTitle: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#b91c1c",
+  },
+  groupErrorText: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: "#b91c1c",
+    opacity: 0.85,
+  },
+  groupErrorAction: {
+    alignSelf: "flex-start",
+    paddingVertical: 3,
+    marginTop: 1,
+  },
+  groupErrorActionText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#b91c1c",
+    textDecorationLine: "underline",
   },
   loadingRow: {
     flexDirection: "row",
