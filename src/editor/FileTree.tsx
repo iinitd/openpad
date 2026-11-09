@@ -358,7 +358,6 @@ export const FileTree = memo(function FileTree({
             </PressableRow>
           ) : null}
           <SidebarPreviewSlots onOpened={onFileOpened} />
-          <Text style={styles.sectionLabel}>Project files</Text>
           {error ? (
             <Text style={styles.error}>{error}</Text>
           ) : root.length === 0 && !rootLoading ? (
@@ -445,19 +444,9 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.background,
   },
   treeContent: {
-    paddingTop: THEME.spacing.xs,
+    paddingTop: THEME.spacing.sm,
     paddingBottom: THEME.spacing.lg,
     paddingHorizontal: THEME.spacing.sm,
-  },
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: "600",
-    letterSpacing: 0.09,
-    textTransform: "uppercase",
-    color: THEME.colors.textMuted,
-    paddingHorizontal: THEME.spacing.md,
-    paddingTop: THEME.spacing.sm,
-    paddingBottom: THEME.spacing.xs,
   },
   row: {
     borderRadius: 9,
@@ -535,7 +524,6 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   nameDir: {
-    fontWeight: "500",
     color: THEME.colors.text,
   },
   nameDisabled: {
