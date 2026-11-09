@@ -267,6 +267,9 @@ export function WorkspacePane({
               style={[styles.addRow, addDisabled && styles.addRowDisabled]}
               onPress={() => openAddProject(source)}
               haptic="selection"
+              // Without this PressableRow wraps its children in an Animated.View,
+              // which loses the row direction and stacks the icon above the label.
+              scale={false}
               pressedStyle={styles.addRowPressed}
               disabled={addDisabled}
               accessibilityRole="button"

@@ -41,6 +41,8 @@ export function SettingsPane({
       <PressableRow
         style={styles.addRow}
         haptic="light"
+        // Keeps the children as direct siblings so the row layout holds.
+        scale={false}
         pressedStyle={styles.addRowPressed}
         onPress={() => {
           hapticTap("light");
