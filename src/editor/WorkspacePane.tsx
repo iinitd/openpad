@@ -266,7 +266,9 @@ export function WorkspacePane({
         </View>
       ) : null}
       {loading && entries.length === 0 ? (
-        <View style={styles.loadingRow}><ActivityIndicator size="small" color={THEME.colors.primary} /><Text style={styles.loadingText}>Loading projects…</Text></View>
+        <View style={styles.loadingState}>
+          <ActivityIndicator size="small" color={THEME.colors.textMuted} />
+        </View>
       ) : null}
       {sources.map(({ source, contextKey, workspaces }) => {
         const collapsed = Boolean(preferences.collapsedProjectSources[source.connectionId]);
@@ -391,7 +393,9 @@ export function WorkspacePane({
             {!collapsed ? (
               <View style={styles.sourceChildren}>
                 {!source.workspacesLoaded ? (
-                  <Text style={styles.loadingText}>Loading projects…</Text>
+                  <View style={styles.groupLoading}>
+                    <ActivityIndicator size="small" color={THEME.colors.textMuted} />
+                  </View>
                 ) : null}
 
                 {source.workspacesLoaded && !source.workspacesError ? (
@@ -435,6 +439,7 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.backgroundSecondary,
   },
   content: {
+    flexGrow: 1,
     paddingTop: THEME.spacing.md,
     gap: 0,
   },
@@ -633,12 +638,17 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#b91c1c",
   },
-  loadingRow: {
-    flexDirection: "row",
+  // A bare spinner, centred in the space it owns.
+  loadingState: {
+    flex: 1,
+    minHeight: 160,
     alignItems: "center",
-    gap: THEME.spacing.sm,
-    padding: THEME.spacing.md,
-    marginHorizontal: THEME.spacing.md,
+    justifyContent: "center",
+  },
+  groupLoading: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: THEME.spacing.xl,
   },
   loadingText: {
     fontSize: 15,
