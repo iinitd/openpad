@@ -249,7 +249,7 @@ export function WorkspacePane({
         <View style={styles.loadingRow}><ActivityIndicator size="small" color={THEME.colors.primary} /><Text style={styles.loadingText}>Loading projects…</Text></View>
       ) : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
-      {sources.map(({ source, contextKey, workspaces }) => {
+      {sources.map(({ source, contextKey, workspaces }, sourceIndex) => {
         const collapsed = Boolean(preferences.collapsedProjectSources[source.connectionId]);
         const live = connections.find((connection) => connection.id === source.connectionId);
         const connected = live?.connectionState.status === "connected";
@@ -258,7 +258,10 @@ export function WorkspacePane({
         const addDisabled = Boolean(busyKey) || opening || isSwitchingConnection || !connected;
         const statusLabel = connected ? "Connected" : connecting ? "Connecting…" : "Offline";
         return (
-          <View key={source.connectionId} style={styles.sourceBlock}>
+          <View
+            key={source.connectionId}
+            style={[styles.sourceBlock, sourceIndex > 0 && styles.sourceBlockDivided]}
+          >
             {/* The connection is the parent of its projects: one header, with
                 its state, and the projects nested underneath. */}
             <View style={styles.sourceRow}>
@@ -391,18 +394,18 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingTop: THEME.spacing.xs,
-    paddingHorizontal: THEME.spacing.sm,
+    paddingHorizontal: THEME.spacing.md,
     gap: THEME.spacing.md,
   },
-  // Each connection is a card and its projects live inside it, so the
-  // grouping is a container rather than an indent.
+  // Full-width group with a rule above it: no card, so the list stays flush
+  // left and right instead of nesting boxes.
   sourceBlock: {
-    gap: 2,
-    padding: THEME.spacing.sm,
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: THEME.colors.border,
-    backgroundColor: THEME.colors.background,
+    gap: 6,
+    paddingVertical: THEME.spacing.md,
+  },
+  sourceBlockDivided: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: THEME.colors.border,
   },
   // Same geometry as a file row: a narrow icon column, and the open item gets
   // an outline rather than a filled block.
@@ -490,9 +493,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingTop: 2,
-    paddingBottom: 6,
-    paddingHorizontal: 2,
+    paddingVertical: THEME.spacing.sm,
+    paddingHorizontal: THEME.spacing.xs,
   },
   sourceHeaderPressed: {
     backgroundColor: THEME.colors.backgroundSecondary,
