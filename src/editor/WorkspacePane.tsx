@@ -503,7 +503,7 @@ export function WorkspacePane({
       })}
       {!loading && entries.length === 0 ? (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>No connections available.</Text>
+          <Text style={styles.emptyText}>All quiet in here.</Text>
           <PressableRow
             style={styles.emptyAction}
             haptic="light"
@@ -514,7 +514,7 @@ export function WorkspacePane({
             accessibilityLabel="Add the demo workspace"
           >
             <Icon name="plus" size={13} color={THEME.colors.textSecondary} />
-            <Text style={styles.emptyActionText}>Add demo workspace</Text>
+            <Text style={styles.emptyActionText}>Say hi to Puff</Text>
           </PressableRow>
         </View>
       ) : null}
