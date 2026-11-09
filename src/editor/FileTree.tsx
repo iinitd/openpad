@@ -504,7 +504,8 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.72 }],
   },
   rowSelected: {
-    backgroundColor: THEME.colors.accentSoft,
+    backgroundColor: THEME.colors.surface,
+    borderColor: THEME.colors.border,
   },
   rowActive: {
     backgroundColor: "rgba(255, 255, 255, 0.62)",
