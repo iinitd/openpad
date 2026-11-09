@@ -17,7 +17,7 @@ import { useWriterOpeningStore } from "../stores/writer-opening-store";
 import { getBackendPreferences, toggleBackendWorkspacePin, usePreferencesStore } from "../stores/preferences-store";
 import { normalizeWorkspaceCwd } from "../stores/workspace-session-key";
 import { groupDirectoryProjects, type DirectoryProject } from "./directory-projects";
-import { AddProjectModal } from "./AddProjectModal";
+import { AddProjectPane } from "./AddProjectPane";
 import { PressableRow } from "../components/PressableRow";
 import { Icon } from "../components/Icon";
 import { THEME } from "../styles/theme";
@@ -31,9 +31,15 @@ function directoryLabel(cwd: string): string {
 export function WorkspacePane({
   bottomInset = 0,
   onSwitched,
+  addProjectOpen = false,
+  onAddProjectOpenChange,
 }: {
   bottomInset?: number;
   onSwitched?: () => void;
+  // Adding a folder is a screen of the projects sheet, not a dialog on top of
+  // it, so the host owns the title and the back affordance.
+  addProjectOpen?: boolean;
+  onAddProjectOpenChange?: (open: boolean) => void;
 } = {}) {
   const opening = useWriterOpeningStore((state) => state.opening);
   const openingError = useWriterOpeningStore((state) => state.error);
@@ -139,7 +145,13 @@ export function WorkspacePane({
     setError(null);
     setAddSource(source);
     setAddRoot(addRootFor(source));
+    onAddProjectOpenChange?.(true);
   }
+
+  // Leaving the screen (back, or the sheet closing) drops the browser state.
+  useEffect(() => {
+    if (!addProjectOpen) setAddSource(null);
+  }, [addProjectOpen]);
 
   function renderRow(source: BackendCatalogEntry, contextKey: string | undefined, ws: DirectoryProject) {
     const key = catalogItemKey(source.connectionId, ws.cwd);
@@ -185,6 +197,23 @@ export function WorkspacePane({
           </View>
         </PressableRow>
       </View>
+    );
+  }
+
+  if (addProjectOpen && addSource) {
+    return (
+      <AddProjectPane
+        sourceLabel={addSource.label}
+        connectionId={addSource.connectionId}
+        rootCwd={addRoot}
+        bottomInset={bottomInset}
+        onSelect={(folder, label) => {
+          const source = addSource;
+          setAddSource(null);
+          onAddProjectOpenChange?.(false);
+          if (source) void openFolder(source, folder, label);
+        }}
+      />
     );
   }
 
@@ -256,18 +285,7 @@ export function WorkspacePane({
       })}
       {!loading && entries.length === 0 ? <Text style={styles.empty}>No backend connections available.</Text> : null}
     </ScrollView>
-    <AddProjectModal
-      visible={Boolean(addSource)}
-      sourceLabel={addSource?.label ?? ""}
-      connectionId={addSource?.connectionId ?? null}
-      rootCwd={addRoot}
-      onClose={() => setAddSource(null)}
-      onSelect={(folder, label) => {
-        const source = addSource;
-        setAddSource(null);
-        if (source) void openFolder(source, folder, label);
-      }}
-    />
+
     </>
   );
 }

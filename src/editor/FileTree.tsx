@@ -164,6 +164,8 @@ export const FileTree = memo(function FileTree({
   showHeader = true,
   showSettingsFooter = false,
   onOpenSettings,
+  addProjectOpen = false,
+  onAddProjectOpenChange,
   onCloseDrawer,
   bottomInset = 0,
   mode,
@@ -181,6 +183,9 @@ export const FileTree = memo(function FileTree({
   showSettingsFooter?: boolean;
   // The mobile sheet opens settings in place instead of pushing a route.
   onOpenSettings?: () => void;
+  // Likewise for the add-project browser: the host draws its header.
+  addProjectOpen?: boolean;
+  onAddProjectOpenChange?: (open: boolean) => void;
   // Mobile sidebar passes a callback so Settings tap closes the drawer first.
   onCloseDrawer?: () => void;
   // Honor the safe-area bottom inset for the pinned footer.
@@ -298,7 +303,12 @@ export const FileTree = memo(function FileTree({
       )}
 
       {tab === "projects" ? (
-        <WorkspacePane bottomInset={bottomInset} onSwitched={onFileOpened} />
+        <WorkspacePane
+          bottomInset={bottomInset}
+          onSwitched={onFileOpened}
+          addProjectOpen={addProjectOpen}
+          onAddProjectOpenChange={onAddProjectOpenChange}
+        />
       ) : (
         <ScrollView style={styles.tree} contentContainerStyle={styles.treeContent}>
           {agentEditingPath ? (

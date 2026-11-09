@@ -326,8 +326,10 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   // corners and the swipe-to-dismiss.
   const [filesOpen, setFilesOpen] = useState(false);
   const [projectsOpen, setProjectsOpen] = useState(false);
-  // Settings opens inside the projects sheet rather than pushing a screen.
+  // Settings and the add-project browser open inside the projects sheet rather
+  // than pushing a screen.
   const [projectsScreen, setProjectsScreen] = useState<"list" | "settings">("list");
+  const [addProjectOpen, setAddProjectOpen] = useState(false);
   // Folder currently expanded into the right-hand column of the files sheet.
   const [filesFolder, setFilesFolder] = useState<string | null>(null);
   const filesCwd = useFilesStore((state) => state.cwd);
@@ -656,15 +658,22 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         onRequestClose={closeProjects}
         onDismiss={() => {
           setProjectsScreen("list");
+          setAddProjectOpen(false);
           closeProjects();
         }}
       >
         <View style={styles.pageSheet}>
           <View style={styles.pageSheetHeader}>
-            {projectsScreen === "settings" ? (
+            {projectsScreen === "settings" || addProjectOpen ? (
               <PressableRow
                 style={styles.pageSheetClose}
-                onPress={() => setProjectsScreen("list")}
+                onPress={() => {
+                  if (addProjectOpen) {
+                    setAddProjectOpen(false);
+                    return;
+                  }
+                  setProjectsScreen("list");
+                }}
                 haptic="light"
                 accessibilityLabel="Back to projects"
               >
@@ -674,7 +683,11 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
               <View style={styles.pageSheetClose} />
             )}
             <Text style={styles.sheetTitle}>
-              {projectsScreen === "settings" ? "Settings" : "Projects"}
+              {projectsScreen === "settings"
+                ? "Settings"
+                : addProjectOpen
+                  ? "New working directory"
+                  : "Projects"}
             </Text>
             <PressableRow
               style={styles.pageSheetClose}
@@ -699,6 +712,8 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
               showHeader={false}
               showSettingsFooter
               onOpenSettings={() => setProjectsScreen("settings")}
+              addProjectOpen={addProjectOpen}
+              onAddProjectOpenChange={setAddProjectOpen}
               bottomInset={insets.bottom}
               onCloseDrawer={closeProjects}
               onFileOpened={() => {
