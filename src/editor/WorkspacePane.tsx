@@ -467,8 +467,9 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   addRowText: {
+    // The fill already marks this as a button; the label need not shout.
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "500",
     color: THEME.colors.text,
   },
   sourceRow: {
@@ -494,7 +495,7 @@ const styles = StyleSheet.create({
   sourceLabel: {
     flexShrink: 1,
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "600",
     letterSpacing: 0.1,
     color: THEME.colors.text,
   },
@@ -542,7 +543,7 @@ const styles = StyleSheet.create({
   },
   addConnectionText: {
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "500",
     color: THEME.colors.text,
   },
   loadingRow: {
