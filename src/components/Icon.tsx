@@ -19,7 +19,6 @@ export type IconName =
   | "eye"
   | "dice"
   | "copy"
-  | "bang"
   | "eye-off"
   | "chevron-down"
   | "chevron-up"
@@ -115,19 +114,6 @@ export function Icon({
       ) : null}
       {name === "chevron-left" ? (
         <Polyline points="15 6 9 12 15 18" {...common} />
-      ) : null}
-      {name === "bang" ? (
-        <>
-          <Circle cx="12" cy="12" r="2.6" {...common} />
-          <Line x1="12" y1="1.5" x2="12" y2="5" {...common} />
-          <Line x1="12" y1="19" x2="12" y2="22.5" {...common} />
-          <Line x1="1.5" y1="12" x2="5" y2="12" {...common} />
-          <Line x1="19" y1="12" x2="22.5" y2="12" {...common} />
-          <Line x1="4.6" y1="4.6" x2="7.1" y2="7.1" {...common} />
-          <Line x1="16.9" y1="16.9" x2="19.4" y2="19.4" {...common} />
-          <Line x1="19.4" y1="4.6" x2="16.9" y2="7.1" {...common} />
-          <Line x1="7.1" y1="16.9" x2="4.6" y2="19.4" {...common} />
-        </>
       ) : null}
       {name === "copy" ? (
         <>
