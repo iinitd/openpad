@@ -75,6 +75,7 @@ export function ConnectionForm({
     if (mode === "openclaw") setMode("direct");
   }, [mode, setMode]);
 
+  const [openCodeTransport, setOpenCodeTransport] = useState<"direct" | "pair">("direct");
   const [connecting, setConnecting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const connectPending = useRef(false);
@@ -224,68 +225,113 @@ export function ConnectionForm({
         </>
       ) : (
         <>
-          <Text style={styles.label}>Pair link (optional)</Text>
-          <TextInput
-            style={styles.input}
-            value={opencodePairLink}
-            onChangeText={setOpenCodePairLink}
-            editable={!isBusy}
-            placeholder="https://host/auth/connect/..."
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="url"
-          />
-          <Text style={styles.hint}>
-            Paste a one-time OpenCode pair link. OpenPad exchanges it for a session
-            token, then saves the server URL and token; the link itself is not stored.
-          </Text>
+          <View style={styles.subTabs}>
+            <TouchableOpacity
+              style={[styles.subTab, openCodeTransport === "direct" && styles.subTabActive]}
+              onPress={() => {
+                hapticTap("selection");
+                setOpenCodeTransport("direct");
+              }}
+              disabled={isBusy}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[
+                  styles.subTabText,
+                  openCodeTransport === "direct" && styles.subTabTextActive,
+                ]}
+              >
+                Direct
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.subTab, openCodeTransport === "pair" && styles.subTabActive]}
+              onPress={() => {
+                hapticTap("selection");
+                setOpenCodeTransport("pair");
+              }}
+              disabled={isBusy}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[
+                  styles.subTabText,
+                  openCodeTransport === "pair" && styles.subTabTextActive,
+                ]}
+              >
+                Pair
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-          <Text style={styles.label}>Server URL</Text>
-          <TextInput
-            style={styles.input}
-            value={opencodeUrl}
-            onChangeText={setOpenCodeUrl}
-            editable={!isBusy}
-            placeholder="http://localhost:4096"
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="url"
-          />
+          {openCodeTransport === "pair" ? (
+            <>
+              <Text style={styles.label}>Pair link</Text>
+              <TextInput
+                style={styles.input}
+                value={opencodePairLink}
+                onChangeText={setOpenCodePairLink}
+                editable={!isBusy}
+                placeholder="https://host/auth/connect/..."
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+              />
+              <Text style={styles.hint}>
+                Paste a one-time OpenCode pair link. OpenPad exchanges it for a session
+                token, then saves the server URL and token; the link itself is not stored.
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text style={styles.label}>Server URL</Text>
+              <TextInput
+                style={styles.input}
+                value={opencodeUrl}
+                onChangeText={setOpenCodeUrl}
+                editable={!isBusy}
+                placeholder="http://localhost:4096"
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+              />
 
-          {openCodePlaintext ? (
-            <Text style={[styles.hint, styles.warningHint]}>
-              This connection is not encrypted. HTTP sends the server password and
-              session token in the clear, so anyone on the same network can read them.
-              Prefer HTTPS, or a private network such as Tailscale.
-            </Text>
-          ) : null}
+              {openCodePlaintext ? (
+                <Text style={[styles.hint, styles.warningHint]}>
+                  This connection is not encrypted. HTTP sends the server password and
+                  session token in the clear, so anyone on the same network can read them.
+                  Prefer HTTPS, or a private network such as Tailscale.
+                </Text>
+              ) : null}
 
-          <Text style={styles.label}>Username (optional)</Text>
-          <TextInput
-            style={styles.input}
-            value={opencodeUsername}
-            onChangeText={setOpenCodeUsername}
-            editable={!isBusy}
-            placeholder="opencode"
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
+              <Text style={styles.label}>Username (optional)</Text>
+              <TextInput
+                style={styles.input}
+                value={opencodeUsername}
+                onChangeText={setOpenCodeUsername}
+                editable={!isBusy}
+                placeholder="opencode"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
 
-          <Text style={styles.label}>Server password (optional)</Text>
-          <TextInput
-            style={styles.input}
-            value={opencodePassword}
-            onChangeText={setOpenCodePassword}
-            editable={!isBusy}
-            placeholder="OPENCODE_SERVER_PASSWORD"
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <Text style={styles.hint}>
-            Run `opencode serve`, then use the printed server password. For the web app,
-            allow this page's origin with `--cors`.
-          </Text>
+              <Text style={styles.label}>Server password (optional)</Text>
+              <TextInput
+                style={styles.input}
+                value={opencodePassword}
+                onChangeText={setOpenCodePassword}
+                editable={!isBusy}
+                placeholder="OPENCODE_SERVER_PASSWORD"
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <Text style={styles.hint}>
+                Run `opencode serve`, then use the printed server password. For the web
+                app, allow this page's origin with `--cors`.
+              </Text>
+            </>
+          )}
         </>
       )}
 
@@ -346,18 +392,18 @@ const styles = StyleSheet.create({
   },
   subTabs: {
     flexDirection: "row",
-    gap: 14,
+    gap: 20,
     marginBottom: THEME.spacing.xs,
   },
   subTab: {
-    paddingVertical: 4,
+    paddingVertical: 6,
   },
   subTabActive: {
-    borderBottomWidth: 1.5,
+    borderBottomWidth: 2,
     borderBottomColor: THEME.colors.text,
   },
   subTabText: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: "500",
     color: THEME.colors.textMuted,
   },
