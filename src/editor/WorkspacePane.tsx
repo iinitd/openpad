@@ -385,6 +385,27 @@ export function WorkspacePane({
                   />
                   <Text style={styles.sourceStatus}>{statusLabel}</Text>
                 </View>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.sourceAdd,
+                    addDisabled && styles.addRowDisabled,
+                    pressed && styles.sourceAddPressed,
+                  ]}
+                  onPress={(event) => {
+                    event.stopPropagation?.();
+                    if (addDisabled) return;
+                    openAddProject(source);
+                  }}
+                  disabled={addDisabled}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Add a project to ${source.label}`}
+                >
+                  <Icon
+                    name="plus"
+                    size={14}
+                    color={addDisabled ? THEME.colors.textMuted : THEME.colors.textSecondary}
+                  />
+                </Pressable>
                 </View>
               </PressableRow>
             </View>
@@ -398,23 +419,7 @@ export function WorkspacePane({
                   </View>
                 ) : null}
 
-                {source.workspacesLoaded && !source.workspacesError ? (
-                  <PressableRow
-                    style={[styles.addRow, addDisabled && styles.addRowDisabled]}
-                    onPress={() => openAddProject(source)}
-                    haptic="selection"
-                    // Without this PressableRow wraps its children in an
-                    // Animated.View, which loses the row direction.
-                    scale={false}
-                    pressedStyle={styles.addRowPressed}
-                    disabled={addDisabled}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Add a project to ${source.label}`}
-                  >
-                    <Icon name="plus" size={13} color={THEME.colors.textSecondary} />
-                    <Text style={styles.addRowText}>New working directory</Text>
-                  </PressableRow>
-                ) : null}
+
                 {workspaces.map((ws) => renderRow(source, contextKey, ws))}
                 {source.workspacesLoaded && !source.workspacesError && workspaces.length === 0 ? (
                   <Text style={styles.empty}>No projects yet.</Text>
@@ -506,24 +511,19 @@ const styles = StyleSheet.create({
   // screen, and the border + shadow make it read as something to press.
   // A quiet action on the group's top edge: no box, so it sits beside the
   // project rows instead of competing with them.
-  addRow: {
-    alignSelf: "flex-end",
-    flexDirection: "row",
+  sourceAdd: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 2,
-    paddingVertical: 6,
-    marginBottom: THEME.spacing.xs,
+    justifyContent: "center",
+    backgroundColor: THEME.colors.surface,
   },
-  addRowPressed: {
-    opacity: 0.5,
+  sourceAddPressed: {
+    backgroundColor: "#ececef",
   },
   addRowDisabled: {
-    opacity: 0.45,
-  },
-  addRowText: {
-    fontSize: 13,
-    color: THEME.colors.textSecondary,
+    opacity: 0.4,
   },
   sourceRow: {
     flexDirection: "row",
