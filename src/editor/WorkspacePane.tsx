@@ -9,6 +9,8 @@ import {
   Easing,
   Platform,
   Pressable,
+  Alert,
+  ActionSheetIOS,
 } from "react-native";
 import { catalogItemKey, useBackendCatalog, useBackendCatalogStore, type BackendCatalogEntry } from "../stores/backend-catalog-store";
 import { useConnectionStore } from "../stores/connection-store";
@@ -18,6 +20,8 @@ import { getBackendPreferences, toggleBackendWorkspacePin, usePreferencesStore }
 import { normalizeWorkspaceCwd } from "../stores/workspace-session-key";
 import { groupDirectoryProjects, type DirectoryProject } from "./directory-projects";
 import { AddProjectPane } from "./AddProjectPane";
+import { aliasFor } from "./connection-alias";
+import { PromptDialog } from "../components/PromptDialog";
 import { PressableRow, hapticTap } from "../components/PressableRow";
 import { Icon } from "../components/Icon";
 import { THEME } from "../styles/theme";
@@ -52,6 +56,10 @@ export function WorkspacePane({
   const agentId = useSessionStore((state) => state.agentId);
   const { entries, loading } = useBackendCatalog({ enabled: Boolean(agentId || openingError) });
   const connections = useConnectionStore((state) => state.connections);
+  const savedConnections = useConnectionStore((state) => state.savedConnections);
+  const setConnectionAlias = useConnectionStore((state) => state.setConnectionAlias);
+  const aliasStyle = usePreferencesStore((state) => state.connectionAliasStyle);
+  const [renameTarget, setRenameTarget] = useState<{ id: string; value: string } | null>(null);
   const activeConnectionId = useConnectionStore((state) => state.activeConnectionId);
   const isSwitchingConnection = useConnectionStore((state) => state.isSwitchingConnection);
   const currentCwd = useSessionStore((state) => state.cwd);
@@ -175,6 +183,53 @@ export function WorkspacePane({
     if (!addProjectOpen) setAddSource(null);
   }, [addProjectOpen]);
 
+  function openConnectionMenu(source: BackendCatalogEntry, alias: string, live: boolean) {
+    const disconnect = () => {
+      Alert.alert(
+        `Disconnect ${alias}?`,
+        "Its projects stay listed; you can reconnect any time.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Disconnect",
+            style: "destructive",
+            onPress: () => void useConnectionStore.getState().disconnect(source.connectionId),
+          },
+        ],
+      );
+    };
+    const rename = () =>
+      setRenameTarget({ id: source.connectionId, value: alias });
+
+    if (Platform.OS === "ios") {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: live ? ["Rename", "Disconnect", "Cancel"] : ["Rename", "Connect", "Cancel"],
+          destructiveButtonIndex: live ? 1 : undefined,
+          cancelButtonIndex: 2,
+        },
+        (index) => {
+          if (index === 0) rename();
+          else if (index === 1) {
+            if (live) disconnect();
+            else void useConnectionStore.getState().connectSaved(source.connectionId);
+          }
+        },
+      );
+      return;
+    }
+    Alert.alert(alias, undefined, [
+      { text: "Rename", onPress: rename },
+      live
+        ? { text: "Disconnect", style: "destructive", onPress: disconnect }
+        : {
+            text: "Connect",
+            onPress: () => void useConnectionStore.getState().connectSaved(source.connectionId),
+          },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  }
+
   function renderRow(source: BackendCatalogEntry, contextKey: string | undefined, ws: DirectoryProject) {
     const key = catalogItemKey(source.connectionId, ws.cwd);
     const active = source.connectionId === activeConnectionId && ws.cwd === activeCwd;
@@ -229,7 +284,7 @@ export function WorkspacePane({
 
   if (addProjectOpen && addSource) {
     return (
-      <AddProjectPane
+    <AddProjectPane
         sourceLabel={addSource.label}
         connectionId={addSource.connectionId}
         rootCwd={addRoot}
@@ -288,6 +343,8 @@ export function WorkspacePane({
         // the address it points at.
         const [backendName, ...restLabel] = source.label.split(" · ");
         const backendHost = restLabel.join(" · ") || source.endpoint;
+        const saved = savedConnections.find((entry) => entry.id === source.connectionId);
+        const alias = saved?.alias?.trim() || aliasFor(source.connectionId, aliasStyle);
         // One card per group, deepest cause first: a failed action, then a
         // broken connection, then a failed project listing.
         const connectionReason =
@@ -349,6 +406,8 @@ export function WorkspacePane({
               <PressableRow
                 style={styles.sourceHeader}
                 onPress={() => preferences.toggleProjectSource(source.connectionId)}
+                onLongPress={() => openConnectionMenu(source, alias, Boolean(live))}
+                delayLongPress={350}
                 haptic="light"
                 // A gentle press-in instead of a tint: the row dips very
                 // slightly, then settles when the list collapses or expands.
@@ -361,7 +420,7 @@ export function WorkspacePane({
                 <View style={styles.sourceHeaderInner}>
                 <View style={styles.sourceHeaderText}>
                   <Text style={styles.sourceLabel} numberOfLines={1}>
-                    {backendName}
+                    {alias}
                   </Text>
                   <View style={styles.sourceMeta}>
                     <View
@@ -375,7 +434,7 @@ export function WorkspacePane({
                       ]}
                     />
                     <Text style={styles.sourceEndpoint} numberOfLines={1}>
-                      {backendHost}
+                      {`${backendName} · ${backendHost}`}
                     </Text>
                     {connected ? null : (
                       <Text style={styles.sourceState}>
@@ -435,6 +494,17 @@ export function WorkspacePane({
 
     </ScrollView>
 
+    <PromptDialog
+      visible={renameTarget !== null}
+      title="Rename connection"
+      placeholder="A name you will recognise"
+      initialValue={renameTarget?.value ?? ""}
+      onCancel={() => setRenameTarget(null)}
+      onSubmit={(value) => {
+        if (renameTarget) setConnectionAlias(renameTarget.id, value);
+        setRenameTarget(null);
+      }}
+    />
     </>
   );
 }

@@ -58,6 +58,8 @@ export function ConnectionForm({
     opencodeUsername,
     opencodePassword,
     opencodePairLink,
+    alias,
+    setAlias,
     setMode,
     setDaemonUrl,
     setPassword,
@@ -79,6 +81,8 @@ export function ConnectionForm({
       opencodeUsername: state.opencodeUsername,
       opencodePassword: state.opencodePassword,
       opencodePairLink: state.opencodePairLink,
+      alias: state.alias,
+      setAlias: state.setAlias,
       setMode: state.setMode,
       setDaemonUrl: state.setDaemonUrl,
       setPassword: state.setPassword,
@@ -227,6 +231,16 @@ export function ConnectionForm({
 
   return (
     <View style={styles.form}>
+      <Text style={styles.label}>Name (optional)</Text>
+      <TextInput
+        style={styles.input}
+        value={alias}
+        onChangeText={setAlias}
+        placeholder="A name you will recognise"
+        autoCapitalize="words"
+        autoCorrect={false}
+      />
+
       <View style={styles.tabs}>
         {(
           [

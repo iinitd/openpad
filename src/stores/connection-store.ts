@@ -28,6 +28,8 @@ export interface BackendConnection {
 
 export interface SavedBackendConnection {
   id: string;
+  /** User-chosen name; the UI falls back to a generated one when empty. */
+  alias?: string;
   label: string;
   mode: ConnectionMode;
   endpoint: string;
@@ -94,14 +96,16 @@ function connectionLabel(mode: ConnectionMode, endpoint: string): string {
   return `${label} · ${new URL(endpoint).host}`;
 }
 
-function savedProfile(state: Pick<ConnectionStore, "mode" | "daemonUrl" | "password" | "pairingLink" | "gatewayUrl" | "gatewayToken" | "opencodeUrl" | "opencodeUsername" | "opencodePassword">): SavedBackendConnection {
+function savedProfile(state: Pick<ConnectionStore, "mode" | "daemonUrl" | "password" | "pairingLink" | "gatewayUrl" | "gatewayToken" | "opencodeUrl" | "opencodeUsername" | "opencodePassword" | "alias">): SavedBackendConnection {
   const { mode } = state;
   const endpoint = (mode === "openclaw" ? state.gatewayUrl
     : mode === "opencode" ? state.opencodeUrl
     : mode === "relay" ? state.pairingLink
     : state.daemonUrl).trim();
+  const alias = state.alias.trim();
   return {
     id: connectionId(endpointContextKey(mode, endpoint)),
+    ...(alias ? { alias } : {}),
     label: connectionLabel(mode, endpoint),
     mode,
     endpoint,
@@ -142,6 +146,7 @@ interface ConnectionStore {
   opencodeUsername: string;
   opencodePassword: string;
   opencodePairLink: string;
+  alias: string;
   activeMode: ConnectionMode | null;
   activeEndpoint: string | null;
   client: WriterBackend | null;
@@ -165,6 +170,8 @@ interface ConnectionStore {
   setOpenCodeUsername: (username: string) => void;
   setOpenCodePassword: (password: string) => void;
   setOpenCodePairLink: (link: string) => void;
+  setAlias: (alias: string) => void;
+  setConnectionAlias: (id: string, alias: string) => void;
   connect: () => Promise<void>;
   activateConnection: (id: string) => Promise<void>;
   disconnect: (id?: string) => Promise<void>;
@@ -348,6 +355,7 @@ export const useConnectionStore = create<ConnectionStore>()(
           opencodeUsername: "opencode",
           opencodePassword: "",
           opencodePairLink: "",
+          alias: "",
           activeMode: null,
           activeEndpoint: null,
           client: null,
@@ -367,6 +375,13 @@ export const useConnectionStore = create<ConnectionStore>()(
           setOpenCodeUsername: (opencodeUsername) => set((state) => ({ opencodeUsername, lastConnectedOk: state.savedConnections.some((entry) => entry.autoConnect) })),
           setOpenCodePassword: (opencodePassword) => set((state) => ({ opencodePassword, lastConnectedOk: state.savedConnections.some((entry) => entry.autoConnect) })),
           setOpenCodePairLink: (opencodePairLink) => set((state) => ({ opencodePairLink, lastConnectedOk: state.savedConnections.some((entry) => entry.autoConnect) })),
+          setAlias: (alias) => set({ alias }),
+          setConnectionAlias: (id, alias) =>
+            set((state) => ({
+              savedConnections: state.savedConnections.map((entry) =>
+                entry.id === id ? { ...entry, alias: alias.trim() || undefined } : entry,
+              ),
+            })),
           _setHydrated: () =>
             set((state) => {
               const shouldMigrateLegacyWebDefault =
@@ -577,6 +592,7 @@ export const useConnectionStore = create<ConnectionStore>()(
                 opencodeUrl: legacy.opencodeUrl ?? defaultOpenCodeUrl(),
                 opencodeUsername: legacy.opencodeUsername ?? "opencode",
                 opencodePassword: legacy.opencodePassword ?? "",
+                alias: legacy.alias ?? "",
               });
               savedConnections = [profile];
               activeConnectionId = profile.id;
@@ -589,6 +605,7 @@ export const useConnectionStore = create<ConnectionStore>()(
         // serialized.
         partialize: (state) => ({
           mode: state.mode,
+          alias: state.alias,
           daemonUrl: state.daemonUrl,
           password: state.password,
           pairingLink: state.pairingLink,
