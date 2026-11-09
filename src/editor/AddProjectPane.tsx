@@ -10,6 +10,7 @@ import {
 import type { BackendDirectoryEntry } from "../backend";
 import { useConnectionStore } from "../stores/connection-store";
 import { Icon } from "../components/Icon";
+import { hapticTap } from "../components/PressableRow";
 import { THEME } from "../styles/theme";
 
 interface AddProjectPaneProps {
@@ -152,6 +153,7 @@ export function AddProjectPane({
           <Pressable
             style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
             onPress={goUp}
+            onPressIn={() => hapticTap("light")}
             disabled={loading}
             accessibilityRole="button"
             accessibilityLabel="Go to parent folder"
@@ -167,6 +169,7 @@ export function AddProjectPane({
             key={entry.path}
             style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
             onPress={() => void load(browseRoot, entry.path)}
+            onPressIn={() => hapticTap("light")}
             disabled={loading}
             accessibilityRole="button"
             accessibilityLabel={`Open ${entry.name}`}
@@ -206,6 +209,7 @@ export function AddProjectPane({
           ]}
           onPress={() => {
             if (!canSelect || !currentAbsolute) return;
+            hapticTap("medium");
             onSelect(currentAbsolute, currentLabel);
           }}
           disabled={!canSelect}
