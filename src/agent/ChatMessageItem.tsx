@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   },
   userMessage: {
     alignSelf: "flex-end",
-    backgroundColor: "#e7edf3",
+    backgroundColor: "#ececef",
     borderBottomRightRadius: THEME.radii.sm,
   },
   userImages: {
