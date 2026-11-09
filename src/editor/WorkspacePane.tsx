@@ -781,7 +781,9 @@ const styles = StyleSheet.create({
     marginHorizontal: THEME.spacing.xs,
   },
   emptyState: {
+    flex: 1,
     alignItems: "center",
+    justifyContent: "center",
     gap: 10,
     paddingVertical: THEME.spacing.xxl,
   },
