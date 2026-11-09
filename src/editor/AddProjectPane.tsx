@@ -132,7 +132,7 @@ export function AddProjectPane({
 
   return (
     <View style={styles.pane}>
-      <View style={styles.pathRow}>
+      <View style={styles.headerBand}>
         <Pressable
           onPress={goUp}
           disabled={!canGoUp || loading}
@@ -149,11 +149,11 @@ export function AddProjectPane({
           <Icon name="chevron-up" size={18} color={THEME.colors.textSecondary} />
         </Pressable>
         <View style={styles.pathBody}>
-          <Text style={styles.pathText} numberOfLines={1}>
-            {`${browseRoot}${path ? `/${path}` : ""}`}
+          <Text style={styles.pathTitle} numberOfLines={1}>
+            {currentLabel || "Folder"}
           </Text>
-          <Text style={styles.sourceText} numberOfLines={1}>
-            {sourceLabel}
+          <Text style={styles.pathText} numberOfLines={1}>
+            {`${sourceLabel} · ${browseRoot}${path ? `/${path}` : ""}`}
           </Text>
         </View>
       </View>
@@ -235,62 +235,63 @@ export function AddProjectPane({
 const styles = StyleSheet.create({
   pane: {
     flex: 1,
+    backgroundColor: THEME.colors.surface,
   },
   emptyState: {
     flex: 1,
     padding: THEME.spacing.lg,
+    backgroundColor: THEME.colors.surface,
   },
-  pathRow: {
+  headerBand: {
     flexDirection: "row",
     alignItems: "center",
-    gap: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.sm,
+    gap: 10,
+    paddingHorizontal: THEME.spacing.md,
+    paddingVertical: THEME.spacing.md,
+    backgroundColor: THEME.colors.background,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: THEME.colors.border,
   },
   upButton: {
-    width: 30,
-    height: 30,
-    borderRadius: THEME.radii.md,
+    width: 26,
+    height: 26,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: THEME.colors.surface,
   },
   upButtonDisabled: {
-    opacity: 0.4,
+    opacity: 0.35,
   },
   upButtonPressed: {
-    backgroundColor: "#ececef",
+    opacity: 0.5,
   },
   pathBody: {
     flex: 1,
     minWidth: 0,
     gap: 1,
   },
-  pathText: {
-    fontSize: 14,
-    fontWeight: "600",
+  pathTitle: {
+    fontSize: 16,
+    letterSpacing: 0.2,
     color: THEME.colors.text,
   },
-  sourceText: {
+  pathText: {
     fontSize: 12,
     color: THEME.colors.textMuted,
   },
   list: {
     flex: 1,
+    backgroundColor: THEME.colors.background,
   },
   listContent: {
-    paddingHorizontal: THEME.spacing.sm,
+    paddingHorizontal: THEME.spacing.md,
     paddingVertical: THEME.spacing.sm,
-    gap: 2,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.md,
-    minHeight: 38,
+    gap: 6,
+    minHeight: 40,
+    paddingHorizontal: THEME.spacing.xs,
     borderRadius: 9,
   },
   rowPressed: {
@@ -304,26 +305,26 @@ const styles = StyleSheet.create({
   stateRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.sm,
+    justifyContent: "center",
+    paddingVertical: THEME.spacing.xl,
   },
   stateText: {
     fontSize: 14,
     color: THEME.colors.textSecondary,
-    paddingHorizontal: THEME.spacing.md,
+    paddingHorizontal: THEME.spacing.sm,
     paddingVertical: THEME.spacing.sm,
   },
   error: {
     fontSize: 14,
     color: THEME.colors.error,
-    paddingHorizontal: THEME.spacing.md,
+    paddingHorizontal: THEME.spacing.sm,
     paddingVertical: THEME.spacing.sm,
   },
   footer: {
     gap: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.lg,
+    paddingHorizontal: THEME.spacing.md,
     paddingTop: THEME.spacing.md,
+    backgroundColor: THEME.colors.background,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: THEME.colors.border,
   },
@@ -332,7 +333,7 @@ const styles = StyleSheet.create({
     color: THEME.colors.textMuted,
   },
   selectButton: {
-    height: 44,
+    height: 46,
     borderRadius: THEME.radii.lg,
     alignItems: "center",
     justifyContent: "center",

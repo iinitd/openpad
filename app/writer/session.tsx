@@ -683,7 +683,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
             )}
             <Text style={styles.sheetTitle} numberOfLines={1}>
               {addProjectOpen
-                ? "New working directory"
+                ? "New project"
                 : addConnectionOpen
                   ? "Add connection"
                   : projectsTab === "projects"
