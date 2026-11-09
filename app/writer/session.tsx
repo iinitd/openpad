@@ -993,9 +993,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   connectionFormContent: {
+    flexGrow: 1,
     paddingHorizontal: THEME.spacing.lg,
     paddingTop: THEME.spacing.lg,
     paddingBottom: THEME.spacing.xxl,
+    backgroundColor: THEME.colors.backgroundSecondary,
   },
   sheetTitle: {
     flex: 1,
