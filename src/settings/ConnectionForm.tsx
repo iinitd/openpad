@@ -233,34 +233,6 @@ export function ConnectionForm({
 
   return (
     <View style={styles.form}>
-      <Text style={styles.label}>Name</Text>
-      <View style={styles.nameRow}>
-        <TextInput
-          style={[styles.input, styles.nameInput]}
-          value={alias}
-          onChangeText={setAlias}
-          placeholder="Required — tap the dice"
-          autoCapitalize="words"
-          autoCorrect={false}
-        />
-        <Pressable
-          style={({ pressed }) => [styles.dice, pressed && styles.dicePressed]}
-          onPress={() => {
-            hapticTap("light");
-            setAlias(
-              randomAlias(
-                alias,
-                savedConnections.map((entry) => entry.alias ?? ""),
-              ),
-            );
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Pick a random name"
-        >
-          <Icon name="dice" size={18} color={THEME.colors.textSecondary} />
-        </Pressable>
-      </View>
-
       <View style={styles.tabs}>
         {(
           [
@@ -315,6 +287,34 @@ export function ConnectionForm({
 
             {open ? (
               <View style={styles.cardBody}>
+                <Text style={styles.label}>Name</Text>
+                <View style={styles.nameRow}>
+                  <TextInput
+                    style={[styles.input, styles.nameInput]}
+                    value={alias}
+                    onChangeText={setAlias}
+                    placeholder="Required — tap the dice"
+                    autoCapitalize="words"
+                    autoCorrect={false}
+                  />
+                  <Pressable
+                    style={({ pressed }) => [styles.dice, pressed && styles.dicePressed]}
+                    onPress={() => {
+                      hapticTap("light");
+                      setAlias(
+                        randomAlias(
+                          alias,
+                          savedConnections.map((entry) => entry.alias ?? ""),
+                        ),
+                      );
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Pick a random name"
+                  >
+                    <Icon name="dice" size={18} color={THEME.colors.textSecondary} />
+                  </Pressable>
+                </View>
+
                 {renderFields(transport)}
                 <TouchableOpacity
                   style={[styles.button, isBusy && styles.buttonDisabled]}
