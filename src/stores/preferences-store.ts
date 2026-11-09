@@ -44,6 +44,10 @@ export interface RecentSession {
   updatedAt: string;
 }
 
+/** The agent's opening instructions; editable in Settings. */
+export const DEFAULT_AGENT_PROMPT =
+  "You are a writing assistant working inside the user's workspace directory. The user is editing documents there and will send you requests, often referencing a specific file and a highlighted passage with a comment.";
+
 const MAX_RECENT_WORKSPACES = 8;
 const MAX_RECENT_SESSIONS = 8;
 
@@ -108,6 +112,12 @@ interface PreferencesStore {
   lastModel: string | null;
   lastCwd: string;
   lastWorkspaceId: string | null;
+  // Prompts the user can tune. The agent prompt is sent when a session is
+  // created; the comment prompt is prepended to file and quote messages.
+  agentPrompt: string;
+  commentPrompt: string;
+  setAgentPrompt: (value: string) => void;
+  setCommentPrompt: (value: string) => void;
   // Last opened document path (relative to cwd), keyed by workspace cwd.
   lastDocumentByCwd: Record<string, string>;
   // Last editor scroll offset (px), keyed by docScrollKey(cwd, path).
@@ -158,6 +168,10 @@ export const usePreferencesStore = create<PreferencesStore>()(
     (set, get) => ({
       sidebarTab: "files",
       setSidebarTab: (sidebarTab) => set({ sidebarTab }),
+      agentPrompt: DEFAULT_AGENT_PROMPT,
+      commentPrompt: "",
+      setAgentPrompt: (agentPrompt) => set({ agentPrompt }),
+      setCommentPrompt: (commentPrompt) => set({ commentPrompt }),
       collapsedProjectSources: {},
       toggleProjectSource: (connectionId) => set((state) => ({
         collapsedProjectSources: {

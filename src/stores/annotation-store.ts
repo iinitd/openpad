@@ -5,6 +5,7 @@ import type { BackendAttachment } from "../backend";
 import { useSessionStore } from "./session-store";
 import { useEditorStore } from "./editor-store";
 import { useFilesStore } from "./files-store";
+import { usePreferencesStore } from "./preferences-store";
 
 interface AnnotationStore {
   // Annotations that have been created (highlighted spans, optionally with a
@@ -60,7 +61,8 @@ function buildMessage(selectionText: string, comment: string, blockIds: string[]
       ? "Polish this passage: improve clarity and flow while preserving meaning."
       : "Review this document and improve it.";
 
-  const lines = [fileRef, ""];
+  const prompt = usePreferencesStore.getState().commentPrompt.trim();
+  const lines = prompt ? [prompt, "", fileRef, ""] : [fileRef, ""];
   if (hasSelection) {
     lines.push("Selected text:", '"""', selectionText, '"""', "");
     if (blockIds.length > 0) lines.push(`Feishu block IDs: ${blockIds.join(" → ")}`, "");

@@ -1,5 +1,6 @@
 import { useSessionStore } from "../stores/session-store";
 import { useWebPreviewStore } from "./web-preview-store";
+import { usePreferencesStore } from "../stores/preferences-store";
 import type { BackendAttachment } from "../backend";
 
 export async function sendPreviewComment(
@@ -14,7 +15,9 @@ export async function sendPreviewComment(
   const instruction = comment.trim() || (selected
     ? "Review this selected preview content and improve it while preserving its meaning."
     : "Review the current web preview and improve it.");
+  const prompt = usePreferencesStore.getState().commentPrompt.trim();
   const lines = [
+    ...(prompt ? [prompt, ""] : []),
     `Preview entry: ${previewRoot}/index.html`,
     projectRoot
       ? `Project root (preview may reference assets anywhere under here): ${projectRoot}/`

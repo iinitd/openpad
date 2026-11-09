@@ -11,7 +11,7 @@ import type {
 import type { StreamItem } from "../types/stream";
 import { applyStreamEvent } from "../client/stream-reducer";
 import { useConnectionStore } from "./connection-store";
-import { getBackendPreferences, setBackendQueuedMessages, usePreferencesStore } from "./preferences-store";
+import { DEFAULT_AGENT_PROMPT, getBackendPreferences, setBackendQueuedMessages, usePreferencesStore } from "./preferences-store";
 import { useEditorStore } from "./editor-store";
 import { workspaceSessionKey } from "./workspace-session-key";
 import { measureStartupTrace, noteStartupTrace } from "../utils/startup-trace";
@@ -92,8 +92,13 @@ function getClient(): WriterBackend {
 // stream handler can recognise and hide it from the visible chat transcript.
 const SYSTEM_PROMPT_MARKER = "\u200b[kel-writer-system]";
 
-const WRITING_SYSTEM_PROMPT = `${SYSTEM_PROMPT_MARKER}
-You are a writing assistant working inside the user's workspace directory. The user is editing documents there and will send you requests, often referencing a specific file and a highlighted passage with a comment.`;
+// The editable part of the prompt. The marker stays fixed so the transcript can
+// keep hiding the system message.
+function writingSystemPrompt(): string {
+  const configured = usePreferencesStore.getState().agentPrompt.trim();
+  return `${SYSTEM_PROMPT_MARKER}
+${configured || DEFAULT_AGENT_PROMPT}`;
+}
 
 /**
  * A sent message can sit silent when the live event stream stalls: the turn is
@@ -163,9 +168,9 @@ function serializeTranscript(items: StreamItem[]): string {
 }
 
 function buildCarryoverPrompt(transcript: string): string {
-  if (!transcript.trim()) return WRITING_SYSTEM_PROMPT;
+  if (!transcript.trim()) return writingSystemPrompt();
   return [
-    WRITING_SYSTEM_PROMPT,
+    writingSystemPrompt(),
     "",
     "--- Prior conversation (for context; continue seamlessly) ---",
     transcript,
@@ -749,8 +754,8 @@ export const useSessionStore = create<SessionStore>()(
         const systemPrompt =
           options?.systemPromptOverride ??
           (initialPrompt
-            ? `${WRITING_SYSTEM_PROMPT}\n\n${initialPrompt}`
-            : WRITING_SYSTEM_PROMPT);
+            ? `${writingSystemPrompt()}\n\n${initialPrompt}`
+            : writingSystemPrompt());
 
         const agent = await client.createAgent({
           provider,
