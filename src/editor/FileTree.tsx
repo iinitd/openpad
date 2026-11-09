@@ -164,6 +164,8 @@ export const FileTree = memo(function FileTree({
   showHeader = true,
   addProjectOpen = false,
   onAddProjectOpenChange,
+  showConnections = false,
+  onAddConnection,
   bottomInset = 0,
   mode,
   onSelectFolder,
@@ -178,6 +180,9 @@ export const FileTree = memo(function FileTree({
   // The host draws the header for the add-project browser.
   addProjectOpen?: boolean;
   onAddProjectOpenChange?: (open: boolean) => void;
+  // The mobile sheet folds connections into the projects list.
+  showConnections?: boolean;
+  onAddConnection?: () => void;
   // Honor the safe-area bottom inset for the pinned footer.
   bottomInset?: number;
   // When set, tapping a folder selects it instead of expanding it in place —
@@ -298,6 +303,8 @@ export const FileTree = memo(function FileTree({
           onSwitched={onFileOpened}
           addProjectOpen={addProjectOpen}
           onAddProjectOpenChange={onAddProjectOpenChange}
+          showConnections={showConnections}
+          onAddConnection={onAddConnection}
         />
       ) : (
         <ScrollView style={styles.tree} contentContainerStyle={styles.treeContent}>

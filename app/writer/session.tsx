@@ -1,7 +1,6 @@
 import { createPluginContext } from "../../src/content/plugin-context";
 import { hapticTap } from "../../src/components/PressableRow";
 import { SettingsPane } from "../../src/settings/SettingsPane";
-import { ConnectionsPane } from "../../src/settings/ConnectionsPane";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   View,
@@ -330,9 +329,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   const [projectsOpen, setProjectsOpen] = useState(false);
   // The projects sheet is a small navigator: three top tabs, with the folder
   // browser as a sub-screen of the projects tab.
-  const [projectsTab, setProjectsTab] = useState<"projects" | "connections" | "settings">(
-    "projects",
-  );
+  const [projectsTab, setProjectsTab] = useState<"projects" | "settings">("projects");
   const [addProjectOpen, setAddProjectOpen] = useState(false);
   // Folder currently expanded into the right-hand column of the files sheet.
   const [filesFolder, setFilesFolder] = useState<string | null>(null);
@@ -684,7 +681,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
               </>
             ) : (
               <View style={styles.sheetTabs}>
-                {(["projects", "connections", "settings"] as const).map((tab) => (
+                {(["projects", "settings"] as const).map((tab) => (
                   <PressableRow
                     key={tab}
                     style={[styles.sheetTab, projectsTab === tab && styles.sheetTabActive]}
@@ -703,11 +700,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
                         projectsTab === tab && styles.sheetTabLabelActive,
                       ]}
                     >
-                      {tab === "projects"
-                        ? "Projects"
-                        : tab === "connections"
-                          ? "Connections"
-                          : "Settings"}
+                      {tab === "projects" ? "Projects" : "Settings"}
                     </Text>
                   </PressableRow>
                 ))}
@@ -729,17 +722,15 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
               showHeader={false}
               addProjectOpen={addProjectOpen}
               onAddProjectOpenChange={setAddProjectOpen}
+              showConnections
+              onAddConnection={() => {
+                closeProjects();
+                router.push("/?add=1");
+              }}
               bottomInset={insets.bottom}
               onFileOpened={() => {
                 closeProjects();
                 showDocument();
-              }}
-            />
-          ) : projectsTab === "connections" ? (
-            <ConnectionsPane
-              onAddConnection={() => {
-                closeProjects();
-                router.push("/?add=1");
               }}
             />
           ) : (

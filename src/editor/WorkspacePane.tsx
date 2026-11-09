@@ -18,6 +18,7 @@ import { getBackendPreferences, toggleBackendWorkspacePin, usePreferencesStore }
 import { normalizeWorkspaceCwd } from "../stores/workspace-session-key";
 import { groupDirectoryProjects, type DirectoryProject } from "./directory-projects";
 import { AddProjectPane } from "./AddProjectPane";
+import { BackendConnections } from "../components/BackendConnections";
 import { PressableRow } from "../components/PressableRow";
 import { Icon } from "../components/Icon";
 import { THEME } from "../styles/theme";
@@ -33,9 +34,15 @@ export function WorkspacePane({
   onSwitched,
   addProjectOpen = false,
   onAddProjectOpenChange,
+  showConnections = false,
+  onAddConnection,
 }: {
   bottomInset?: number;
   onSwitched?: () => void;
+  // The mobile sheet shows the backend connections under the projects, so one
+  // scroll covers "which project" and "which server".
+  showConnections?: boolean;
+  onAddConnection?: () => void;
   // Adding a folder is a screen of the projects sheet, not a dialog on top of
   // it, so the host owns the title and the back affordance.
   addProjectOpen?: boolean;
@@ -287,6 +294,31 @@ export function WorkspacePane({
         );
       })}
       {!loading && entries.length === 0 ? <Text style={styles.empty}>No backend connections available.</Text> : null}
+
+      {showConnections ? (
+        <View style={styles.connections}>
+          <Text style={styles.connectionsLabel}>Connections</Text>
+          <BackendConnections />
+          <PressableRow
+            style={styles.addConnection}
+            haptic="light"
+            scale={false}
+            pressedStyle={styles.addConnectionPressed}
+            onPress={() => onAddConnection?.()}
+            accessibilityRole="button"
+            accessibilityLabel="Add connection"
+          >
+            <View style={styles.addConnectionGlyph}>
+              <Icon name="plus" size={15} color={THEME.colors.accent} />
+            </View>
+            <View style={styles.addConnectionBody}>
+              <Text style={styles.addConnectionTitle}>Add connection</Text>
+              <Text style={styles.addConnectionHint}>Server URL, or pair with a relay</Text>
+            </View>
+            <Icon name="chevron-right" size={16} color={THEME.colors.textMuted} />
+          </PressableRow>
+        </View>
+      ) : null}
     </ScrollView>
 
     </>
@@ -404,6 +436,54 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: THEME.colors.text,
+  },
+  connections: {
+    marginTop: THEME.spacing.md,
+    paddingTop: THEME.spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: THEME.colors.border,
+    gap: THEME.spacing.sm,
+  },
+  connectionsLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 0.6,
+    textTransform: "uppercase",
+    color: THEME.colors.textMuted,
+    paddingHorizontal: THEME.spacing.md,
+  },
+  addConnection: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: THEME.spacing.md,
+    paddingHorizontal: THEME.spacing.md,
+    paddingVertical: THEME.spacing.md,
+    borderRadius: THEME.radii.lg,
+    backgroundColor: THEME.colors.surface,
+  },
+  addConnectionPressed: {
+    backgroundColor: "#ececef",
+  },
+  addConnectionGlyph: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: THEME.colors.accentSoft,
+  },
+  addConnectionBody: {
+    flex: 1,
+    gap: 2,
+  },
+  addConnectionTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: THEME.colors.text,
+  },
+  addConnectionHint: {
+    fontSize: 12,
+    color: THEME.colors.textMuted,
   },
   loadingRow: {
     flexDirection: "row",
