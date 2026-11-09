@@ -375,7 +375,7 @@ export function WorkspacePane({
           accessibilityRole="button"
           accessibilityLabel="Add connection"
         >
-          <Icon name="plus" size={15} color={THEME.colors.textSecondary} />
+          <Icon name="plus" size={16} color={THEME.colors.text} />
           <Text style={styles.addConnectionText}>Add connection</Text>
         </PressableRow>
       ) : null}
@@ -481,7 +481,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingVertical: 6,
+    paddingVertical: 8,
     paddingHorizontal: THEME.spacing.xs,
     borderRadius: 8,
   },
@@ -493,22 +493,22 @@ const styles = StyleSheet.create({
   },
   sourceLabel: {
     flexShrink: 1,
-    fontSize: 13,
-    fontWeight: "600",
-    color: THEME.colors.textMuted,
+    fontSize: 14,
+    fontWeight: "700",
+    letterSpacing: 0.1,
+    color: THEME.colors.text,
   },
   sourceDot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    marginLeft: 2,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   sourceDotOn: { backgroundColor: THEME.colors.success },
   sourceDotPending: { backgroundColor: THEME.colors.warning },
   sourceDotOff: { backgroundColor: THEME.colors.textMuted },
   sourceStatus: {
-    fontSize: 11,
-    color: THEME.colors.textMuted,
+    fontSize: 12,
+    color: THEME.colors.textSecondary,
   },
   sourceAction: {
     paddingHorizontal: 6,
@@ -529,17 +529,21 @@ const styles = StyleSheet.create({
   addConnectionRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 8,
+    height: 40,
     marginTop: THEME.spacing.md,
-    paddingHorizontal: THEME.spacing.xs,
-    paddingVertical: THEME.spacing.sm,
+    marginHorizontal: THEME.spacing.xs,
+    paddingHorizontal: THEME.spacing.md,
+    borderRadius: 9,
+    backgroundColor: THEME.colors.surface,
   },
   addConnectionPressed: {
     backgroundColor: THEME.colors.backgroundSecondary,
   },
   addConnectionText: {
-    fontSize: 14,
-    color: THEME.colors.textSecondary,
+    fontSize: 15,
+    fontWeight: "600",
+    color: THEME.colors.text,
   },
   loadingRow: {
     flexDirection: "row",
