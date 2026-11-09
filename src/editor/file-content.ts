@@ -278,11 +278,85 @@ export function markdownToHtml(src: string): string {
   return wrapTablesForPreview(typeof html === "string" ? html : String(html));
 }
 
+// Source files get a code view: preserved whitespace and a monospace block,
+// rather than being poured through Markdown where indentation collapses.
+const CODE_EXTS = new Set([
+  ".json",
+  ".jsonc",
+  ".json5",
+  ".yaml",
+  ".yml",
+  ".toml",
+  ".ini",
+  ".conf",
+  ".env",
+  ".js",
+  ".jsx",
+  ".mjs",
+  ".cjs",
+  ".ts",
+  ".tsx",
+  ".py",
+  ".rb",
+  ".go",
+  ".rs",
+  ".swift",
+  ".kt",
+  ".java",
+  ".c",
+  ".cc",
+  ".cpp",
+  ".h",
+  ".hpp",
+  ".cs",
+  ".php",
+  ".sh",
+  ".bash",
+  ".zsh",
+  ".fish",
+  ".sql",
+  ".css",
+  ".scss",
+  ".less",
+  ".lua",
+  ".graphql",
+  ".xml",
+  ".log",
+]);
+
+const MAX_CODE_PREVIEW = 200_000;
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function prettyJson(raw: string): string | null {
+  try {
+    return JSON.stringify(JSON.parse(raw), null, 2);
+  } catch {
+    return null;
+  }
+}
+
+function codeFileToHtml(path: string, raw: string): string {
+  const ext = extname(path);
+  const formatted = ext === ".json" ? prettyJson(raw) ?? raw : raw;
+  const body =
+    formatted.length > MAX_CODE_PREVIEW
+      ? `${formatted.slice(0, MAX_CODE_PREVIEW)}\n\n… truncated, ${formatted.length - MAX_CODE_PREVIEW} more characters`
+      : formatted;
+  return `<pre><code>${escapeHtml(body.replace(/\s+$/, ""))}</code></pre>`;
+}
+
 // Convert a workspace file's raw text into HTML suitable for the editor.
 export function fileContentToHtml(path: string, raw: string): string {
   const ext = extname(path);
   // Even pure-HTML files may contain Lark custom tags, so normalize first.
   if (HTML_EXTS.has(ext)) return wrapTablesForPreview(normalizeLarkTags(raw));
+  if (CODE_EXTS.has(ext)) return codeFileToHtml(path, raw);
   if (MARKDOWN_EXTS.has(ext)) return markdownToHtml(raw);
   // Unknown extension: still try the mixed pipeline; it degrades to plain
   // paragraphs for tag-free text.
