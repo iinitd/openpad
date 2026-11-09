@@ -587,6 +587,9 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         visible={filesOpen}
         animationType="slide"
         presentationStyle="pageSheet"
+        // A sheet must always be dismissable, even if its content failed to
+        // render: without this iOS presents it as non-interactive.
+        allowSwipeDismissal
         onRequestClose={closeFiles}
         onDismiss={closeFiles}
       >
@@ -651,6 +654,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         visible={projectsOpen}
         animationType="slide"
         presentationStyle="pageSheet"
+        allowSwipeDismissal
         onRequestClose={closeProjects}
         onDismiss={() => {
           setProjectsTab("projects");
