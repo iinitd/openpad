@@ -441,7 +441,7 @@ export function WorkspacePane({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: THEME.colors.backgroundSecondary,
+    backgroundColor: THEME.colors.surface,
   },
   content: {
     flexGrow: 1,
