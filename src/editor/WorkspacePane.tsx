@@ -509,12 +509,12 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: 10,
     paddingVertical: THEME.spacing.sm,
     paddingHorizontal: THEME.spacing.xs,
   },
   sourceHeaderPressed: {
-    backgroundColor: THEME.colors.backgroundSecondary,
+    opacity: 0.55,
   },
   sourceHeaderText: {
     flex: 1,
