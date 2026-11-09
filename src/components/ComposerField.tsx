@@ -132,11 +132,11 @@ export function ComposerField({
 }: ComposerFieldProps) {
   const disabled = sendDisabled ?? (!value.trim() && images.length === 0);
 
-  // The field grows with the text up to four lines, then scrolls. Below the
-  // threshold the composer stays a pill; past it, the pill becomes a rounded
-  // rectangle so the text has a straight edge to live against.
+  // The field grows with the text up to three lines, then scrolls inside the
+  // same box. Below the threshold the composer stays a pill; past it, the pill
+  // becomes a rounded rectangle so the text has a straight edge to live against.
   const minInputHeight = variant === "embedded" ? 40 : 36;
-  const maxInputHeight = variant === "embedded" ? 106 : 96;
+  const maxInputHeight = variant === "embedded" ? 84 : 82;
   const verticalPadding = variant === "embedded" ? 18 : 8;
   const horizontalPadding = variant === "embedded" ? 8 : 14;
   // A hidden copy of the text measures the wrapped height. `contentSize` on the
@@ -219,7 +219,10 @@ export function ComposerField({
               const width = Math.ceil(event.nativeEvent.layout.width);
               if (width > 0 && width !== fieldWidth) setFieldWidth(width);
             }}
-            scrollEnabled={inputHeight >= maxInputHeight}
+            // Keep scrolling enabled at all times: with a clamped height the
+            // text view follows the caret, which is what makes a long draft
+            // readable while typing.
+            scrollEnabled
             value={value}
             onChangeText={onChangeText}
             placeholder={placeholder}
