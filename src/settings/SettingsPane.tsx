@@ -2,7 +2,11 @@ import { useRef } from "react";
 import { ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { Icon } from "../components/Icon";
 import { useConnectionStore } from "../stores/connection-store";
-import { DEFAULT_AGENT_PROMPT, usePreferencesStore } from "../stores/preferences-store";
+import {
+  DEFAULT_AGENT_PROMPT,
+  DEFAULT_COMMENT_PROMPT,
+  usePreferencesStore,
+} from "../stores/preferences-store";
 import { COMMENT_PROMPT_PLACEHOLDERS } from "../editor/comment-prompt";
 import { PressableRow, hapticTap } from "../components/PressableRow";
 import { THEME } from "../styles/theme";
@@ -100,12 +104,12 @@ export function SettingsPane() {
       <View style={styles.card}>
         <View style={styles.promptHeader}>
           <Text style={styles.promptLabel}>Files</Text>
-          {commentPrompt.trim().length > 0 ? (
+          {commentPrompt.trim() !== DEFAULT_COMMENT_PROMPT.trim() ? (
             <PressableRow
               style={styles.resetButton}
               haptic="light"
               scale={false}
-              onPress={() => setCommentPrompt("")}
+              onPress={() => setCommentPrompt(DEFAULT_COMMENT_PROMPT)}
               accessibilityRole="button"
               accessibilityLabel="Reset file prompt"
             >
@@ -123,7 +127,7 @@ export function SettingsPane() {
           onBlur={() => {
             caretRef.current = null;
           }}
-          placeholder="Optional context added to file comments and quoted passages."
+          placeholder={DEFAULT_COMMENT_PROMPT}
           placeholderTextColor={THEME.colors.textMuted}
           multiline
           autoCapitalize="sentences"

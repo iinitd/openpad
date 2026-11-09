@@ -48,6 +48,14 @@ export interface RecentSession {
 export const DEFAULT_AGENT_PROMPT =
   "You are a writing assistant working inside the user's workspace directory. The user is editing documents there and will send you requests, often referencing a specific file and a highlighted passage with a comment.";
 
+/** The default template for file comments; editable in Settings. */
+export const DEFAULT_COMMENT_PROMPT = `File: {filename}
+
+Selected text:
+"""
+{selected_text}
+"""`;
+
 const MAX_RECENT_WORKSPACES = 8;
 const MAX_RECENT_SESSIONS = 8;
 
@@ -169,7 +177,7 @@ export const usePreferencesStore = create<PreferencesStore>()(
       sidebarTab: "files",
       setSidebarTab: (sidebarTab) => set({ sidebarTab }),
       agentPrompt: DEFAULT_AGENT_PROMPT,
-      commentPrompt: "",
+      commentPrompt: DEFAULT_COMMENT_PROMPT,
       setAgentPrompt: (agentPrompt) => set({ agentPrompt }),
       setCommentPrompt: (commentPrompt) => set({ commentPrompt }),
       collapsedProjectSources: {},

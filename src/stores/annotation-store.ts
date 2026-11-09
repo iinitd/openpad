@@ -5,7 +5,7 @@ import type { BackendAttachment } from "../backend";
 import { useSessionStore } from "./session-store";
 import { useEditorStore } from "./editor-store";
 import { useFilesStore } from "./files-store";
-import { usePreferencesStore } from "./preferences-store";
+import { DEFAULT_COMMENT_PROMPT, usePreferencesStore } from "./preferences-store";
 import { renderCommentPrompt } from "../editor/comment-prompt";
 
 interface AnnotationStore {
@@ -62,13 +62,12 @@ function buildMessage(selectionText: string, comment: string, blockIds: string[]
       ? "Polish this passage: improve clarity and flow while preserving meaning."
       : "Review this document and improve it.";
 
-  const template = usePreferencesStore.getState().commentPrompt;
-  const rendered = template.trim()
-    ? renderCommentPrompt(template, {
-        filename: documentPath ?? "(the open document)",
-        selection: selectionText,
-      })
-    : "";
+  const stored = usePreferencesStore.getState().commentPrompt;
+  const template = stored.trim() ? stored : DEFAULT_COMMENT_PROMPT;
+  const rendered = renderCommentPrompt(template, {
+    filename: documentPath ?? "(the open document)",
+    selection: selectionText,
+  });
   const lines: string[] = [];
   if (rendered) {
     lines.push(rendered, "");
