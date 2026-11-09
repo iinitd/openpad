@@ -1,6 +1,6 @@
 import { createPluginContext } from "../../src/content/plugin-context";
 import { hapticTap } from "../../src/components/PressableRow";
-import { ToastHost } from "../../src/components/Toast";
+import { ToastHost, showToast } from "../../src/components/Toast";
 import { SettingsPane } from "../../src/settings/SettingsPane";
 import { ConnectionForm } from "../../src/settings/ConnectionForm";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -281,31 +281,16 @@ export default function WriterSessionScreen() {
 
   const { width: screenWidth } = useWindowDimensions();
   const isCompact = screenWidth < COMPACT_BREAKPOINT || isPhonePortraitWeb();
-  const switchingProjectSession = Boolean(openingTarget?.agentId &&
-    openingTarget.connectionId === activeConnectionId && projectCwd &&
-    normalizeWorkspaceCwd(openingTarget.cwd ?? "") === projectCwd);
-  const showOpeningStatus = Boolean(openingError || (opening && !switchingProjectSession));
+  // Opening failures are transient enough for a toast; the layout keeps no
+  // status strip of its own.
+  useEffect(() => {
+    if (openingError) showToast(openingError);
+  }, [openingError]);
 
   return (
     <View style={styles.writerContainer}>
       <ToastHost />
-      {showOpeningStatus ? (
-        <View style={[styles.openingStatus, isCompact ? { paddingTop: insets.top + THEME.spacing.sm } : null]}>
-          {opening ? <ActivityIndicator size="small" color={THEME.colors.primary} /> : null}
-          <Text style={[styles.openingText, openingError ? styles.openingError : null]} accessibilityRole={openingError ? "alert" : undefined}>
-            {opening ? "Opening project…" : openingError}
-          </Text>
-          {openingError && !opening ? (
-            <Pressable onPress={() => void useWriterOpeningStore.getState().retry()} accessibilityRole="button">
-              <Text style={styles.openingAction}>Retry</Text>
-            </Pressable>
-          ) : null}
-          <Pressable onPress={() => router.push("/writer/settings")} accessibilityRole="button">
-            <Text style={styles.openingAction}>Connections</Text>
-          </Pressable>
-        </View>
-      ) : null}
-      {isCompact ? <MobileLayout screenWidth={screenWidth} topInset={showOpeningStatus ? 0 : insets.top} /> : (
+      {isCompact ? <MobileLayout screenWidth={screenWidth} topInset={insets.top} /> : (
         <View style={styles.splitContainer}>
           <View style={styles.filesPane}><FileTree /></View>
           <View style={styles.editorPane}><ContentPreview /></View>
@@ -781,6 +766,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
           ) : (
             <SettingsPane />
           )}
+          <ToastHost />
         </View>
       </Modal>
     </View>
@@ -789,15 +775,6 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
 
 const styles = StyleSheet.create({
   writerContainer: { flex: 1, backgroundColor: THEME.colors.background },
-  openingStatus: {
-    flexDirection: "row", alignItems: "center", gap: THEME.spacing.md,
-    paddingHorizontal: THEME.spacing.lg, paddingVertical: THEME.spacing.sm,
-    backgroundColor: THEME.colors.backgroundSecondary,
-    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: THEME.colors.border,
-  },
-  openingText: { flex: 1, fontSize: 15, color: THEME.colors.textSecondary },
-  openingError: { color: THEME.colors.error },
-  openingAction: { fontSize: 15, color: THEME.colors.primary },
   splitContainer: {
     flex: 1,
     flexDirection: "row",

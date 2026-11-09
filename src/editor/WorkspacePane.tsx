@@ -59,7 +59,8 @@ export function WorkspacePane({
   // Also subscribe to inactive preference snapshots so pins update immediately.
   const preferences = usePreferencesStore();
   const [busyKey, setBusyKey] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // Scoped to the connection that failed, so the message sits inside its group.
+  const [error, setError] = useState<{ connectionId: string; message: string } | null>(null);
   const [addSource, setAddSource] = useState<BackendCatalogEntry | null>(null);
   const [addRoot, setAddRoot] = useState<string | null>(null);
   const operationInFlight = useRef(false);
@@ -102,7 +103,10 @@ export function WorkspacePane({
       });
       if (!mounted.current || generation !== operationGeneration.current) return;
       if (opened) onSwitched?.();
-      else setError(useWriterOpeningStore.getState().error);
+      else setError({
+        connectionId: source.connectionId,
+        message: useWriterOpeningStore.getState().error ?? "Could not open this project.",
+      });
     } finally {
       if (generation === operationGeneration.current) {
         operationInFlight.current = false;
@@ -128,7 +132,10 @@ export function WorkspacePane({
         // A new directory only enters the catalog after it has a session.
         await useBackendCatalogStore.getState().refresh(source.connectionId, { workspaces: true });
       } else {
-        setError(useWriterOpeningStore.getState().error);
+        setError({
+          connectionId: source.connectionId,
+          message: useWriterOpeningStore.getState().error ?? "Could not add this folder.",
+        });
       }
     } finally {
       if (generation === operationGeneration.current) {
@@ -147,7 +154,10 @@ export function WorkspacePane({
         connectionId: source.connectionId,
       });
       if (opened) onSwitched?.();
-      else setError(useWriterOpeningStore.getState().error);
+      else setError({
+        connectionId: source.connectionId,
+        message: useWriterOpeningStore.getState().error ?? "Could not reconnect.",
+      });
     } finally {
       operationInFlight.current = false;
     }
@@ -266,7 +276,6 @@ export function WorkspacePane({
       {loading && entries.length === 0 ? (
         <View style={styles.loadingRow}><ActivityIndicator size="small" color={THEME.colors.primary} /><Text style={styles.loadingText}>Loading projects…</Text></View>
       ) : null}
-      {error ? <Text style={styles.error}>{error}</Text> : null}
       {sources.map(({ source, contextKey, workspaces }) => {
         const collapsed = Boolean(preferences.collapsedProjectSources[source.connectionId]);
         const live = connections.find((connection) => connection.id === source.connectionId);
@@ -363,6 +372,9 @@ export function WorkspacePane({
                       <Text style={styles.loadingText}>Retry</Text>
                     </PressableRow>
                   </>
+                ) : null}
+                {error?.connectionId === source.connectionId ? (
+                  <Text style={styles.error}>{error.message}</Text>
                 ) : null}
                 {source.workspacesLoaded && !source.workspacesError ? (
                   <PressableRow
