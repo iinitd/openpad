@@ -264,9 +264,48 @@ export function ConnectionForm({
     );
   }
 
+  const activeBackend = expanded.startsWith("opencode") ? "opencode" : "paseo";
+  const lastTransport = useRef<Record<"paseo" | "opencode", Transport>>({
+    paseo: "paseo-direct",
+    opencode: "opencode-direct",
+  });
+  const visibleTransports = TRANSPORT_ORDER.filter((transport) =>
+    activeBackend === "opencode"
+      ? transport.startsWith("opencode")
+      : transport.startsWith("paseo"),
+  );
+
   return (
     <View style={styles.form}>
-      {TRANSPORT_ORDER.map((transport) => {
+      <View style={styles.tabs}>
+        {(
+          [
+            ["opencode", "OpenCode"],
+            ["paseo", "Paseo"],
+          ] as const
+        ).map(([backend, label]) => {
+          const active = activeBackend === backend;
+          return (
+            <TouchableOpacity
+              key={backend}
+              style={[styles.tab, active && styles.tabActive]}
+              onPress={() => {
+                if (active) return;
+                hapticTap("selection");
+                setExpanded(lastTransport.current[backend]);
+              }}
+              disabled={isBusy}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.tabText, active && styles.tabTextActive]}>
+                {label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {visibleTransports.map((transport) => {
         const open = expanded === transport;
         return (
           <View key={transport} style={[styles.card, open && styles.cardOpen]}>
@@ -275,6 +314,8 @@ export function ConnectionForm({
               onPress={() => {
                 if (open) return;
                 hapticTap("selection");
+                lastTransport.current[transport.startsWith("opencode") ? "opencode" : "paseo"] =
+                  transport;
                 setExpanded(transport);
               }}
               disabled={isBusy}
@@ -323,6 +364,34 @@ export function ConnectionForm({
 const styles = StyleSheet.create({
   form: {
     gap: THEME.spacing.sm,
+  },
+  tabs: {
+    flexDirection: "row",
+    gap: 2,
+    backgroundColor: THEME.colors.surface,
+    borderRadius: 9,
+    marginBottom: THEME.spacing.xs,
+    padding: 2,
+  },
+  tab: {
+    flex: 1,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 7,
+  },
+  tabActive: {
+    backgroundColor: THEME.colors.background,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: THEME.colors.border,
+  },
+  tabText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: THEME.colors.textSecondary,
+  },
+  tabTextActive: {
+    color: THEME.colors.text,
   },
   card: {
     backgroundColor: THEME.colors.background,
