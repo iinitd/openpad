@@ -20,7 +20,7 @@ import { getBackendPreferences, toggleBackendWorkspacePin, usePreferencesStore }
 import { normalizeWorkspaceCwd } from "../stores/workspace-session-key";
 import { groupDirectoryProjects, type DirectoryProject } from "./directory-projects";
 import { AddProjectPane } from "./AddProjectPane";
-import { aliasFor, randomAlias } from "./connection-alias";
+import { randomAlias } from "./connection-alias";
 import { PromptDialog } from "../components/PromptDialog";
 import { PressableRow, hapticTap } from "../components/PressableRow";
 import { Icon } from "../components/Icon";
@@ -343,7 +343,7 @@ export function WorkspacePane({
         const [backendName, ...restLabel] = source.label.split(" · ");
         const backendHost = restLabel.join(" · ") || source.endpoint;
         const saved = savedConnections.find((entry) => entry.id === source.connectionId);
-        const alias = saved?.alias?.trim() || aliasFor(source.connectionId);
+        const alias = saved?.alias?.trim() ?? "";
         // One card per group, deepest cause first: a failed action, then a
         // broken connection, then a failed project listing.
         const connectionReason =
@@ -418,9 +418,11 @@ export function WorkspacePane({
               >
                 <View style={styles.sourceHeaderInner}>
                 <View style={styles.sourceHeaderText}>
-                  <Text style={styles.sourceLabel} numberOfLines={1}>
-                    {alias}
-                  </Text>
+                  {alias ? (
+                    <Text style={styles.sourceLabel} numberOfLines={1}>
+                      {alias}
+                    </Text>
+                  ) : null}
                   <View style={styles.sourceMeta}>
                     <View
                       style={[
@@ -498,7 +500,14 @@ export function WorkspacePane({
       title="Rename connection"
       placeholder="A name you will recognise"
       initialValue={renameTarget?.value ?? ""}
-      randomize={() => randomAlias(renameTarget?.value)}
+      randomize={() =>
+        randomAlias(
+          renameTarget?.value,
+          savedConnections
+            .filter((entry) => entry.id !== renameTarget?.id)
+            .map((entry) => entry.alias ?? ""),
+        )
+      }
       onCancel={() => setRenameTarget(null)}
       onSubmit={(value) => {
         if (renameTarget) setConnectionAlias(renameTarget.id, value);

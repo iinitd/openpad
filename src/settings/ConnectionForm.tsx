@@ -247,7 +247,12 @@ export function ConnectionForm({
           style={({ pressed }) => [styles.dice, pressed && styles.dicePressed]}
           onPress={() => {
             hapticTap("light");
-            setAlias(randomAlias(alias));
+            setAlias(
+              randomAlias(
+                alias,
+                savedConnections.map((entry) => entry.alias ?? ""),
+              ),
+            );
           }}
           accessibilityRole="button"
           accessibilityLabel="Pick a random name"

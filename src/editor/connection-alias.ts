@@ -50,25 +50,17 @@ const NAMES = [
   "Zoom",
 ];
 
-function hash(value: string): number {
-  let total = 0;
-  for (let index = 0; index < value.length; index++) {
-    total = (total * 31 + value.charCodeAt(index)) >>> 0;
-  }
-  return total;
-}
-
-/** A stable name for a connection that has none of its own. */
-export function aliasFor(connectionId: string): string {
-  return NAMES[hash(connectionId) % NAMES.length]!;
-}
-
-/** A fresh name, never the one already showing. */
-export function randomAlias(current?: string): string {
-  if (NAMES.length === 1) return NAMES[0]!;
-  let next = current;
-  while (next === current) {
-    next = NAMES[Math.floor(Math.random() * NAMES.length)];
-  }
-  return next!;
+/**
+ * A fresh name the user does not already have: never the current one, and
+ * never one another connection is using. Falls back to the whole pool only
+ * when every name is taken.
+ */
+export function randomAlias(current?: string, taken: string[] = []): string {
+  const blocked = new Set(
+    taken.filter(Boolean).map((name) => name.trim().toLowerCase()),
+  );
+  if (current) blocked.add(current.trim().toLowerCase());
+  const pool = NAMES.filter((name) => !blocked.has(name.toLowerCase()));
+  const source = pool.length > 0 ? pool : NAMES;
+  return source[Math.floor(Math.random() * source.length)]!;
 }
