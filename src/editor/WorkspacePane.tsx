@@ -60,6 +60,10 @@ export function WorkspacePane({
   const preferences = usePreferencesStore();
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [addSource, setAddSource] = useState<BackendCatalogEntry | null>(null);
+  // Failures belong to the connection that produced them, shown in its group.
+  const [error, setError] = useState<{ connectionId: string; title: string; message: string } | null>(
+    null,
+  );
   const [addRoot, setAddRoot] = useState<string | null>(null);
   const operationInFlight = useRef(false);
   const operationGeneration = useRef(0);
@@ -123,6 +127,12 @@ export function WorkspacePane({
         onSwitched?.();
         // A new directory only enters the catalog after it has a session.
         await useBackendCatalogStore.getState().refresh(source.connectionId, { workspaces: true });
+      } else {
+        setError({
+          connectionId: source.connectionId,
+          title: "Couldn't add this folder",
+          message: useWriterOpeningStore.getState().error ?? "Try again in a moment.",
+        });
       }
     } finally {
       if (generation === operationGeneration.current) {
@@ -140,6 +150,11 @@ export function WorkspacePane({
         connectionId: source.connectionId,
       });
       if (opened) onSwitched?.();
+      else setError({
+        connectionId: source.connectionId,
+        title: "Couldn't reconnect",
+        message: useWriterOpeningStore.getState().error ?? "Try again in a moment.",
+      });
     } finally {
       operationInFlight.current = false;
     }
@@ -340,26 +355,60 @@ export function WorkspacePane({
                 {!source.workspacesLoaded ? (
                   <Text style={styles.loadingText}>Loading projects…</Text>
                 ) : null}
-                {source.workspacesError ? (
-                  <View style={styles.groupError}>
-                    <Text style={styles.groupErrorTitle}>Couldn't load projects</Text>
-                    <Text style={styles.groupErrorText}>{source.workspacesError}</Text>
-                    <PressableRow
-                      style={styles.groupErrorAction}
-                      haptic="light"
-                      scale={false}
-                      onPress={() =>
-                        void useBackendCatalogStore
-                          .getState()
-                          .refresh(source.connectionId, { workspaces: true })
-                      }
-                      accessibilityRole="button"
-                      accessibilityLabel="Retry loading projects"
-                    >
-                      <Text style={styles.groupErrorActionText}>Retry</Text>
-                    </PressableRow>
-                  </View>
-                ) : null}
+                {(() => {
+                  // One card per group, deepest cause first: a failed open, then
+                  // a broken connection, then a failed project listing.
+                  const connectionReason =
+                    live?.connectionState.status === "disconnected"
+                      ? live.connectionState.reason
+                      : undefined;
+                  const card =
+                    error?.connectionId === source.connectionId
+                      ? {
+                          title: error.title,
+                          message: error.message,
+                          actionLabel: "Retry",
+                          onAction: () => {
+                            setError(null);
+                            void useWriterOpeningStore.getState().retry();
+                          },
+                        }
+                      : connectionReason
+                        ? {
+                            title: "Couldn't connect",
+                            message: connectionReason,
+                            actionLabel: "Reconnect",
+                            onAction: () => void openConnection(source),
+                          }
+                        : source.workspacesError
+                          ? {
+                              title: "Couldn't load projects",
+                              message: source.workspacesError,
+                              actionLabel: "Retry",
+                              onAction: () =>
+                                void useBackendCatalogStore
+                                  .getState()
+                                  .refresh(source.connectionId, { workspaces: true }),
+                            }
+                          : null;
+                  if (!card) return null;
+                  return (
+                    <View style={styles.groupError}>
+                      <Text style={styles.groupErrorTitle}>{card.title}</Text>
+                      <Text style={styles.groupErrorText}>{card.message}</Text>
+                      <PressableRow
+                        style={styles.groupErrorAction}
+                        haptic="light"
+                        scale={false}
+                        onPress={card.onAction}
+                        accessibilityRole="button"
+                        accessibilityLabel={card.actionLabel}
+                      >
+                        <Text style={styles.groupErrorActionText}>{card.actionLabel}</Text>
+                      </PressableRow>
+                    </View>
+                  );
+                })()}
                 {source.workspacesLoaded && !source.workspacesError ? (
                   <PressableRow
                     style={[styles.addRow, addDisabled && styles.addRowDisabled]}

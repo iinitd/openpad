@@ -1,6 +1,6 @@
 import { createPluginContext } from "../../src/content/plugin-context";
 import { hapticTap } from "../../src/components/PressableRow";
-import { ToastHost, showToast } from "../../src/components/Toast";
+import { ToastHost } from "../../src/components/Toast";
 import { SettingsPane } from "../../src/settings/SettingsPane";
 import { ConnectionForm } from "../../src/settings/ConnectionForm";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -281,12 +281,6 @@ export default function WriterSessionScreen() {
 
   const { width: screenWidth } = useWindowDimensions();
   const isCompact = screenWidth < COMPACT_BREAKPOINT || isPhonePortraitWeb();
-  // Opening failures are transient enough for a toast; the layout keeps no
-  // status strip of its own.
-  useEffect(() => {
-    if (openingError) showToast(openingError);
-  }, [openingError]);
-
   return (
     <View style={styles.writerContainer}>
       <ToastHost />
