@@ -289,16 +289,19 @@ export function WorkspacePane({
             {/* The connection is the parent of its projects: one header, with
                 its state, and the projects nested underneath. */}
             <View style={styles.sourceRow}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.sourceHeader,
-                  pressed && styles.sourceHeaderPressed,
-                ]}
+              <PressableRow
+                style={styles.sourceHeader}
                 onPress={() => preferences.toggleProjectSource(source.connectionId)}
+                haptic="light"
+                // A gentle press-in instead of a tint: the row dips very
+                // slightly, then settles when the list collapses or expands.
+                scale={0.985}
+                pressedStyle={styles.sourceHeaderPressed}
                 accessibilityRole="button"
                 accessibilityLabel={`${collapsed ? "Expand" : "Collapse"} ${source.label}`}
                 accessibilityState={{ expanded: !collapsed }}
               >
+                <View style={styles.sourceHeaderInner}>
                 <Icon
                   name={collapsed ? "chevron-right" : "chevron-down"}
                   size={14}
@@ -325,7 +328,8 @@ export function WorkspacePane({
                   />
                   <Text style={styles.sourceStatus}>{statusLabel}</Text>
                 </View>
-              </Pressable>
+                </View>
+              </PressableRow>
               {!connected && !connecting ? (
                 <PressableRow
                   style={styles.sourceAction}
@@ -507,14 +511,17 @@ const styles = StyleSheet.create({
   },
   sourceHeader: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
     paddingVertical: THEME.spacing.sm,
     paddingHorizontal: THEME.spacing.xs,
   },
+  sourceHeaderInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
   sourceHeaderPressed: {
-    opacity: 0.55,
+    // Cancel PressableRow's translucent tint; the scale is the feedback.
+    backgroundColor: "transparent",
   },
   sourceHeaderText: {
     flex: 1,
