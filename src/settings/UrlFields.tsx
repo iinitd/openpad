@@ -135,7 +135,9 @@ export function UrlFields({
       </View>
 
       {!parts.secure ? (
-        <Text style={styles.warning}>{insecureHint}</Text>
+        <View style={styles.warningCard}>
+          <Text style={styles.warningText}>{insecureHint}</Text>
+        </View>
       ) : null}
 
       {onUsernameChange ? (
@@ -248,11 +250,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: THEME.colors.text,
   },
-  warning: {
+  warningCard: {
+    backgroundColor: "#fef7d6",
+    borderRadius: THEME.radii.md,
+    paddingHorizontal: THEME.spacing.sm + 2,
+    paddingVertical: THEME.spacing.sm,
+  },
+  warningText: {
     fontSize: 12,
     lineHeight: 17,
-    color: THEME.colors.warning,
-    marginTop: -THEME.spacing.xs,
+    color: "#8a6100",
   },
   passwordRow: {
     flexDirection: "row",
