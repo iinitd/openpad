@@ -387,6 +387,7 @@ export function WorkspacePane({
               </PressableRow>
             </View>
 
+            {groupCard}
             {!collapsed ? (
               <View style={styles.sourceChildren}>
                 {!source.workspacesLoaded ? (
@@ -416,7 +417,6 @@ export function WorkspacePane({
                 ) : null}
               </View>
             ) : null}
-            {groupCard}
           </View>
         );
       })}
