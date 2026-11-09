@@ -18,7 +18,7 @@ import { getBackendPreferences, toggleBackendWorkspacePin, usePreferencesStore }
 import { normalizeWorkspaceCwd } from "../stores/workspace-session-key";
 import { groupDirectoryProjects, type DirectoryProject } from "./directory-projects";
 import { AddProjectPane } from "./AddProjectPane";
-import { PressableRow } from "../components/PressableRow";
+import { PressableRow, hapticTap } from "../components/PressableRow";
 import { Icon } from "../components/Icon";
 import { THEME } from "../styles/theme";
 
@@ -393,6 +393,7 @@ export function WorkspacePane({
                   onPress={(event) => {
                     event.stopPropagation?.();
                     if (addDisabled) return;
+                    hapticTap("light");
                     openAddProject(source);
                   }}
                   disabled={addDisabled}
