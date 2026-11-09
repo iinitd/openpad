@@ -257,6 +257,10 @@ export function WorkspacePane({
         const onThisConnection = source.connectionId === activeConnectionId;
         const addDisabled = Boolean(busyKey) || opening || isSwitchingConnection || !connected;
         const statusLabel = connected ? "Connected" : connecting ? "Connecting…" : "Offline";
+        // "OpenCode · host" on one line is a mouthful; split it into a name and
+        // the address it points at.
+        const [backendName, ...restLabel] = source.label.split(" · ");
+        const backendHost = restLabel.join(" · ") || source.endpoint;
         return (
           <View key={source.connectionId} style={styles.sourceBlock}>
             {/* The connection is the parent of its projects: one header, with
@@ -277,10 +281,14 @@ export function WorkspacePane({
                   size={14}
                   color={THEME.colors.textMuted}
                 />
-                <Text style={styles.sourceLabel} numberOfLines={1}>
-                  {source.label}
-                </Text>
-                <View style={styles.sourceSpacer} />
+                <View style={styles.sourceHeaderText}>
+                  <Text style={styles.sourceLabel} numberOfLines={1}>
+                    {backendName}
+                  </Text>
+                  <Text style={styles.sourceEndpoint} numberOfLines={1}>
+                    {backendHost}
+                  </Text>
+                </View>
                 <View style={styles.sourceStatusPill}>
                   <View
                     style={[
@@ -498,8 +506,14 @@ const styles = StyleSheet.create({
   sourceHeaderPressed: {
     backgroundColor: THEME.colors.backgroundSecondary,
   },
-  sourceSpacer: {
+  sourceHeaderText: {
     flex: 1,
+    minWidth: 0,
+    gap: 1,
+  },
+  sourceEndpoint: {
+    fontSize: 12,
+    color: THEME.colors.textMuted,
   },
   // Hierarchy through size and tone, not weight: the connection reads as a
   // heading because it is larger and darker than the project names below it.
