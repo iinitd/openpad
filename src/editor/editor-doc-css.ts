@@ -295,6 +295,11 @@ export const EDITOR_DOC_CSS = `
     padding: 0;
     white-space: inherit;
   }
+  .tiptap pre code .tok-comment { color: #6b7280; font-style: italic; }
+  .tiptap pre code .tok-string { color: #047857; }
+  .tiptap pre code .tok-number { color: #b45309; }
+  .tiptap pre code .tok-keyword { color: #7c3aed; font-weight: 600; }
+  .tiptap pre code .tok-literal { color: #1d4ed8; }
   .kel-ai-pending { background-color: #e2e8f0; border-bottom: 2px dashed #94a3b8; }
   @keyframes kel-ai-pulse {
     0%   { background-color: #e2e8f0; box-shadow: 0 0 0 0 rgba(100,116,139,0.45); }

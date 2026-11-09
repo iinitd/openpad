@@ -11,6 +11,7 @@
 //      HTML through untouched, so mixed content survives.
 
 import { marked } from "marked";
+import { highlightCode } from "./code-highlight";
 
 marked.setOptions({
   gfm: true,
@@ -348,7 +349,7 @@ function codeFileToHtml(path: string, raw: string): string {
     formatted.length > MAX_CODE_PREVIEW
       ? `${formatted.slice(0, MAX_CODE_PREVIEW)}\n\n… truncated, ${formatted.length - MAX_CODE_PREVIEW} more characters`
       : formatted;
-  return `<pre><code>${escapeHtml(body.replace(/\s+$/, ""))}</code></pre>`;
+  return `<pre><code>${highlightCode(body.replace(/\s+$/, ""), ext)}</code></pre>`;
 }
 
 // Convert a workspace file's raw text into HTML suitable for the editor.
