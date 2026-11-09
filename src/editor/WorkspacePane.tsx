@@ -394,8 +394,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: THEME.spacing.sm,
     gap: THEME.spacing.md,
   },
+  // Each connection is a card and its projects live inside it, so the
+  // grouping is a container rather than an indent.
   sourceBlock: {
-    gap: THEME.spacing.sm,
+    gap: 2,
+    padding: THEME.spacing.sm,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: THEME.colors.border,
+    backgroundColor: THEME.colors.background,
   },
   // Same geometry as a file row: a narrow icon column, and the open item gets
   // an outline rather than a filled block.
@@ -483,9 +490,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    paddingVertical: 8,
-    paddingHorizontal: THEME.spacing.xs,
-    borderRadius: 8,
+    paddingTop: 2,
+    paddingBottom: 6,
+    paddingHorizontal: 2,
   },
   sourceHeaderPressed: {
     backgroundColor: THEME.colors.backgroundSecondary,
@@ -524,10 +531,6 @@ const styles = StyleSheet.create({
   },
   sourceChildren: {
     gap: 2,
-    paddingLeft: THEME.spacing.md,
-    marginLeft: 3,
-    borderLeftWidth: StyleSheet.hairlineWidth,
-    borderLeftColor: THEME.colors.border,
   },
   addConnectionRow: {
     flexDirection: "row",
