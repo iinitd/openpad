@@ -89,13 +89,6 @@ export const ChatInput = memo(function ChatInput({
     <View style={variant === "embedded" ? styles.containerEmbedded : styles.container}>
       {queued.length > 0 ? (
         <View style={styles.queueList}>
-          {queued.length > 1 ? (
-            <Text style={styles.queueHint}>
-              {queued.length} messages queued · will send together after the current reply
-            </Text>
-          ) : (
-            <Text style={styles.queueHint}>Queued · will send after the current reply</Text>
-          )}
           {queued.map((q) => (
             <View key={q.id} style={styles.queueChip}>
               <Text style={styles.queueChipText} numberOfLines={2}>
@@ -151,27 +144,25 @@ const styles = StyleSheet.create({
     gap: THEME.spacing.xs,
     marginBottom: THEME.spacing.xs,
   },
-  queueHint: {
-    fontSize: 13,
-    color: THEME.colors.textSecondary,
-    paddingHorizontal: THEME.spacing.xs,
-  },
+  // Waiting messages read as pending by shape, not by a caption: a quiet
+  // white row with an accent rule, stacked directly above the composer.
   queueChip: {
     flexDirection: "row",
     alignItems: "center",
     gap: THEME.spacing.sm,
-    backgroundColor: THEME.colors.surface,
+    backgroundColor: THEME.colors.background,
     borderRadius: THEME.radii.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: THEME.colors.border,
+    borderLeftWidth: 2,
+    borderLeftColor: THEME.colors.accent,
     paddingLeft: THEME.spacing.md,
     paddingRight: 6,
-    paddingVertical: 6,
+    paddingVertical: 7,
   },
   queueChipText: {
     flex: 1,
-    fontSize: 15,
-    color: THEME.colors.text,
+    fontSize: 14,
+    lineHeight: 20,
+    color: THEME.colors.textSecondary,
   },
   queueRemove: {
     width: 22,

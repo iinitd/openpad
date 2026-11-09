@@ -457,7 +457,8 @@ const styles = StyleSheet.create({
     marginBottom: THEME.spacing.xs,
     paddingHorizontal: THEME.spacing.md,
     borderRadius: 9,
-    // Soft fill, not another outline: the open project is the boxed row.
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
     backgroundColor: THEME.colors.surface,
   },
   addRowPressed: {
