@@ -61,9 +61,7 @@ export function WorkspacePane({
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [addSource, setAddSource] = useState<BackendCatalogEntry | null>(null);
   // Failures belong to the connection that produced them, shown in its group.
-  const [error, setError] = useState<{ connectionId: string; title: string; message: string } | null>(
-    null,
-  );
+  const [error, setError] = useState<{ connectionId: string; message: string } | null>(null);
   const [addRoot, setAddRoot] = useState<string | null>(null);
   const operationInFlight = useRef(false);
   const operationGeneration = useRef(0);
@@ -130,7 +128,6 @@ export function WorkspacePane({
       } else {
         setError({
           connectionId: source.connectionId,
-          title: "Couldn't add this folder",
           message: useWriterOpeningStore.getState().error ?? "Try again in a moment.",
         });
       }
@@ -152,7 +149,6 @@ export function WorkspacePane({
       if (opened) onSwitched?.();
       else setError({
         connectionId: source.connectionId,
-        title: "Couldn't reconnect",
         message: useWriterOpeningStore.getState().error ?? "Try again in a moment.",
       });
     } finally {
@@ -290,6 +286,59 @@ export function WorkspacePane({
         // the address it points at.
         const [backendName, ...restLabel] = source.label.split(" · ");
         const backendHost = restLabel.join(" · ") || source.endpoint;
+        // One card per group, deepest cause first: a failed action, then a
+        // broken connection, then a failed project listing.
+        const connectionReason =
+          live?.connectionState.status === "disconnected"
+            ? live.connectionState.reason ?? "The connection closed. Reconnect to continue."
+            : live?.connectionState.status === "disposed"
+              ? "The connection closed. Reconnect to continue."
+              : undefined;
+        const groupCard = (() => {
+          const card =
+            error?.connectionId === source.connectionId
+              ? {
+                  message: error.message,
+                  actionLabel: "Retry",
+                  onAction: () => {
+                    setError(null);
+                    void useWriterOpeningStore.getState().retry();
+                  },
+                }
+              : connectionReason
+                ? {
+                    message: connectionReason,
+                    actionLabel: "Reconnect",
+                    onAction: () => void openConnection(source),
+                  }
+                : source.workspacesError
+                  ? {
+                      message: source.workspacesError,
+                      actionLabel: "Retry",
+                      onAction: () =>
+                        void useBackendCatalogStore
+                          .getState()
+                          .refresh(source.connectionId, { workspaces: true }),
+                    }
+                  : null;
+          if (!card) return null;
+          return (
+            <View style={styles.groupError}>
+              <Text style={styles.groupErrorText}>{card.message}</Text>
+              <PressableRow
+                style={styles.groupErrorAction}
+                haptic="light"
+                scale={false}
+                onPress={card.onAction}
+                accessibilityRole="button"
+                accessibilityLabel={card.actionLabel}
+              >
+                <Text style={styles.groupErrorActionText}>{card.actionLabel}</Text>
+              </PressableRow>
+            </View>
+          );
+        })();
+
         return (
           <View key={source.connectionId} style={styles.sourceBlock}>
             {/* The connection is the parent of its projects: one header, with
@@ -336,18 +385,6 @@ export function WorkspacePane({
                 </View>
                 </View>
               </PressableRow>
-              {!connected && !connecting ? (
-                <PressableRow
-                  style={styles.sourceAction}
-                  haptic="light"
-                  scale={false}
-                  onPress={() => void openConnection(source)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Reconnect ${source.label}`}
-                >
-                  <Text style={styles.sourceActionText}>Reconnect</Text>
-                </PressableRow>
-              ) : null}
             </View>
 
             {!collapsed ? (
@@ -355,60 +392,7 @@ export function WorkspacePane({
                 {!source.workspacesLoaded ? (
                   <Text style={styles.loadingText}>Loading projects…</Text>
                 ) : null}
-                {(() => {
-                  // One card per group, deepest cause first: a failed open, then
-                  // a broken connection, then a failed project listing.
-                  const connectionReason =
-                    live?.connectionState.status === "disconnected"
-                      ? live.connectionState.reason
-                      : undefined;
-                  const card =
-                    error?.connectionId === source.connectionId
-                      ? {
-                          title: error.title,
-                          message: error.message,
-                          actionLabel: "Retry",
-                          onAction: () => {
-                            setError(null);
-                            void useWriterOpeningStore.getState().retry();
-                          },
-                        }
-                      : connectionReason
-                        ? {
-                            title: "Couldn't connect",
-                            message: connectionReason,
-                            actionLabel: "Reconnect",
-                            onAction: () => void openConnection(source),
-                          }
-                        : source.workspacesError
-                          ? {
-                              title: "Couldn't load projects",
-                              message: source.workspacesError,
-                              actionLabel: "Retry",
-                              onAction: () =>
-                                void useBackendCatalogStore
-                                  .getState()
-                                  .refresh(source.connectionId, { workspaces: true }),
-                            }
-                          : null;
-                  if (!card) return null;
-                  return (
-                    <View style={styles.groupError}>
-                      <Text style={styles.groupErrorTitle}>{card.title}</Text>
-                      <Text style={styles.groupErrorText}>{card.message}</Text>
-                      <PressableRow
-                        style={styles.groupErrorAction}
-                        haptic="light"
-                        scale={false}
-                        onPress={card.onAction}
-                        accessibilityRole="button"
-                        accessibilityLabel={card.actionLabel}
-                      >
-                        <Text style={styles.groupErrorActionText}>{card.actionLabel}</Text>
-                      </PressableRow>
-                    </View>
-                  );
-                })()}
+
                 {source.workspacesLoaded && !source.workspacesError ? (
                   <PressableRow
                     style={[styles.addRow, addDisabled && styles.addRowDisabled]}
@@ -432,6 +416,7 @@ export function WorkspacePane({
                 ) : null}
               </View>
             ) : null}
+            {groupCard}
           </View>
         );
       })}
@@ -597,15 +582,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: THEME.colors.textSecondary,
   },
-  sourceAction: {
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-  },
-  sourceActionText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: THEME.colors.textSecondary,
-  },
   sourceChildren: {
     gap: 2,
   },
@@ -641,11 +617,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: "#fef2f2",
   },
-  groupErrorTitle: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#b91c1c",
-  },
   groupErrorText: {
     fontSize: 12,
     lineHeight: 17,
@@ -661,7 +632,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
     color: "#b91c1c",
-    textDecorationLine: "underline",
   },
   loadingRow: {
     flexDirection: "row",
