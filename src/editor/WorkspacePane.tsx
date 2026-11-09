@@ -411,7 +411,7 @@ export function WorkspacePane({
                     accessibilityRole="button"
                     accessibilityLabel={`Add a project to ${source.label}`}
                   >
-                    <Icon name="plus" size={16} color={THEME.colors.text} />
+                    <Icon name="plus" size={13} color={THEME.colors.textSecondary} />
                     <Text style={styles.addRowText}>New working directory</Text>
                   </PressableRow>
                 ) : null}
@@ -504,30 +504,26 @@ const styles = StyleSheet.create({
   },
   // A white button rather than another list row: this is the one action on the
   // screen, and the border + shadow make it read as something to press.
+  // A quiet action on the group's top edge: no box, so it sits beside the
+  // project rows instead of competing with them.
   addRow: {
+    alignSelf: "flex-end",
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    height: 40,
-    marginTop: 2,
+    gap: 4,
+    paddingHorizontal: 2,
+    paddingVertical: 6,
     marginBottom: THEME.spacing.xs,
-    paddingHorizontal: THEME.spacing.md,
-    borderRadius: 9,
-    borderWidth: 1,
-    borderColor: THEME.colors.border,
-    backgroundColor: THEME.colors.surface,
   },
   addRowPressed: {
-    backgroundColor: "#ececef",
+    opacity: 0.5,
   },
   addRowDisabled: {
     opacity: 0.45,
   },
   addRowText: {
-    // The fill already marks this as a button; the label need not shout.
-    fontSize: 15,
-    fontWeight: "500",
-    color: THEME.colors.text,
+    fontSize: 13,
+    color: THEME.colors.textSecondary,
   },
   sourceRow: {
     flexDirection: "row",
