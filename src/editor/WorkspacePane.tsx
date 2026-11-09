@@ -249,7 +249,7 @@ export function WorkspacePane({
         <View style={styles.loadingRow}><ActivityIndicator size="small" color={THEME.colors.primary} /><Text style={styles.loadingText}>Loading projects…</Text></View>
       ) : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
-      {sources.map(({ source, contextKey, workspaces }, sourceIndex) => {
+      {sources.map(({ source, contextKey, workspaces }) => {
         const collapsed = Boolean(preferences.collapsedProjectSources[source.connectionId]);
         const live = connections.find((connection) => connection.id === source.connectionId);
         const connected = live?.connectionState.status === "connected";
@@ -258,10 +258,7 @@ export function WorkspacePane({
         const addDisabled = Boolean(busyKey) || opening || isSwitchingConnection || !connected;
         const statusLabel = connected ? "Connected" : connecting ? "Connecting…" : "Offline";
         return (
-          <View
-            key={source.connectionId}
-            style={[styles.sourceBlock, sourceIndex > 0 && styles.sourceBlockDivided]}
-          >
+          <View key={source.connectionId} style={styles.sourceBlock}>
             {/* The connection is the parent of its projects: one header, with
                 its state, and the projects nested underneath. */}
             <View style={styles.sourceRow}>
@@ -393,21 +390,21 @@ export function WorkspacePane({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: THEME.colors.backgroundSecondary,
   },
   content: {
-    paddingTop: THEME.spacing.xs,
-    paddingHorizontal: THEME.spacing.md,
-    gap: THEME.spacing.md,
+    paddingTop: 0,
+    gap: 0,
   },
-  // Full-width group with a rule above it: no card, so the list stays flush
-  // left and right instead of nesting boxes.
+  // Each connection is a white band on the grey page: rules top and bottom,
+  // nothing on the sides, so it spans the full width.
   sourceBlock: {
     gap: 6,
     paddingVertical: THEME.spacing.md,
-  },
-  sourceBlockDivided: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: THEME.colors.border,
+    paddingHorizontal: THEME.spacing.md,
+    backgroundColor: THEME.colors.background,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: THEME.colors.border,
   },
   // Same geometry as a file row: a narrow icon column, and the open item gets
   // an outline rather than a filled block.
@@ -550,8 +547,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     height: 40,
-    marginTop: THEME.spacing.md,
-    marginHorizontal: THEME.spacing.xs,
+    marginVertical: THEME.spacing.md,
+    marginHorizontal: THEME.spacing.md,
     paddingHorizontal: THEME.spacing.md,
     borderRadius: 9,
     backgroundColor: THEME.colors.surface,
@@ -569,6 +566,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: THEME.spacing.sm,
     padding: THEME.spacing.md,
+    marginHorizontal: THEME.spacing.md,
   },
   loadingText: {
     fontSize: 15,
@@ -584,5 +582,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: THEME.colors.textMuted,
     padding: THEME.spacing.md,
+    marginHorizontal: THEME.spacing.xs,
   },
 });
