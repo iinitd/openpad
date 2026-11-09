@@ -664,22 +664,41 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         }}
       >
         <View style={styles.pageSheet}>
-          <View style={styles.pageSheetHeader}>
+          <View
+            style={[
+              styles.pageSheetHeader,
+              addProjectOpen ? null : styles.pageSheetHeaderFlush,
+            ]}
+          >
             {addProjectOpen ? (
-              <>
-                <PressableRow
-                  style={styles.pageSheetClose}
-                  onPress={() => setAddProjectOpen(false)}
-                  haptic="light"
-                  accessibilityLabel="Back to projects"
-                >
-                  <Icon name="chevron-left" size={20} color={THEME.colors.text} />
-                </PressableRow>
-                <Text style={[styles.sheetTitle, styles.sheetTitleCentered]} numberOfLines={1}>
-                  New working directory
-                </Text>
-              </>
-            ) : (
+              <PressableRow
+                style={styles.pageSheetClose}
+                onPress={() => setAddProjectOpen(false)}
+                haptic="light"
+                accessibilityLabel="Back to projects"
+              >
+                <Icon name="chevron-left" size={20} color={THEME.colors.text} />
+              </PressableRow>
+            ) : null}
+            <Text style={styles.sheetTitle} numberOfLines={1}>
+              {addProjectOpen
+                ? "New working directory"
+                : projectsTab === "projects"
+                  ? "Projects"
+                  : "Settings"}
+            </Text>
+            <PressableRow
+              style={styles.pageSheetClose}
+              onPress={closeProjects}
+              haptic="light"
+              accessibilityLabel="Close projects"
+            >
+              <Icon name="close" size={18} color={THEME.colors.textSecondary} />
+            </PressableRow>
+          </View>
+
+          {addProjectOpen ? null : (
+            <View style={styles.sheetTabRow}>
               <View style={styles.sheetTabs}>
                 {(["projects", "settings"] as const).map((tab) => (
                   <PressableRow
@@ -705,16 +724,8 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
                   </PressableRow>
                 ))}
               </View>
-            )}
-            <PressableRow
-              style={styles.pageSheetClose}
-              onPress={closeProjects}
-              haptic="light"
-              accessibilityLabel="Close projects"
-            >
-              <Icon name="close" size={18} color={THEME.colors.textSecondary} />
-            </PressableRow>
-          </View>
+            </View>
+          )}
 
           {projectsTab === "projects" ? (
             <FileTree
@@ -920,8 +931,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: THEME.radii.md,
   },
+  pageSheetHeaderFlush: {
+    borderBottomWidth: 0,
+  },
+  sheetTabRow: {
+    paddingHorizontal: THEME.spacing.lg,
+    paddingTop: THEME.spacing.sm,
+    paddingBottom: THEME.spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#e6e6ea",
+  },
   sheetTabs: {
-    flex: 1,
     flexDirection: "row",
     gap: 2,
     padding: 2,
@@ -948,11 +968,8 @@ const styles = StyleSheet.create({
   sheetTabLabelActive: {
     color: THEME.colors.text,
   },
-  sheetTitleCentered: {
-    flex: 1,
-    textAlign: "center",
-  },
   sheetTitle: {
+    flex: 1,
     fontSize: 17,
     fontWeight: "600",
     letterSpacing: -0.01,
