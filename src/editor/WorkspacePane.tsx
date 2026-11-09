@@ -270,7 +270,6 @@ export function WorkspacePane({
         const live = connections.find((connection) => connection.id === source.connectionId);
         const connected = live?.connectionState.status === "connected";
         const connecting = live?.connectionState.status === "connecting";
-        const onThisConnection = source.connectionId === activeConnectionId;
         const addDisabled = Boolean(busyKey) || opening || isSwitchingConnection || !connected;
         // Only three states are worth naming: connected, still trying, and
         // failed. A plain disconnect reads as "Connecting" because the app will
@@ -340,17 +339,6 @@ export function WorkspacePane({
                   accessibilityLabel={`Reconnect ${source.label}`}
                 >
                   <Text style={styles.sourceActionText}>Reconnect</Text>
-                </PressableRow>
-              ) : connected && !onThisConnection ? (
-                <PressableRow
-                  style={styles.sourceAction}
-                  haptic="light"
-                  scale={false}
-                  onPress={() => void openConnection(source)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Switch to ${source.label}`}
-                >
-                  <Text style={styles.sourceActionText}>Switch</Text>
                 </PressableRow>
               ) : null}
             </View>
