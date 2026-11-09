@@ -708,7 +708,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "flex-end",
     paddingHorizontal: THEME.spacing.md,
-    paddingBottom: THEME.spacing.sm,
+    paddingBottom: THEME.spacing.md,
   },
   addConnectionButton: {
     flexDirection: "row",
