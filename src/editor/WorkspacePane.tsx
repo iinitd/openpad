@@ -536,7 +536,9 @@ const styles = StyleSheet.create({
   sourceHeader: {
     flex: 1,
     paddingVertical: THEME.spacing.sm,
-    paddingLeft: THEME.spacing.xs,
+    // Lines the title up with the project icons below (block 12 + row 12,
+    // minus the icon column's 1pt optical inset).
+    paddingLeft: 13,
     paddingRight: THEME.spacing.xs,
   },
   sourceHeaderInner: {
