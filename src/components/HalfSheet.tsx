@@ -26,7 +26,7 @@ export function HalfSheet({
   children,
   scrollToEndOnOpen = false,
   stickyHeaderIndices,
-  actions,
+  headerActions,
 }: {
   visible: boolean;
   title: string;
@@ -36,8 +36,8 @@ export function HalfSheet({
   scrollToEndOnOpen?: boolean;
   /** Pin the given children while the rest of the sheet scrolls. */
   stickyHeaderIndices?: number[];
-  /** Quick actions shown under the title, above the content. */
-  actions?: ReactNode;
+  /** Buttons shown in the title bar, before the close button. */
+  headerActions?: ReactNode;
 }) {
   const { height } = useWindowDimensions();
   const sheetHeight = Math.round(height * 0.75);
@@ -143,6 +143,7 @@ export function HalfSheet({
             <Text style={styles.title} numberOfLines={1}>
               {title}
             </Text>
+            {headerActions}
             <PressableRow
               style={styles.close}
               onPress={closeNow}
@@ -152,7 +153,6 @@ export function HalfSheet({
               <Icon name="close" size={18} color={THEME.colors.textSecondary} />
             </PressableRow>
           </View>
-          {actions ? <View style={styles.actions}>{actions}</View> : null}
           <ScrollView
             ref={scrollRef}
             contentContainerStyle={styles.content}
@@ -214,15 +214,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "600",
     color: THEME.colors.text,
-  },
-  actions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.lg,
-    paddingVertical: THEME.spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: THEME.colors.border,
   },
   close: {
     width: 32,

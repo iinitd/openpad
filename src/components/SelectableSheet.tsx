@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Platform, StyleSheet, Text } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import { HalfSheet } from "./HalfSheet";
@@ -39,7 +39,7 @@ export function SelectableSheet({
       visible={visible}
       title="Message"
       onClose={onClose}
-      actions={
+      headerActions={
         <PressableRow
           style={styles.action}
           haptic="light"
@@ -50,16 +50,13 @@ export function SelectableSheet({
             setTimeout(() => setCopied(false), 1400);
           }}
           accessibilityRole="button"
-          accessibilityLabel="Copy message"
+          accessibilityLabel={copied ? "Copied" : "Copy message"}
         >
           <Icon
-            name="copy"
-            size={14}
-            color={copied ? THEME.colors.success : THEME.colors.textSecondary}
+            name={copied ? "check" : "copy"}
+            size={16}
+            color={THEME.colors.textSecondary}
           />
-          <Text style={[styles.actionText, copied && styles.actionTextDone]}>
-            {copied ? "Copied" : "Copy"}
-          </Text>
         </PressableRow>
       }
     >
@@ -70,21 +67,10 @@ export function SelectableSheet({
 
 const styles = StyleSheet.create({
   action: {
-    flexDirection: "row",
+    width: 32,
+    height: 32,
     alignItems: "center",
-    gap: 5,
-    height: 30,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-    backgroundColor: THEME.colors.surface,
-  },
-  actionText: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: THEME.colors.textSecondary,
-  },
-  actionTextDone: {
-    color: THEME.colors.success,
+    justifyContent: "center",
   },
   text: {
     fontSize: 16,
