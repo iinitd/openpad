@@ -90,7 +90,7 @@ export function UrlFields({
   password,
   onPasswordChange,
   passwordPlaceholder = "Optional",
-  insecureHint = "Not encrypted. Everything sent here, including the password, can be read on the network. Prefer SSL, or a private network such as Tailscale.",
+  insecureHint = "This connection is not encrypted. Everything sent here, including the password, travels in the clear, so anyone on the same network can read it. Prefer SSL, or a private network such as Tailscale.",
 }: UrlFieldsProps) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [reveal, setReveal] = useState(false);

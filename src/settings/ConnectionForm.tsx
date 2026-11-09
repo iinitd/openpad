@@ -150,7 +150,7 @@ export function ConnectionForm({
           password={password}
           onPasswordChange={setPassword}
           passwordPlaceholder="Optional"
-          insecureHint="Not encrypted. WebSocket traffic and the daemon password travel in the clear. Prefer SSL, or a private network such as Tailscale."
+          insecureHint="This connection is not encrypted. WebSocket traffic and the daemon password travel in the clear, so anyone on the same network can read them. Prefer SSL, or a private network such as Tailscale."
         />
       );
     }
@@ -208,7 +208,7 @@ export function ConnectionForm({
           password={opencodePassword}
           onPasswordChange={setOpenCodePassword}
           passwordPlaceholder="OPENCODE_SERVER_PASSWORD"
-          insecureHint="Not encrypted. HTTP sends the server password and session token in the clear. Prefer HTTPS, or a private network such as Tailscale."
+          insecureHint="This connection is not encrypted. HTTP sends the server password and session token in the clear, so anyone on the same network can read them. Prefer HTTPS, or a private network such as Tailscale."
         />
         <Text style={styles.hint}>
           Run `opencode serve`, then use the printed server password. For the web app,
