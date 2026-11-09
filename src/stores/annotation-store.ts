@@ -54,7 +54,6 @@ function buildAnnotationMessage(annotation: Annotation): string {
 // comment bar. `selectionText` may be empty for a document-scoped comment.
 function buildMessage(selectionText: string, comment: string, blockIds: string[] = []): string {
   const { documentPath } = useEditorStore.getState();
-  const fileRef = documentPath ? `File: ${documentPath}` : "File: (the open document)";
   const hasSelection = selectionText.trim().length > 0;
   const instruction = comment.trim()
     ? comment.trim()
@@ -68,15 +67,8 @@ function buildMessage(selectionText: string, comment: string, blockIds: string[]
     filename: documentPath ?? "(the open document)",
     selection: selectionText,
   });
-  const lines: string[] = [];
-  if (rendered) {
-    lines.push(rendered, "");
-  } else {
-    lines.push(fileRef, "");
-    if (hasSelection) {
-      lines.push("Selected text:", '"""', selectionText, '"""', "");
-    }
-  }
+  // The message is the template rendered; there is no second assembly path.
+  const lines: string[] = rendered ? [rendered, ""] : [];
   if (blockIds.length > 0) lines.push(`Feishu block IDs: ${blockIds.join(" → ")}`, "");
   lines.push(`Instruction: ${instruction}`);
   if (blockIds.length > 0) {
