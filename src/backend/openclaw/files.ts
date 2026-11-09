@@ -382,7 +382,7 @@ export class OpenClawFiles {
     } catch (error) {
       if (error instanceof OpenClawRpcError) throw error;
       return fail("DOWNLOAD_FAILED", controller.signal.aborted ? "OpenClaw file download timed out or exceeded its size limit." :
-        "OpenClaw file download failed. Browsers cannot read cross-origin downloads from gateways without CORS support; serve OpenPad and the gateway through the same origin. Also check gateway HTTP access and retry.");
+        "OpenClaw file download failed. Browsers cannot read cross-origin downloads from gateways without CORS support; serve Puff and the gateway through the same origin. Also check gateway HTTP access and retry.");
     } finally { clearTimeout(deadline); }
   }
 }

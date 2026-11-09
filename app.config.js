@@ -10,7 +10,7 @@ module.exports = ({ config }) => {
 
   return {
     ...config,
-    name: "OpenPad Dev",
+    name: "Puff Dev",
     scheme: "openpad-dev",
     ios: {
       ...config.ios,

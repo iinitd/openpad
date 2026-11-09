@@ -14,6 +14,7 @@ export type ConnectionMode = "direct" | "relay" | "openclaw" | "opencode" | "dem
 /** A demo workspace that ships with the app so a fresh install is explorable. */
 const DEMO_ENDPOINT = "demo://welcome";
 const DEMO_CONTEXT_KEY = "demo:welcome";
+const DEMO_ALIAS = "Puff";
 
 export interface BackendConnection {
   id: string;
@@ -503,6 +504,7 @@ export const useConnectionStore = create<ConnectionStore>()(
                   ...state.savedConnections,
                   {
                     id,
+                    alias: DEMO_ALIAS,
                     label: "Demo · Welcome tour",
                     mode: "demo" as const,
                     endpoint: DEMO_ENDPOINT,
@@ -534,6 +536,7 @@ export const useConnectionStore = create<ConnectionStore>()(
                     ...state.savedConnections,
                     {
                       id: connectionId(DEMO_CONTEXT_KEY),
+                      alias: DEMO_ALIAS,
                       label: "Demo · Welcome tour",
                       mode: "demo" as const,
                       endpoint: DEMO_ENDPOINT,
@@ -542,6 +545,12 @@ export const useConnectionStore = create<ConnectionStore>()(
                   ],
                 }));
               }
+              const demoId = connectionId(DEMO_CONTEXT_KEY);
+              set((state) => ({
+                savedConnections: state.savedConnections.map((entry) =>
+                  entry.id === demoId && !entry.alias ? { ...entry, alias: DEMO_ALIAS } : entry,
+                ),
+              }));
               const preferredId = get().activeConnectionId;
               const selection = selectionGeneration;
               const profiles = get().savedConnections.filter((entry) => entry.autoConnect);

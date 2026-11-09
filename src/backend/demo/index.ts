@@ -33,7 +33,7 @@ const WORKSPACE_ID = "demo-workspace";
 
 const README = `# Demo Project
 
-This is a sandbox that ships with OpenPad. Nothing here touches a server: edits,
+This is a sandbox that ships with Puff. Nothing here touches a server: edits,
 messages and files live in memory and reset when the app restarts.
 
 ## What to try

@@ -33,7 +33,7 @@ export function ConnectionsPane({
       ) : (
         <View style={styles.emptyCard}>
           <Text style={styles.emptyText}>
-            No connections yet. Add one to point OpenPad at your own backend.
+            No connections yet. Add one to point Puff at your own backend.
           </Text>
         </View>
       )}

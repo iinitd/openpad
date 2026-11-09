@@ -56,7 +56,7 @@ export function ConnectingView({
             strokeWidth={1.6}
           />
         </View>
-        <Text style={styles.brand}>OpenPad</Text>
+        <Text style={styles.brand}>Puff</Text>
 
         <View style={styles.status}>
           <Text style={styles.title}>{title}</Text>

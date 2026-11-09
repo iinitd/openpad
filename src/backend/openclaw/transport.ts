@@ -322,7 +322,7 @@ export class OpenClawTransport {
       type: "req", id: attempt.connectId, method: "connect",
       params: {
         minProtocol: 3, maxProtocol: 4,
-        client: { id: CLIENT_ID, mode: CLIENT_MODE, displayName: "OpenPad",
+        client: { id: CLIENT_ID, mode: CLIENT_MODE, displayName: "Puff",
           version: this.options.clientVersion?.trim() || "1.0.0", platform,
           ...(deviceFamily ? { deviceFamily } : {}), instanceId: identity.deviceId },
         role: ROLE, scopes: this.scopes, caps: [...(this.options.caps ?? ["tool-events", "exec-approvals"])],

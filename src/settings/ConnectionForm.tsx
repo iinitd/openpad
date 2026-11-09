@@ -197,7 +197,7 @@ export function ConnectionForm({
             keyboardType="url"
           />
           <Text style={styles.hint}>
-            Paste a one-time OpenCode pair link. OpenPad exchanges it for a session
+            Paste a one-time OpenCode pair link. Puff exchanges it for a session
             token, then saves the server URL and token; the link itself is not stored.
           </Text>
         </>

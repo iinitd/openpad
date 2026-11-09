@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "OpenPad",
+    "name": "Puff",
     "slug": "writer",
     "version": "1.0.0",
     "orientation": "default",
@@ -30,9 +30,9 @@
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro",
-      "name": "OpenPad",
-      "shortName": "OpenPad",
-      "description": "OpenPad — a focused writing workspace powered by Paseo, OpenClaw, and OpenCode.",
+      "name": "Puff",
+      "shortName": "Puff",
+      "description": "Puff — a focused writing workspace powered by Paseo, OpenClaw, and OpenCode.",
       "display": "standalone",
       "startUrl": "/",
       "scope": "/",
@@ -45,7 +45,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "OpenPad uses your photo library to attach images to a conversation."
+          "photosPermission": "Puff uses your photo library to attach images to a conversation."
         }
       ]
     ],

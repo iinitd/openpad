@@ -168,7 +168,7 @@ export class OpenCodeTransport {
     } catch (error) {
       let message = error instanceof Error ? error.message : "Could not connect to OpenCode.";
       if (error instanceof OpenCodeRequestError && error.status === 404) {
-        message = "This server does not expose the OpenCode v2 /api endpoints. OpenPad requires OpenCode v2 (`opencode serve`).";
+        message = "This server does not expose the OpenCode v2 /api endpoints. Puff requires OpenCode v2 (`opencode serve`).";
         error = new OpenCodeRequestError("UNSUPPORTED", message, 404);
       }
       this.closeEvents();

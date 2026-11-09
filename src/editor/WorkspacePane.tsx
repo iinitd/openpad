@@ -183,16 +183,27 @@ export function WorkspacePane({
   }, [addProjectOpen]);
 
   function openConnectionMenu(source: BackendCatalogEntry, alias: string, live: boolean) {
+    // The demo is not a server: disconnecting it is the same as turning off the
+    // demo workspace in Settings.
+    const isDemo = source.endpoint === "demo://welcome" || source.label.startsWith("Demo");
     const disconnect = () => {
       Alert.alert(
         `Disconnect ${alias}?`,
-        "Its projects stay listed; you can reconnect any time.",
+        isDemo
+          ? "This hides the demo workspace. Turn it back on from Settings."
+          : "Its projects stay listed; you can reconnect any time.",
         [
           { text: "Cancel", style: "cancel" },
           {
             text: "Disconnect",
             style: "destructive",
-            onPress: () => void useConnectionStore.getState().disconnect(source.connectionId),
+            onPress: () => {
+              if (isDemo) {
+                void useConnectionStore.getState().setDemoEnabled(false);
+                return;
+              }
+              void useConnectionStore.getState().disconnect(source.connectionId);
+            },
           },
         ],
       );
