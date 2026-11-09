@@ -67,7 +67,21 @@ export function SettingsPane() {
 
       <Text style={styles.sectionLabel}>Prompts</Text>
       <View style={styles.card}>
-        <Text style={styles.promptLabel}>Agent</Text>
+        <View style={styles.promptHeader}>
+          <Text style={styles.promptLabel}>Agent</Text>
+          {agentPrompt.trim() !== DEFAULT_AGENT_PROMPT ? (
+            <PressableRow
+              style={styles.resetButton}
+              haptic="light"
+              scale={false}
+              onPress={() => setAgentPrompt(DEFAULT_AGENT_PROMPT)}
+              accessibilityRole="button"
+              accessibilityLabel="Reset agent prompt"
+            >
+              <Text style={styles.resetText}>Reset</Text>
+            </PressableRow>
+          ) : null}
+        </View>
         <TextInput
           style={styles.promptInput}
           value={agentPrompt}
@@ -84,7 +98,21 @@ export function SettingsPane() {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.promptLabel}>Files</Text>
+        <View style={styles.promptHeader}>
+          <Text style={styles.promptLabel}>Files</Text>
+          {commentPrompt.trim().length > 0 ? (
+            <PressableRow
+              style={styles.resetButton}
+              haptic="light"
+              scale={false}
+              onPress={() => setCommentPrompt("")}
+              accessibilityRole="button"
+              accessibilityLabel="Reset file prompt"
+            >
+              <Text style={styles.resetText}>Reset</Text>
+            </PressableRow>
+          ) : null}
+        </View>
         <TextInput
           style={styles.promptInput}
           value={commentPrompt}
@@ -170,11 +198,25 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: THEME.colors.text,
   },
+  promptHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: THEME.spacing.sm,
+  },
   promptLabel: {
     fontSize: 13,
     fontWeight: "600",
     color: THEME.colors.textSecondary,
-    marginTop: THEME.spacing.sm,
+  },
+  resetButton: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  resetText: {
+    fontSize: 12,
+    fontWeight: "500",
+    color: THEME.colors.textSecondary,
   },
   promptInput: {
     minHeight: 88,
