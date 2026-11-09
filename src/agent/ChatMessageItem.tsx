@@ -307,7 +307,10 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   assistantMessage: {
-    alignSelf: "flex-start",
+    // Stretch rather than shrink-wrap: rich content (tables, code, lists)
+    // measures unreliably when the bubble's width depends on its own text, and
+    // a stale measurement wraps a reply into a narrow column.
+    alignSelf: "stretch",
     backgroundColor: THEME.colors.background,
     borderBottomLeftRadius: THEME.radii.sm,
     borderWidth: StyleSheet.hairlineWidth,
