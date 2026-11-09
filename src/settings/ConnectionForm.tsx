@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -12,13 +12,34 @@ import {
 import { useShallow } from "zustand/react/shallow";
 import { useConnectionStore } from "../stores/connection-store";
 import { useWriterOpeningStore } from "../stores/writer-opening-store";
+import { Icon } from "../components/Icon";
 import { THEME } from "../styles/theme";
 import { hapticTap } from "../components/PressableRow";
 
+type Transport =
+  | "paseo-direct"
+  | "paseo-relay"
+  | "opencode-direct"
+  | "opencode-pair";
+
+const TRANSPORT_TITLES: Record<Transport, string> = {
+  "paseo-direct": "Paseo · Direct",
+  "paseo-relay": "Paseo · Relay",
+  "opencode-direct": "OpenCode · Direct",
+  "opencode-pair": "OpenCode · Pair",
+};
+
+const TRANSPORT_ORDER: Transport[] = [
+  "opencode-direct",
+  "opencode-pair",
+  "paseo-direct",
+  "paseo-relay",
+];
+
 /**
- * The connection form itself: mode tabs, the fields for the chosen mode, and
- * the connect action. It is shared by the launch screen and the in-sheet
- * "Add connection" page, so both stay in step.
+ * The connection form: four ways to reach a backend, one accordion card each.
+ * OpenCode is the primary backend, so it comes first. Only the open card shows
+ * fields, which keeps the page to a handful of lines when nothing is chosen.
  */
 export function ConnectionForm({
   onConnected,
@@ -70,17 +91,27 @@ export function ConnectionForm({
     })),
   );
 
-  // OpenClaw is hidden for now; a stored selection falls back to Paseo direct.
-  useEffect(() => {
-    if (mode === "openclaw") setMode("direct");
-  }, [mode, setMode]);
-
-  const [openCodeTransport, setOpenCodeTransport] = useState<"direct" | "pair">("direct");
+  const [expanded, setExpanded] = useState<Transport>(() => {
+    if (mode === "opencode") return "opencode-direct";
+    if (mode === "relay") return "paseo-relay";
+    return "paseo-direct";
+  });
   const [connecting, setConnecting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const connectPending = useRef(false);
   const isBusy = connecting;
   const addingConnection = connections.length > 0 || savedConnections.length > 0;
+
+  // The card is the source of truth for which mode the store is in. OpenClaw is
+  // no longer offered, so a stored selection lands on Paseo direct.
+  useEffect(() => {
+    if (expanded.startsWith("opencode")) {
+      if (mode !== "opencode") setMode("opencode");
+      return;
+    }
+    const next = expanded === "paseo-relay" ? "relay" : "direct";
+    if (mode !== next) setMode(next);
+  }, [expanded, mode, setMode]);
 
   // A bare host:port defaults to http://, so both spellings mean plaintext.
   const openCodePlaintext = (() => {
@@ -113,73 +144,9 @@ export function ConnectionForm({
     }
   }
 
-  return (
-    <View style={styles.form}>
-      <View style={styles.tabs}>
-        {(
-          [
-            ["paseo", "Paseo"],
-            ["opencode", "OpenCode"],
-          ] as const
-        ).map(([value, label]) => {
-          const active = value === "opencode" ? mode === "opencode" : mode !== "opencode";
-          return (
-            <TouchableOpacity
-              key={value}
-              style={[styles.tab, active && styles.tabActive]}
-              onPress={() => {
-                if (active) return;
-                hapticTap("selection");
-                // Keep the chosen Paseo transport when re-entering the tab.
-                setMode(value === "opencode" ? "opencode" : "direct");
-              }}
-              disabled={isBusy}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.tabText, active && styles.tabTextActive]}>
-                {label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {mode !== "opencode" ? (
-        <View style={styles.subTabs}>
-          <TouchableOpacity
-            style={[styles.subTab, mode !== "relay" && styles.subTabActive]}
-            onPress={() => {
-              hapticTap("selection");
-              setMode("direct");
-            }}
-            disabled={isBusy}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={[styles.subTabText, mode !== "relay" && styles.subTabTextActive]}
-            >
-              Direct
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.subTab, mode === "relay" && styles.subTabActive]}
-            onPress={() => {
-              hapticTap("selection");
-              setMode("relay");
-            }}
-            disabled={isBusy}
-            activeOpacity={0.8}
-          >
-            <Text
-              style={[styles.subTabText, mode === "relay" && styles.subTabTextActive]}
-            >
-              Relay
-            </Text>
-          </TouchableOpacity>
-        </View>
-      ) : null}
-
-      {mode === "direct" ? (
+  function renderFields(transport: Transport): ReactNode {
+    if (transport === "paseo-direct") {
+      return (
         <>
           <Text style={styles.label}>Daemon URL</Text>
           <TextInput
@@ -192,7 +159,6 @@ export function ConnectionForm({
             autoCorrect={false}
             keyboardType="url"
           />
-
           <Text style={styles.label}>Password (optional)</Text>
           <TextInput
             style={styles.input}
@@ -205,7 +171,10 @@ export function ConnectionForm({
             autoCorrect={false}
           />
         </>
-      ) : mode === "relay" ? (
+      );
+    }
+    if (transport === "paseo-relay") {
+      return (
         <>
           <Text style={styles.label}>Pairing Link</Text>
           <TextInput
@@ -223,192 +192,164 @@ export function ConnectionForm({
             Get this from the Paseo app → Settings → Pair new device
           </Text>
         </>
-      ) : (
+      );
+    }
+    if (transport === "opencode-pair") {
+      return (
         <>
-          <View style={styles.subTabs}>
-            <TouchableOpacity
-              style={[styles.subTab, openCodeTransport === "direct" && styles.subTabActive]}
-              onPress={() => {
-                hapticTap("selection");
-                setOpenCodeTransport("direct");
-              }}
-              disabled={isBusy}
-              activeOpacity={0.8}
-            >
-              <Text
-                style={[
-                  styles.subTabText,
-                  openCodeTransport === "direct" && styles.subTabTextActive,
-                ]}
-              >
-                Direct
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.subTab, openCodeTransport === "pair" && styles.subTabActive]}
-              onPress={() => {
-                hapticTap("selection");
-                setOpenCodeTransport("pair");
-              }}
-              disabled={isBusy}
-              activeOpacity={0.8}
-            >
-              <Text
-                style={[
-                  styles.subTabText,
-                  openCodeTransport === "pair" && styles.subTabTextActive,
-                ]}
-              >
-                Pair
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {openCodeTransport === "pair" ? (
-            <>
-              <Text style={styles.label}>Pair link</Text>
-              <TextInput
-                style={styles.input}
-                value={opencodePairLink}
-                onChangeText={setOpenCodePairLink}
-                editable={!isBusy}
-                placeholder="https://host/auth/connect/..."
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="url"
-              />
-              <Text style={styles.hint}>
-                Paste a one-time OpenCode pair link. OpenPad exchanges it for a session
-                token, then saves the server URL and token; the link itself is not stored.
-              </Text>
-            </>
-          ) : (
-            <>
-              <Text style={styles.label}>Server URL</Text>
-              <TextInput
-                style={styles.input}
-                value={opencodeUrl}
-                onChangeText={setOpenCodeUrl}
-                editable={!isBusy}
-                placeholder="http://localhost:4096"
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="url"
-              />
-
-              {openCodePlaintext ? (
-                <Text style={[styles.hint, styles.warningHint]}>
-                  This connection is not encrypted. HTTP sends the server password and
-                  session token in the clear, so anyone on the same network can read them.
-                  Prefer HTTPS, or a private network such as Tailscale.
-                </Text>
-              ) : null}
-
-              <Text style={styles.label}>Username (optional)</Text>
-              <TextInput
-                style={styles.input}
-                value={opencodeUsername}
-                onChangeText={setOpenCodeUsername}
-                editable={!isBusy}
-                placeholder="opencode"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-
-              <Text style={styles.label}>Server password (optional)</Text>
-              <TextInput
-                style={styles.input}
-                value={opencodePassword}
-                onChangeText={setOpenCodePassword}
-                editable={!isBusy}
-                placeholder="OPENCODE_SERVER_PASSWORD"
-                secureTextEntry
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              <Text style={styles.hint}>
-                Run `opencode serve`, then use the printed server password. For the web
-                app, allow this page's origin with `--cors`.
-              </Text>
-            </>
-          )}
-        </>
-      )}
-
-      <TouchableOpacity
-        style={[styles.button, isBusy && styles.buttonDisabled]}
-        onPress={() => {
-          hapticTap("medium");
-          void handleConnect();
-        }}
-        disabled={isBusy}
-        activeOpacity={0.85}
-      >
-        {isBusy ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>
-            {addingConnection ? "Add connection" : "Connect"}
+          <Text style={styles.label}>Pair link</Text>
+          <TextInput
+            style={styles.input}
+            value={opencodePairLink}
+            onChangeText={setOpenCodePairLink}
+            editable={!isBusy}
+            placeholder="https://host/auth/connect/..."
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="url"
+          />
+          <Text style={styles.hint}>
+            Paste a one-time OpenCode pair link. OpenPad exchanges it for a session
+            token, then saves the server URL and token; the link itself is not stored.
           </Text>
-        )}
-      </TouchableOpacity>
+        </>
+      );
+    }
+    return (
+      <>
+        <Text style={styles.label}>Server URL</Text>
+        <TextInput
+          style={styles.input}
+          value={opencodeUrl}
+          onChangeText={setOpenCodeUrl}
+          editable={!isBusy}
+          placeholder="http://localhost:4096"
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="url"
+        />
+        {openCodePlaintext ? (
+          <Text style={[styles.hint, styles.warningHint]}>
+            This connection is not encrypted. HTTP sends the server password and
+            session token in the clear, so anyone on the same network can read them.
+            Prefer HTTPS, or a private network such as Tailscale.
+          </Text>
+        ) : null}
+        <Text style={styles.label}>Username (optional)</Text>
+        <TextInput
+          style={styles.input}
+          value={opencodeUsername}
+          onChangeText={setOpenCodeUsername}
+          editable={!isBusy}
+          placeholder="opencode"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        <Text style={styles.label}>Server password (optional)</Text>
+        <TextInput
+          style={styles.input}
+          value={opencodePassword}
+          onChangeText={setOpenCodePassword}
+          editable={!isBusy}
+          placeholder="OPENCODE_SERVER_PASSWORD"
+          secureTextEntry
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        <Text style={styles.hint}>
+          Run `opencode serve`, then use the printed server password. For the web app,
+          allow this page's origin with `--cors`.
+        </Text>
+      </>
+    );
+  }
 
-      {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+  return (
+    <View style={styles.form}>
+      {TRANSPORT_ORDER.map((transport) => {
+        const open = expanded === transport;
+        return (
+          <View key={transport} style={[styles.card, open && styles.cardOpen]}>
+            <TouchableOpacity
+              style={styles.cardHeader}
+              onPress={() => {
+                if (open) return;
+                hapticTap("selection");
+                setExpanded(transport);
+              }}
+              disabled={isBusy}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: open }}
+            >
+              <Text style={styles.cardTitle}>{TRANSPORT_TITLES[transport]}</Text>
+              <Icon
+                name={open ? "chevron-up" : "chevron-down"}
+                size={16}
+                color={THEME.colors.textMuted}
+              />
+            </TouchableOpacity>
+
+            {open ? (
+              <View style={styles.cardBody}>
+                {renderFields(transport)}
+                <TouchableOpacity
+                  style={[styles.button, isBusy && styles.buttonDisabled]}
+                  onPress={() => {
+                    hapticTap("medium");
+                    void handleConnect();
+                  }}
+                  disabled={isBusy}
+                  activeOpacity={0.85}
+                >
+                  {isBusy ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.buttonText}>
+                      {addingConnection ? "Add connection" : "Connect"}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+                {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
+              </View>
+            ) : null}
+          </View>
+        );
+      })}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   form: {
-    gap: THEME.spacing.md,
+    gap: THEME.spacing.sm,
   },
-  tabs: {
-    flexDirection: "row",
-    gap: 2,
-    backgroundColor: THEME.colors.surface,
-    borderRadius: 9,
-    marginBottom: THEME.spacing.md,
-    padding: 2,
-  },
-  tab: {
-    flex: 1,
-    height: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 7,
-  },
-  tabActive: {
+  card: {
     backgroundColor: THEME.colors.background,
+    borderRadius: THEME.radii.lg,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: THEME.colors.border,
+    overflow: "hidden",
   },
-  tabText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: THEME.colors.textSecondary,
+  cardOpen: {
+    borderColor: "rgba(148,163,184,0.4)",
   },
-  tabTextActive: {
-    color: THEME.colors.text,
-  },
-  subTabs: {
+  cardHeader: {
     flexDirection: "row",
-    gap: 20,
-    marginBottom: THEME.spacing.xs,
+    alignItems: "center",
+    justifyContent: "space-between",
+    minHeight: 48,
+    paddingHorizontal: THEME.spacing.md,
   },
-  subTab: {
-    paddingVertical: 6,
-  },
-  subTabActive: {
-    borderBottomWidth: 2,
-    borderBottomColor: THEME.colors.text,
-  },
-  subTabText: {
+  cardTitle: {
     fontSize: 15,
     fontWeight: "500",
-    color: THEME.colors.textMuted,
-  },
-  subTabTextActive: {
     color: THEME.colors.text,
+  },
+  cardBody: {
+    gap: 10,
+    paddingHorizontal: THEME.spacing.md,
+    paddingBottom: THEME.spacing.md,
   },
   label: {
     fontSize: 13,
@@ -446,7 +387,7 @@ const styles = StyleSheet.create({
     borderRadius: THEME.radii.lg,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: THEME.spacing.sm,
+    marginTop: THEME.spacing.xs,
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -460,6 +401,5 @@ const styles = StyleSheet.create({
     color: THEME.colors.error,
     fontSize: 13,
     lineHeight: 18,
-    marginTop: THEME.spacing.xs,
   },
 });
