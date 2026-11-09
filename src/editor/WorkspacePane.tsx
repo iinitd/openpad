@@ -213,7 +213,7 @@ export function WorkspacePane({
                 <Icon
                   name={pinned ? "star-filled" : "star"}
                   size={14}
-                  color={pinned ? THEME.colors.textSecondary : "rgba(161,161,170,0.55)"}
+                  color={pinned ? "#eab308" : "rgba(161,161,170,0.55)"}
                 />
               </Pressable>
             ) : null}
