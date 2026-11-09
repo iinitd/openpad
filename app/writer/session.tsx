@@ -598,6 +598,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
       >
         <View style={[styles.pageSheet, { paddingBottom: insets.bottom }]}>
           <View style={styles.pageSheetHeader}>
+            <View style={styles.pageSheetClose} />
             <Text style={styles.sheetTitle}>Files</Text>
             <PressableRow
               style={styles.pageSheetClose}
@@ -679,7 +680,9 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
               >
                 <Icon name="chevron-left" size={20} color={THEME.colors.text} />
               </PressableRow>
-            ) : null}
+            ) : (
+              <View style={styles.pageSheetClose} />
+            )}
             <Text style={styles.sheetTitle} numberOfLines={1}>
               {addProjectOpen
                 ? "New working directory"
@@ -970,6 +973,7 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     flex: 1,
+    textAlign: "center",
     fontSize: 17,
     fontWeight: "600",
     letterSpacing: -0.01,
