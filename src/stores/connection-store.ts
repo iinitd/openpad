@@ -149,6 +149,8 @@ interface ConnectionStore {
   serverVersion: string | null;
   // Compatibility launch flag: at least one saved profile enables auto-connect.
   lastConnectedOk: boolean;
+  /** Whether the bundled demo workspace is listed and connected. */
+  demoEnabled: boolean;
   // Flipped once the persisted state has been rehydrated from storage, so
   // consumers know whether it's safe to read lastConnectedOk for auto-connect.
   hasHydrated: boolean;
@@ -168,6 +170,7 @@ interface ConnectionStore {
   disconnect: (id?: string) => Promise<void>;
   connectSaved: (id: string) => Promise<void>;
   restoreConnections: () => Promise<void>;
+  setDemoEnabled: (enabled: boolean) => Promise<void>;
   _setHydrated: () => void;
 }
 
@@ -351,6 +354,7 @@ export const useConnectionStore = create<ConnectionStore>()(
           connectionState: { status: "idle" },
           serverVersion: null,
           lastConnectedOk: false,
+          demoEnabled: true,
           hasHydrated: false,
 
           setMode: (mode) => set((state) => ({ mode, lastConnectedOk: state.savedConnections.some((entry) => entry.autoConnect) })),
@@ -466,6 +470,35 @@ export const useConnectionStore = create<ConnectionStore>()(
             });
           },
 
+          setDemoEnabled: async (enabled) => {
+            set({ demoEnabled: enabled });
+            const id = connectionId(DEMO_CONTEXT_KEY);
+            if (!enabled) {
+              await get().disconnect(id).catch(() => {});
+              set((state) => ({
+                savedConnections: state.savedConnections.filter((entry) => entry.id !== id),
+                connections: state.connections.filter((entry) => entry.id !== id),
+              }));
+              if (get().activeConnectionId === id) set(activeProjection(null));
+              return;
+            }
+            if (!get().savedConnections.some((entry) => entry.id === id)) {
+              set((state) => ({
+                savedConnections: [
+                  ...state.savedConnections,
+                  {
+                    id,
+                    label: "Demo · Welcome tour",
+                    mode: "demo" as const,
+                    endpoint: DEMO_ENDPOINT,
+                    autoConnect: true,
+                  },
+                ],
+              }));
+            }
+            await get().connectSaved(id).catch(() => {});
+          },
+
           restoreConnections: () => {
             if (restorePromise) return restorePromise;
             restorePromise = (async () => {
@@ -480,7 +513,7 @@ export const useConnectionStore = create<ConnectionStore>()(
               }
               // A fresh install starts inside a demo workspace instead of a
               // connection form, so the product can be explored immediately.
-              if (get().savedConnections.length === 0) {
+              if (get().demoEnabled && get().savedConnections.length === 0) {
                 set((state) => ({
                   savedConnections: [
                     ...state.savedConnections,
@@ -565,6 +598,7 @@ export const useConnectionStore = create<ConnectionStore>()(
           opencodeUsername: state.opencodeUsername,
           opencodePassword: state.opencodePassword,
           lastConnectedOk: state.lastConnectedOk,
+          demoEnabled: state.demoEnabled,
           savedConnections: state.savedConnections,
           activeConnectionId: state.activeConnectionId,
         }),
