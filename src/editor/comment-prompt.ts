@@ -4,18 +4,23 @@
  * two placeholders carry the context that used to be assembled in code.
  */
 
-export const COMMENT_PROMPT_PLACEHOLDERS = ["{filename}", "{selected_text}"] as const;
+export const COMMENT_PROMPT_PLACEHOLDERS = [
+  "{filename}",
+  "{selected_text}",
+  "{message}",
+] as const;
 
 export function renderCommentPrompt(
   template: string,
-  context: { filename: string; selection: string },
+  context: { filename: string; selection: string; message: string },
 ): string {
   const trimmed = template.trim();
   if (!trimmed) return "";
   const selection = context.selection.trim();
   let text = trimmed
     .replace(/\{filename\}/gi, context.filename)
-    .replace(/\{selected_text\}/gi, selection);
+    .replace(/\{selected_text\}/gi, selection)
+    .replace(/\{message\}/gi, context.message);
 
   if (!selection) {
     // An empty placeholder leaves a heading and a pair of quote fences behind;

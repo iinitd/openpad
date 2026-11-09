@@ -54,7 +54,9 @@ export const DEFAULT_COMMENT_PROMPT = `File: {filename}
 Selected text:
 """
 {selected_text}
-"""`;
+"""
+
+{message}`;
 
 const MAX_RECENT_WORKSPACES = 8;
 const MAX_RECENT_SESSIONS = 8;

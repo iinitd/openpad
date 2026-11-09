@@ -66,9 +66,13 @@ function buildMessage(selectionText: string, comment: string, blockIds: string[]
   const rendered = renderCommentPrompt(template, {
     filename: documentPath ?? "(the open document)",
     selection: selectionText,
+    message: instruction,
   });
   // The message is the template rendered; there is no second assembly path.
+  // A template without {message} gets the instruction appended instead.
+  const carriesMessage = /\{message\}/i.test(template);
   const lines: string[] = rendered ? [rendered, ""] : [];
+  if (!carriesMessage) lines.push(`Instruction: ${instruction}`, "");
   if (blockIds.length > 0) lines.push(`Feishu block IDs: ${blockIds.join(" → ")}`, "");
   lines.push(`Instruction: ${instruction}`);
   if (blockIds.length > 0) {

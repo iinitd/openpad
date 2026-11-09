@@ -21,6 +21,7 @@ export async function sendPreviewComment(
   const rendered = renderCommentPrompt(template, {
     filename: `${previewRoot}/index.html`,
     selection: selected,
+    message: instruction,
   });
   const namesFile = /\{filename\}/i.test(template);
   const lines = [
@@ -32,7 +33,9 @@ export async function sendPreviewComment(
     "Locate and edit the source file(s) that produce the rendered content.",
     "",
   ];
-  if (selected) lines.push("Rendered selection:", '"""', selected, '"""', "");
-  lines.push(`Instruction: ${instruction}`);
+  if (selected && !/\{selected_text\}/i.test(template)) {
+    lines.push("Rendered selection:", '"""', selected, '"""', "");
+  }
+  if (!/\{message\}/i.test(template)) lines.push(`Instruction: ${instruction}`);
   await useSessionStore.getState().sendMessage(lines.join("\n"), attachments);
 }
