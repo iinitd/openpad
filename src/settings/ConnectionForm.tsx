@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -31,8 +31,6 @@ export function ConnectionForm({
     daemonUrl,
     password,
     pairingLink,
-    gatewayUrl,
-    gatewayToken,
     opencodeUrl,
     opencodeUsername,
     opencodePassword,
@@ -41,8 +39,6 @@ export function ConnectionForm({
     setDaemonUrl,
     setPassword,
     setPairingLink,
-    setGatewayUrl,
-    setGatewayToken,
     setOpenCodeUrl,
     setOpenCodeUsername,
     setOpenCodePassword,
@@ -56,8 +52,6 @@ export function ConnectionForm({
       daemonUrl: state.daemonUrl,
       password: state.password,
       pairingLink: state.pairingLink,
-      gatewayUrl: state.gatewayUrl,
-      gatewayToken: state.gatewayToken,
       opencodeUrl: state.opencodeUrl,
       opencodeUsername: state.opencodeUsername,
       opencodePassword: state.opencodePassword,
@@ -66,8 +60,6 @@ export function ConnectionForm({
       setDaemonUrl: state.setDaemonUrl,
       setPassword: state.setPassword,
       setPairingLink: state.setPairingLink,
-      setGatewayUrl: state.setGatewayUrl,
-      setGatewayToken: state.setGatewayToken,
       setOpenCodeUrl: state.setOpenCodeUrl,
       setOpenCodeUsername: state.setOpenCodeUsername,
       setOpenCodePassword: state.setOpenCodePassword,
@@ -77,6 +69,11 @@ export function ConnectionForm({
       savedConnections: state.savedConnections,
     })),
   );
+
+  // OpenClaw is hidden for now; a stored selection falls back to Paseo direct.
+  useEffect(() => {
+    if (mode === "openclaw") setMode("direct");
+  }, [mode, setMode]);
 
   const [connecting, setConnecting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -120,28 +117,66 @@ export function ConnectionForm({
       <View style={styles.tabs}>
         {(
           [
-            ["direct", "Direct"],
-            ["relay", "Relay"],
-            ["openclaw", "OpenClaw"],
+            ["paseo", "Paseo"],
             ["opencode", "OpenCode"],
           ] as const
-        ).map(([value, label]) => (
+        ).map(([value, label]) => {
+          const active = value === "opencode" ? mode === "opencode" : mode !== "opencode";
+          return (
+            <TouchableOpacity
+              key={value}
+              style={[styles.tab, active && styles.tabActive]}
+              onPress={() => {
+                if (active) return;
+                hapticTap("selection");
+                // Keep the chosen Paseo transport when re-entering the tab.
+                setMode(value === "opencode" ? "opencode" : "direct");
+              }}
+              disabled={isBusy}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.tabText, active && styles.tabTextActive]}>
+                {label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {mode !== "opencode" ? (
+        <View style={styles.subTabs}>
           <TouchableOpacity
-            key={value}
-            style={[styles.tab, mode === value && styles.tabActive]}
+            style={[styles.subTab, mode !== "relay" && styles.subTabActive]}
             onPress={() => {
               hapticTap("selection");
-              setMode(value);
+              setMode("direct");
             }}
             disabled={isBusy}
             activeOpacity={0.8}
           >
-            <Text style={[styles.tabText, mode === value && styles.tabTextActive]}>
-              {label}
+            <Text
+              style={[styles.subTabText, mode !== "relay" && styles.subTabTextActive]}
+            >
+              Direct
             </Text>
           </TouchableOpacity>
-        ))}
-      </View>
+          <TouchableOpacity
+            style={[styles.subTab, mode === "relay" && styles.subTabActive]}
+            onPress={() => {
+              hapticTap("selection");
+              setMode("relay");
+            }}
+            disabled={isBusy}
+            activeOpacity={0.8}
+          >
+            <Text
+              style={[styles.subTabText, mode === "relay" && styles.subTabTextActive]}
+            >
+              Relay
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
 
       {mode === "direct" ? (
         <>
@@ -185,35 +220,6 @@ export function ConnectionForm({
           />
           <Text style={styles.hint}>
             Get this from the Paseo app → Settings → Pair new device
-          </Text>
-        </>
-      ) : mode === "openclaw" ? (
-        <>
-          <Text style={styles.label}>Gateway URL</Text>
-          <TextInput
-            style={styles.input}
-            value={gatewayUrl}
-            onChangeText={setGatewayUrl}
-            editable={!isBusy}
-            placeholder="ws://localhost:18789"
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="url"
-          />
-
-          <Text style={styles.label}>Gateway token (optional)</Text>
-          <TextInput
-            style={styles.input}
-            value={gatewayToken}
-            onChangeText={setGatewayToken}
-            editable={!isBusy}
-            placeholder="Enter token if required"
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <Text style={styles.hint}>
-            If pairing is requested, approve this device through OpenClaw and reconnect.
           </Text>
         </>
       ) : (
@@ -336,6 +342,26 @@ const styles = StyleSheet.create({
     color: THEME.colors.textSecondary,
   },
   tabTextActive: {
+    color: THEME.colors.text,
+  },
+  subTabs: {
+    flexDirection: "row",
+    gap: 14,
+    marginBottom: THEME.spacing.xs,
+  },
+  subTab: {
+    paddingVertical: 4,
+  },
+  subTabActive: {
+    borderBottomWidth: 1.5,
+    borderBottomColor: THEME.colors.text,
+  },
+  subTabText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: THEME.colors.textMuted,
+  },
+  subTabTextActive: {
     color: THEME.colors.text,
   },
   label: {
