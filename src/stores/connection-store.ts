@@ -3,12 +3,17 @@ import { create } from "zustand";
 import { persist, subscribeWithSelector } from "zustand/middleware";
 import type { WriterBackend, ConnectionState, BackendPermissionRequest } from "../backend";
 import { connectWithTimeout, connectViaRelay, connectOpenClawGateway, connectOpenCodeServer, redeemOpenCodePairLink } from "../backend";
+import { createDemoBackend } from "../backend/demo";
 import { sha256 } from "@noble/hashes/sha256";
 import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils";
 import { persistStorage } from "./persist-storage";
 import { activateBackendContext, resetBackendViews } from "./backend-context";
 
-export type ConnectionMode = "direct" | "relay" | "openclaw" | "opencode";
+export type ConnectionMode = "direct" | "relay" | "openclaw" | "opencode" | "demo";
+
+/** A demo workspace that ships with the app so a fresh install is explorable. */
+const DEMO_ENDPOINT = "demo://welcome";
+const DEMO_CONTEXT_KEY = "demo:welcome";
 
 export interface BackendConnection {
   id: string;
@@ -63,6 +68,7 @@ function defaultOpenCodeUrl(): string {
 }
 
 function endpointContextKey(mode: ConnectionMode, endpoint: string): string {
+  if (mode === "demo") return DEMO_CONTEXT_KEY;
   if (mode === "relay") return `paseo:relay:${bytesToHex(sha256(utf8ToBytes(endpoint.trim())))}`;
   const url = new URL(endpoint);
   if (mode === "openclaw") {
@@ -82,6 +88,7 @@ function connectionId(contextKey: string): string {
 }
 
 function connectionLabel(mode: ConnectionMode, endpoint: string): string {
+  if (mode === "demo") return "Demo · Welcome tour";
   if (mode === "relay") return "Paseo relay";
   const label = mode === "openclaw" ? "OpenClaw" : mode === "opencode" ? "OpenCode" : "Paseo";
   return `${label} · ${new URL(endpoint).host}`;
@@ -240,17 +247,23 @@ export const useConnectionStore = create<ConnectionStore>()(
           const generation = nextGeneration(profile.id);
           let candidate: WriterBackend | null = null;
           try {
-            candidate = profile.mode === "openclaw"
-              ? await connectOpenClawGateway({ url: profile.endpoint, token: profile.token ?? "" })
-              : profile.mode === "opencode"
-              ? await connectOpenCodeServer({
+            if (profile.mode === "demo") {
+              const demo = createDemoBackend();
+              await demo.connect();
+              candidate = demo;
+            } else if (profile.mode === "openclaw") {
+              candidate = await connectOpenClawGateway({ url: profile.endpoint, token: profile.token ?? "" });
+            } else if (profile.mode === "opencode") {
+              candidate = await connectOpenCodeServer({
                 url: profile.endpoint,
                 username: profile.username,
                 password: profile.password ?? "",
-              })
-              : profile.mode === "relay"
-              ? await connectViaRelay(profile.endpoint)
-              : await connectWithTimeout(profile.endpoint, profile.password ?? "");
+              });
+            } else if (profile.mode === "relay") {
+              candidate = await connectViaRelay(profile.endpoint);
+            } else {
+              candidate = await connectWithTimeout(profile.endpoint, profile.password ?? "");
+            }
             const client = candidate;
             await serializeActivation(async () => {
               if (generations.get(profile.id) !== generation) throw new Error("Connection was superseded");
@@ -464,6 +477,22 @@ export const useConnectionStore = create<ConnectionStore>()(
                   });
                   if (get().hasHydrated) { unsubscribe(); resolve(); }
                 });
+              }
+              // A fresh install starts inside a demo workspace instead of a
+              // connection form, so the product can be explored immediately.
+              if (get().savedConnections.length === 0) {
+                set((state) => ({
+                  savedConnections: [
+                    ...state.savedConnections,
+                    {
+                      id: connectionId(DEMO_CONTEXT_KEY),
+                      label: "Demo · Welcome tour",
+                      mode: "demo" as const,
+                      endpoint: DEMO_ENDPOINT,
+                      autoConnect: true,
+                    },
+                  ],
+                }));
               }
               const preferredId = get().activeConnectionId;
               const selection = selectionGeneration;

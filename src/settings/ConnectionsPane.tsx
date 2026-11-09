@@ -1,9 +1,10 @@
+import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { useRouter } from "expo-router";
 import { useConnectionStore } from "../stores/connection-store";
 import { BackendConnections } from "../components/BackendConnections";
 import { Icon } from "../components/Icon";
 import { PressableRow, hapticTap } from "../components/PressableRow";
+import { ConnectionForm } from "./ConnectionForm";
 import { THEME } from "../styles/theme";
 
 /**
@@ -16,7 +17,7 @@ export function ConnectionsPane({
 }: {
   onAddConnection?: () => void;
 } = {}) {
-  const router = useRouter();
+  const [adding, setAdding] = useState(false);
   const hasConnections = useConnectionStore(
     (state) => state.connections.length > 0 || state.savedConnections.length > 0,
   );
@@ -49,7 +50,7 @@ export function ConnectionsPane({
             onAddConnection();
             return;
           }
-          router.push("/?add=1");
+          setAdding((current) => !current);
         }}
         accessibilityRole="button"
         accessibilityLabel="Add connection"
@@ -61,8 +62,14 @@ export function ConnectionsPane({
           <Text style={styles.addTitle}>Add connection</Text>
           <Text style={styles.addHint}>Server URL, or pair with a relay</Text>
         </View>
-        <Icon name="chevron-right" size={16} color={THEME.colors.textMuted} />
+        <Icon
+          name={adding ? "chevron-down" : "chevron-right"}
+          size={16}
+          color={THEME.colors.textMuted}
+        />
       </PressableRow>
+
+      {adding ? <ConnectionForm onConnected={() => setAdding(false)} /> : null}
     </ScrollView>
   );
 }

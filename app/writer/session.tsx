@@ -88,6 +88,7 @@ export default function WriterSessionScreen() {
   const loadRoot = useFilesStore((state) => state.loadRoot);
   const resetFiles = useFilesStore((state) => state.reset);
   const previousConnectionStatus = useRef(connectionStatus);
+  const restoreRequested = useRef(false);
   useWatchWebPreview(cwd);
 
   useEffect(() => {
@@ -95,7 +96,17 @@ export default function WriterSessionScreen() {
     // A failed attempt stays visible until Retry or another explicit selection.
     if (isSwitchingConnection || opening) return;
     if (!client) {
-      if (!openingError) router.replace("/");
+      // No connection yet: restore the saved ones. A fresh install is seeded
+      // with the demo workspace, so this always lands somewhere usable.
+      if (!openingError && !restoreRequested.current) {
+        restoreRequested.current = true;
+        void useConnectionStore
+          .getState()
+          .restoreConnections()
+          .finally(() => {
+            restoreRequested.current = false;
+          });
+      }
       return;
     }
     if (agentId || agentStatus === "initializing" || !preferencesHydrated || connectionStatus !== "connected") return;
