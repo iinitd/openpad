@@ -1,7 +1,9 @@
+import { useRef } from "react";
 import { ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { Icon } from "../components/Icon";
 import { useConnectionStore } from "../stores/connection-store";
 import { DEFAULT_AGENT_PROMPT, usePreferencesStore } from "../stores/preferences-store";
+import { COMMENT_PROMPT_PLACEHOLDERS } from "../editor/comment-prompt";
 import { PressableRow, hapticTap } from "../components/PressableRow";
 import { THEME } from "../styles/theme";
 
@@ -16,6 +18,20 @@ export function SettingsPane() {
   const commentPrompt = usePreferencesStore((state) => state.commentPrompt);
   const setAgentPrompt = usePreferencesStore((state) => state.setAgentPrompt);
   const setCommentPrompt = usePreferencesStore((state) => state.setCommentPrompt);
+  // Where the caret sits in the files prompt, so a placeholder lands there.
+  const caretRef = useRef<{ start: number; end: number } | null>(null);
+
+  const insertPlaceholder = (token: string) => {
+    const caret = caretRef.current;
+    const current = commentPrompt;
+    if (caret && caret.start <= current.length) {
+      setCommentPrompt(
+        current.slice(0, caret.start) + token + current.slice(caret.end),
+      );
+      return;
+    }
+    setCommentPrompt(current.trim().length > 0 ? `${current.trimEnd()} ${token}` : token);
+  };
 
   return (
     <ScrollView
@@ -73,12 +89,34 @@ export function SettingsPane() {
           style={styles.promptInput}
           value={commentPrompt}
           onChangeText={setCommentPrompt}
+          onSelectionChange={(event) => {
+            caretRef.current = event.nativeEvent.selection;
+          }}
+          onBlur={() => {
+            caretRef.current = null;
+          }}
           placeholder="Optional context added to file comments and quoted passages."
           placeholderTextColor={THEME.colors.textMuted}
           multiline
           autoCapitalize="sentences"
           autoCorrect={false}
         />
+        <View style={styles.placeholders}>
+          <Text style={styles.placeholderLead}>Insert</Text>
+          {COMMENT_PROMPT_PLACEHOLDERS.map((token) => (
+            <PressableRow
+              key={token}
+              style={styles.placeholderChip}
+              haptic="light"
+              scale={false}
+              onPress={() => insertPlaceholder(token)}
+              accessibilityRole="button"
+              accessibilityLabel={`Insert ${token}`}
+            >
+              <Text style={styles.placeholderChipText}>{token}</Text>
+            </PressableRow>
+          ))}
+        </View>
         <Text style={styles.rowHint}>
           Prepended to the message when you comment on a file or quote a passage.
         </Text>
@@ -151,6 +189,29 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: THEME.colors.text,
     textAlignVertical: "top",
+  },
+  placeholders: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 6,
+    marginTop: THEME.spacing.sm,
+  },
+  placeholderLead: {
+    fontSize: 12,
+    color: THEME.colors.textMuted,
+    marginRight: 2,
+  },
+  placeholderChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: THEME.colors.surface,
+  },
+  placeholderChipText: {
+    fontFamily: THEME.fonts.mono,
+    fontSize: 11,
+    color: THEME.colors.textSecondary,
   },
   rowHint: {
     fontSize: 12,

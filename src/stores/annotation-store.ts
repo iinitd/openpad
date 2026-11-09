@@ -6,6 +6,7 @@ import { useSessionStore } from "./session-store";
 import { useEditorStore } from "./editor-store";
 import { useFilesStore } from "./files-store";
 import { usePreferencesStore } from "./preferences-store";
+import { renderCommentPrompt } from "../editor/comment-prompt";
 
 interface AnnotationStore {
   // Annotations that have been created (highlighted spans, optionally with a
@@ -61,12 +62,23 @@ function buildMessage(selectionText: string, comment: string, blockIds: string[]
       ? "Polish this passage: improve clarity and flow while preserving meaning."
       : "Review this document and improve it.";
 
-  const prompt = usePreferencesStore.getState().commentPrompt.trim();
-  const lines = prompt ? [prompt, "", fileRef, ""] : [fileRef, ""];
-  if (hasSelection) {
-    lines.push("Selected text:", '"""', selectionText, '"""', "");
-    if (blockIds.length > 0) lines.push(`Feishu block IDs: ${blockIds.join(" → ")}`, "");
+  const template = usePreferencesStore.getState().commentPrompt;
+  const rendered = template.trim()
+    ? renderCommentPrompt(template, {
+        filename: documentPath ?? "(the open document)",
+        selection: selectionText,
+      })
+    : "";
+  const lines: string[] = [];
+  if (rendered) {
+    lines.push(rendered, "");
+  } else {
+    lines.push(fileRef, "");
+    if (hasSelection) {
+      lines.push("Selected text:", '"""', selectionText, '"""', "");
+    }
   }
+  if (blockIds.length > 0) lines.push(`Feishu block IDs: ${blockIds.join(" → ")}`, "");
   lines.push(`Instruction: ${instruction}`);
   if (blockIds.length > 0) {
     lines.push("This is a pulled Feishu working copy. Edit this local file, preserve its block IDs and destination metadata, then use the established lark push/patch workflow when publishing; do not edit a raw mirror.");
