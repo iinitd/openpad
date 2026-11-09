@@ -265,7 +265,7 @@ export function ConnectionForm({
         return (
           <View key={transport} style={[styles.card, open && styles.cardOpen]}>
             <TouchableOpacity
-              style={styles.cardHeader}
+              style={[styles.cardHeader, open && styles.cardHeaderOpen]}
               onPress={() => {
                 if (open) return;
                 hapticTap("selection");
@@ -364,6 +364,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     minHeight: 48,
     paddingHorizontal: THEME.spacing.md,
+  },
+  cardHeaderOpen: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: THEME.colors.border,
   },
   cardTitle: {
     fontSize: 15,
