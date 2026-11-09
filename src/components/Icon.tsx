@@ -17,6 +17,7 @@ export type IconName =
   | "chevron-right"
   | "chevron-left"
   | "eye"
+  | "dice"
   | "eye-off"
   | "chevron-down"
   | "chevron-up"
@@ -112,6 +113,16 @@ export function Icon({
       ) : null}
       {name === "chevron-left" ? (
         <Polyline points="15 6 9 12 15 18" {...common} />
+      ) : null}
+      {name === "dice" ? (
+        <>
+          <Rect x="3" y="3" width="18" height="18" rx="4" {...common} />
+          <Circle cx="8.5" cy="8.5" r="1.1" fill="currentColor" stroke="none" />
+          <Circle cx="15.5" cy="8.5" r="1.1" fill="currentColor" stroke="none" />
+          <Circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none" />
+          <Circle cx="8.5" cy="15.5" r="1.1" fill="currentColor" stroke="none" />
+          <Circle cx="15.5" cy="15.5" r="1.1" fill="currentColor" stroke="none" />
+        </>
       ) : null}
       {name === "eye" ? (
         <>

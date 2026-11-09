@@ -44,8 +44,6 @@ export interface RecentSession {
   updatedAt: string;
 }
 
-import type { AliasStyle } from "../editor/connection-alias";
-
 const MAX_RECENT_WORKSPACES = 8;
 const MAX_RECENT_SESSIONS = 8;
 
@@ -101,9 +99,6 @@ function backendPreferences(state: PreferencesStore): BackendPreferences {
 interface PreferencesStore {
   sidebarTab: "files" | "projects";
   setSidebarTab: (tab: "files" | "projects") => void;
-  // Name pool used for connections that have no alias of their own.
-  connectionAliasStyle: AliasStyle;
-  setConnectionAliasStyle: (style: AliasStyle) => void;
   collapsedProjectSources: Record<string, boolean>;
   toggleProjectSource: (connectionId: string) => void;
   activeBackendKey: string | null;
@@ -163,8 +158,6 @@ export const usePreferencesStore = create<PreferencesStore>()(
     (set, get) => ({
       sidebarTab: "files",
       setSidebarTab: (sidebarTab) => set({ sidebarTab }),
-      connectionAliasStyle: "planets",
-      setConnectionAliasStyle: (connectionAliasStyle) => set({ connectionAliasStyle }),
       collapsedProjectSources: {},
       toggleProjectSource: (connectionId) => set((state) => ({
         collapsedProjectSources: {

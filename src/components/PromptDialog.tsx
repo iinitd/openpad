@@ -7,6 +7,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { Icon } from "./Icon";
 import { THEME } from "../styles/theme";
 
 /**
@@ -20,6 +21,7 @@ export function PromptDialog({
   placeholder,
   initialValue = "",
   confirmLabel = "Save",
+  randomize,
   onCancel,
   onSubmit,
 }: {
@@ -29,6 +31,8 @@ export function PromptDialog({
   placeholder?: string;
   initialValue?: string;
   confirmLabel?: string;
+  /** When present, a dice button offers a generated value. */
+  randomize?: () => string;
   onCancel: () => void;
   onSubmit: (value: string) => void;
 }) {
@@ -45,17 +49,29 @@ export function PromptDialog({
         <View style={styles.card}>
           <Text style={styles.title}>{title}</Text>
           {message ? <Text style={styles.message}>{message}</Text> : null}
-          <TextInput
-            style={styles.input}
-            value={value}
-            onChangeText={setValue}
-            placeholder={placeholder}
-            autoFocus
-            autoCapitalize="words"
-            autoCorrect={false}
-            returnKeyType="done"
-            onSubmitEditing={() => onSubmit(value)}
-          />
+          <View style={styles.inputRow}>
+            <TextInput
+              style={[styles.input, styles.inputField]}
+              value={value}
+              onChangeText={setValue}
+              placeholder={placeholder}
+              autoFocus
+              autoCapitalize="words"
+              autoCorrect={false}
+              returnKeyType="done"
+              onSubmitEditing={() => onSubmit(value)}
+            />
+            {randomize ? (
+              <Pressable
+                style={({ pressed }) => [styles.dice, pressed && styles.actionPressed]}
+                onPress={() => setValue(randomize())}
+                accessibilityRole="button"
+                accessibilityLabel="Pick a random name"
+              >
+                <Icon name="dice" size={18} color={THEME.colors.textSecondary} />
+              </Pressable>
+            ) : null}
+          </View>
           <View style={styles.actions}>
             <Pressable
               style={({ pressed }) => [styles.action, pressed && styles.actionPressed]}
@@ -108,6 +124,24 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: THEME.colors.textSecondary,
     marginTop: -THEME.spacing.sm,
+  },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: THEME.spacing.sm,
+  },
+  inputField: {
+    flex: 1,
+  },
+  dice: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: THEME.radii.lg,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    backgroundColor: THEME.colors.background,
   },
   input: {
     borderWidth: 1,

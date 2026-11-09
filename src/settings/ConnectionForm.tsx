@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -13,6 +14,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useConnectionStore } from "../stores/connection-store";
 import { useWriterOpeningStore } from "../stores/writer-opening-store";
 import { Icon } from "../components/Icon";
+import { randomAlias } from "../editor/connection-alias";
 import { UrlFields } from "./UrlFields";
 import { THEME } from "../styles/theme";
 import { hapticTap } from "../components/PressableRow";
@@ -231,15 +233,28 @@ export function ConnectionForm({
 
   return (
     <View style={styles.form}>
-      <Text style={styles.label}>Name (optional)</Text>
-      <TextInput
-        style={styles.input}
-        value={alias}
-        onChangeText={setAlias}
-        placeholder="A name you will recognise"
-        autoCapitalize="words"
-        autoCorrect={false}
-      />
+      <Text style={styles.label}>Name</Text>
+      <View style={styles.nameRow}>
+        <TextInput
+          style={[styles.input, styles.nameInput]}
+          value={alias}
+          onChangeText={setAlias}
+          placeholder="Required — tap the dice"
+          autoCapitalize="words"
+          autoCorrect={false}
+        />
+        <Pressable
+          style={({ pressed }) => [styles.dice, pressed && styles.dicePressed]}
+          onPress={() => {
+            hapticTap("light");
+            setAlias(randomAlias(alias));
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Pick a random name"
+        >
+          <Icon name="dice" size={18} color={THEME.colors.textSecondary} />
+        </Pressable>
+      </View>
 
       <View style={styles.tabs}>
         {(
@@ -386,6 +401,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: THEME.spacing.md,
     paddingTop: THEME.spacing.md,
     paddingBottom: THEME.spacing.md,
+  },
+  nameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: THEME.spacing.sm,
+  },
+  nameInput: {
+    flex: 1,
+  },
+  dice: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: THEME.radii.lg,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    backgroundColor: THEME.colors.background,
+  },
+  dicePressed: {
+    backgroundColor: THEME.colors.backgroundSecondary,
   },
   label: {
     fontSize: 13,

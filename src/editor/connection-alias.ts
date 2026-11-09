@@ -1,55 +1,53 @@
 /**
- * Connection aliases. A connection's own label ("OpenCode · 100.82.76.122")
- * is accurate but hard to say; people recognise it by a name instead. When the
- * user has not chosen one, a stable name is derived from the connection id so
- * it does not change between launches.
+ * Connection names. A connection's own label ("OpenCode · 100.82.76.122") is
+ * accurate but hard to say; people recognise it by a short name instead. Names
+ * come from a pool of onomatopoeia — short, distinct and easy to spot.
  */
 
-export type AliasStyle = "planets" | "animals";
-
-export const ALIAS_STYLES: AliasStyle[] = ["planets", "animals"];
-
-export const ALIAS_STYLE_LABELS: Record<AliasStyle, string> = {
-  planets: "Planets",
-  animals: "Animals",
-};
-
-const PLANETS = [
-  "Mercury",
-  "Venus",
-  "Earth",
-  "Mars",
-  "Jupiter",
-  "Saturn",
-  "Uranus",
-  "Neptune",
-  "Pluto",
-  "Ceres",
-  "Eris",
-  "Titan",
-  "Europa",
-  "Io",
-  "Ganymede",
-  "Callisto",
-];
-
-const ANIMALS = [
-  "Fox",
-  "Otter",
-  "Heron",
-  "Lynx",
-  "Badger",
-  "Koala",
-  "Panda",
-  "Raven",
-  "Wolf",
-  "Seal",
-  "Ibis",
-  "Moth",
-  "Ferret",
-  "Marten",
-  "Gecko",
-  "Crane",
+const NAMES = [
+  "Bloop",
+  "Clank",
+  "Whirr",
+  "Thunk",
+  "Sizzle",
+  "Boing",
+  "Zap",
+  "Fizz",
+  "Rumble",
+  "Crackle",
+  "Whoosh",
+  "Plink",
+  "Klang",
+  "Thump",
+  "Buzz",
+  "Hiss",
+  "Rattle",
+  "Clatter",
+  "Splash",
+  "Squelch",
+  "Beep",
+  "Chime",
+  "Clunk",
+  "Ding",
+  "Fwoosh",
+  "Glug",
+  "Honk",
+  "Jingle",
+  "Knock",
+  "Murmur",
+  "Ping",
+  "Pop",
+  "Purr",
+  "Ratchet",
+  "Screech",
+  "Shuffle",
+  "Snip",
+  "Swish",
+  "Tick",
+  "Twang",
+  "Vroom",
+  "Wobble",
+  "Zoom",
 ];
 
 function hash(value: string): number {
@@ -60,7 +58,17 @@ function hash(value: string): number {
   return total;
 }
 
-export function aliasFor(connectionId: string, style: AliasStyle): string {
-  const list = style === "animals" ? ANIMALS : PLANETS;
-  return list[hash(connectionId) % list.length]!;
+/** A stable name for a connection that has none of its own. */
+export function aliasFor(connectionId: string): string {
+  return NAMES[hash(connectionId) % NAMES.length]!;
+}
+
+/** A fresh name, never the one already showing. */
+export function randomAlias(current?: string): string {
+  if (NAMES.length === 1) return NAMES[0]!;
+  let next = current;
+  while (next === current) {
+    next = NAMES[Math.floor(Math.random() * NAMES.length)];
+  }
+  return next!;
 }

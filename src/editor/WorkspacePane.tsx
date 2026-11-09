@@ -20,7 +20,7 @@ import { getBackendPreferences, toggleBackendWorkspacePin, usePreferencesStore }
 import { normalizeWorkspaceCwd } from "../stores/workspace-session-key";
 import { groupDirectoryProjects, type DirectoryProject } from "./directory-projects";
 import { AddProjectPane } from "./AddProjectPane";
-import { aliasFor } from "./connection-alias";
+import { aliasFor, randomAlias } from "./connection-alias";
 import { PromptDialog } from "../components/PromptDialog";
 import { PressableRow, hapticTap } from "../components/PressableRow";
 import { Icon } from "../components/Icon";
@@ -58,7 +58,6 @@ export function WorkspacePane({
   const connections = useConnectionStore((state) => state.connections);
   const savedConnections = useConnectionStore((state) => state.savedConnections);
   const setConnectionAlias = useConnectionStore((state) => state.setConnectionAlias);
-  const aliasStyle = usePreferencesStore((state) => state.connectionAliasStyle);
   const [renameTarget, setRenameTarget] = useState<{ id: string; value: string } | null>(null);
   const activeConnectionId = useConnectionStore((state) => state.activeConnectionId);
   const isSwitchingConnection = useConnectionStore((state) => state.isSwitchingConnection);
@@ -344,7 +343,7 @@ export function WorkspacePane({
         const [backendName, ...restLabel] = source.label.split(" · ");
         const backendHost = restLabel.join(" · ") || source.endpoint;
         const saved = savedConnections.find((entry) => entry.id === source.connectionId);
-        const alias = saved?.alias?.trim() || aliasFor(source.connectionId, aliasStyle);
+        const alias = saved?.alias?.trim() || aliasFor(source.connectionId);
         // One card per group, deepest cause first: a failed action, then a
         // broken connection, then a failed project listing.
         const connectionReason =
@@ -499,6 +498,7 @@ export function WorkspacePane({
       title="Rename connection"
       placeholder="A name you will recognise"
       initialValue={renameTarget?.value ?? ""}
+      randomize={() => randomAlias(renameTarget?.value)}
       onCancel={() => setRenameTarget(null)}
       onSubmit={(value) => {
         if (renameTarget) setConnectionAlias(renameTarget.id, value);
