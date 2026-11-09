@@ -44,7 +44,15 @@ function reduceTimelineEvent(
       if (existingIdx !== -1) {
         return state.map((existing, index) =>
           index === existingIdx && existing.kind === "user_message"
-            ? { ...existing, text: item.text, messageId: item.messageId, optimistic: false }
+            ? {
+                ...existing,
+                text: item.text || existing.text,
+                messageId: item.messageId,
+                // The live echo has no attachments; keep the ones the optimistic
+                // row was created with.
+                images: item.images ?? existing.images,
+                optimistic: false,
+              }
             : existing,
         );
       }
@@ -55,6 +63,7 @@ function reduceTimelineEvent(
           id,
           messageId: item.messageId,
           text: item.text,
+          images: item.images,
           timestamp: new Date().toISOString(),
         } satisfies UserMessageItem,
       ];

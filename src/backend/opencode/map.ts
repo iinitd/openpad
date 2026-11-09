@@ -16,9 +16,31 @@ export function mapSessionMessage(raw: unknown): MappedPart[] {
   const messageId = asString(message.id);
 
   if (type === "user") {
-    const text = asString(message.text);
-    if (!text) return [];
-    return [{ item: { type: "user_message", text, messageId }, timestamp }];
+    const text = asString(message.text) ?? "";
+    const images = Array.isArray(message.files)
+      ? message.files
+          .map((value) => {
+            const file = asRecord(value);
+            const data = asString(file.data);
+            if (!data) return null;
+            const mime = asString(file.mime) ?? asString(file.mediaType) ?? "image/jpeg";
+            return data.startsWith("data:") ? data : `data:${mime};base64,${data}`;
+          })
+          .filter((value): value is string => Boolean(value))
+      : [];
+    // An image-only prompt has no text, and dropping it would lose the message.
+    if (!text && images.length === 0) return [];
+    return [
+      {
+        item: {
+          type: "user_message",
+          text,
+          messageId,
+          ...(images.length > 0 ? { images } : {}),
+        },
+        timestamp,
+      },
+    ];
   }
 
   if (type === "assistant") {

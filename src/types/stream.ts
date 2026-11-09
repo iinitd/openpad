@@ -10,6 +10,8 @@ export interface UserMessageItem {
   id: string;
   messageId?: string;
   text: string;
+  /** Attached images as data URIs, in the order they were chosen. */
+  images?: string[];
   timestamp: string;
   optimistic?: boolean;
 }

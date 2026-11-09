@@ -79,7 +79,7 @@ export interface BackendPermissionResponse {
 }
 
 export type BackendTimelineItem =
-  | { type: "user_message"; text: string; messageId?: string }
+  | { type: "user_message"; text: string; messageId?: string; images?: string[] }
   // Live text is incremental; a history entry contains the text for that entry.
   | { type: "assistant_message"; text: string; messageId?: string; replace?: boolean }
   | { type: "reasoning"; text: string }

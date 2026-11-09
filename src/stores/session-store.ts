@@ -1085,6 +1085,10 @@ export const useSessionStore = create<SessionStore>()(
         id: `user-${messageId}`,
         messageId,
         text,
+        // Show the chosen images in the transcript straight away.
+        ...(attachments && attachments.length > 0
+          ? { images: attachments.map((file) => `data:${file.mime};base64,${file.base64}`) }
+          : {}),
         timestamp: new Date().toISOString(),
         optimistic: true,
       };

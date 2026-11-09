@@ -1,5 +1,5 @@
 import { memo, useMemo, useState } from "react";
-import { Pressable, View, Text, StyleSheet } from "react-native";
+import { Image, Pressable, View, Text, StyleSheet } from "react-native";
 import { THEME } from "../styles/theme";
 import { PressableRow, hapticTap } from "../components/PressableRow";
 import { HalfSheet } from "../components/HalfSheet";
@@ -229,19 +229,42 @@ const AssistantBubble = memo(function AssistantBubble({ text }: { text: string }
   );
 });
 
-const UserBubble = memo(function UserBubble({ text }: { text: string }) {
+const UserBubble = memo(function UserBubble({
+  text,
+  images,
+}: {
+  text: string;
+  images?: string[];
+}) {
   const [open, setOpen] = useState(false);
+  const hasText = text.trim().length > 0;
   return (
     <>
       <Pressable
         style={[styles.message, styles.userMessage]}
         delayLongPress={250}
-        onLongPress={() => {
-          hapticLongPress();
-          setOpen(true);
-        }}
+        onLongPress={
+          hasText
+            ? () => {
+                hapticLongPress();
+                setOpen(true);
+              }
+            : undefined
+        }
       >
-        <Text style={styles.userText}>{text}</Text>
+        {images && images.length > 0 ? (
+          <View style={styles.userImages}>
+            {images.map((uri, index) => (
+              <Image
+                key={`${index}-${uri.length}`}
+                source={{ uri }}
+                style={styles.userImage}
+                resizeMode="cover"
+              />
+            ))}
+          </View>
+        ) : null}
+        {hasText ? <Text style={styles.userText}>{text}</Text> : null}
       </Pressable>
       <SelectableSheet
         visible={open}
@@ -255,9 +278,10 @@ const UserBubble = memo(function UserBubble({ text }: { text: string }) {
 export const ChatMessageItem = memo(function ChatMessageItem({ item }: Props) {
   switch (item.kind) {
     case "user_message":
-      // An image-only prompt carries no text; an empty bubble would read as a
-      // rendering fault.
-      return item.text.trim() ? <UserBubble text={item.text} /> : null;
+      // An image-only prompt has no text but still needs its bubble.
+      return item.text.trim() || (item.images?.length ?? 0) > 0 ? (
+        <UserBubble text={item.text} images={item.images} />
+      ) : null;
     case "assistant_message":
       return <AssistantBubble text={item.text || "..."} />;
     case "thought":
@@ -300,6 +324,18 @@ const styles = StyleSheet.create({
     alignSelf: "flex-end",
     backgroundColor: "#e7edf3",
     borderBottomRightRadius: THEME.radii.sm,
+  },
+  userImages: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginBottom: 6,
+  },
+  userImage: {
+    width: 140,
+    height: 140,
+    borderRadius: 12,
+    backgroundColor: THEME.colors.surface,
   },
   userText: {
     color: THEME.colors.text,
