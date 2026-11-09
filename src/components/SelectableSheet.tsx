@@ -1,12 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
-import { Platform, StyleSheet, Text, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { PanResponder, Platform, StyleSheet, Text, View } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import * as Haptics from "expo-haptics";
 import { HalfSheet } from "./HalfSheet";
 import { SelectableText } from "./SelectableText";
 import { Icon } from "./Icon";
 import { PressableRow } from "./PressableRow";
-import { selectedSlice, splitBangTokens } from "./bang-tokens";
+import { selectedSlice, splitBangTokens, tokenRange } from "./bang-tokens";
 import { THEME } from "../styles/theme";
 
 /** The tap that opens a sheet should be felt, not just seen. */
@@ -36,6 +36,69 @@ export function SelectableSheet({
   const [exploded, setExploded] = useState(false);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const tokens = useMemo(() => splitBangTokens(text), [text]);
+
+  // Drag across the pieces to take a run of them, like dragging over text.
+  const rects = useRef<Array<{ x: number; y: number; w: number; h: number }>>([]);
+  const anchor = useRef<number | null>(null);
+  const pressStart = useRef({ x: 0, y: 0, time: 0 });
+
+  const tokenAt = (x: number, y: number): number | null => {
+    let bestIndex: number | null = null;
+    let bestDistance = Number.POSITIVE_INFINITY;
+    for (let index = 0; index < rects.current.length; index += 1) {
+      const rect = rects.current[index];
+      if (!rect) continue;
+      const inside =
+        x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h;
+      const dx = x - (rect.x + rect.w / 2);
+      const dy = y - (rect.y + rect.h / 2);
+      const distance = inside ? 0 : dx * dx + dy * dy;
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        bestIndex = index;
+      }
+    }
+    return bestIndex;
+  };
+
+  const responder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponderCapture: (event) => {
+        pressStart.current = {
+          x: event.nativeEvent.locationX,
+          y: event.nativeEvent.locationY,
+          time: Date.now(),
+        };
+        return false;
+      },
+      // A held finger that starts moving picks a range; an ordinary drag keeps
+      // scrolling the sheet.
+      onMoveShouldSetPanResponder: (_event, gesture) =>
+        Date.now() - pressStart.current.time > 180 &&
+        Math.abs(gesture.dx) + Math.abs(gesture.dy) > 4,
+      onPanResponderGrant: () => {
+        const index = tokenAt(pressStart.current.x, pressStart.current.y);
+        if (index === null) return;
+        anchor.current = index;
+        setSelected(new Set([index]));
+        if (Platform.OS !== "web") {
+          void Haptics.selectionAsync();
+        }
+      },
+      onPanResponderMove: (event) => {
+        if (anchor.current === null) return;
+        const index = tokenAt(event.nativeEvent.locationX, event.nativeEvent.locationY);
+        if (index === null) return;
+        setSelected(tokenRange(anchor.current, index));
+      },
+      onPanResponderRelease: () => {
+        anchor.current = null;
+      },
+      onPanResponderTerminate: () => {
+        anchor.current = null;
+      },
+    }),
+  ).current;
 
   useEffect(() => {
     if (!visible) {
@@ -104,7 +167,7 @@ export function SelectableSheet({
     >
       {exploded ? (
         <View style={styles.exploded}>
-          <View style={styles.tokens}>
+          <View style={styles.tokens} {...responder.panHandlers}>
             {tokens.map((token, index) => {
               const active = selected.has(index);
               return (
@@ -113,6 +176,10 @@ export function SelectableSheet({
                   style={[styles.token, active && styles.tokenActive]}
                   haptic="selection"
                   scale={false}
+                  onLayout={(event) => {
+                    const { x, y, width, height } = event.nativeEvent.layout;
+                    rects.current[index] = { x, y, w: width, h: height };
+                  }}
                   onPress={() => toggleToken(index)}
                   accessibilityRole="button"
                   accessibilityState={{ selected: active }}
@@ -128,7 +195,7 @@ export function SelectableSheet({
           <View style={styles.footer}>
             <Text style={styles.footerText}>
               {selected.size === 0
-                ? "Tap words to pick them"
+                ? "Tap, or hold and drag across"
                 : `${selected.size} picked`}
             </Text>
             <PressableRow
