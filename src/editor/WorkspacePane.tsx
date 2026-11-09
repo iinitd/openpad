@@ -210,8 +210,11 @@ export function WorkspacePane({
                 style={({ pressed }) => [styles.pinButton, pressed && styles.pinButtonPressed]}
                 accessibilityLabel={pinned ? "Unpin project" : "Pin project"}
               >
-                <Icon name={pinned ? "star-filled" : "star"} size={15}
-                  color={pinned ? THEME.colors.textSecondary : THEME.colors.textMuted} />
+                <Icon
+                  name={pinned ? "star-filled" : "star"}
+                  size={14}
+                  color={pinned ? THEME.colors.textSecondary : "rgba(161,161,170,0.55)"}
+                />
               </Pressable>
             ) : null}
           </View>
@@ -277,6 +280,7 @@ export function WorkspacePane({
                 <Text style={styles.sourceLabel} numberOfLines={1}>
                   {source.label}
                 </Text>
+                <View style={styles.sourceSpacer} />
                 <View
                   style={[
                     styles.sourceDot,
@@ -449,18 +453,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     height: 40,
-    // Extra inset so the button does not sit flush with the rows' edge.
-    marginHorizontal: THEME.spacing.sm,
     marginTop: 2,
     marginBottom: THEME.spacing.xs,
     paddingHorizontal: THEME.spacing.md,
-    borderRadius: THEME.radii.lg,
-    borderWidth: 1,
-    borderColor: THEME.colors.border,
-    backgroundColor: THEME.colors.background,
+    borderRadius: 9,
+    // Soft fill, not another outline: the open project is the boxed row.
+    backgroundColor: THEME.colors.surface,
   },
   addRowPressed: {
-    backgroundColor: THEME.colors.backgroundSecondary,
+    backgroundColor: "#ececef",
   },
   addRowDisabled: {
     opacity: 0.45,
@@ -486,6 +487,9 @@ const styles = StyleSheet.create({
   },
   sourceHeaderPressed: {
     backgroundColor: THEME.colors.backgroundSecondary,
+  },
+  sourceSpacer: {
+    flex: 1,
   },
   sourceLabel: {
     flexShrink: 1,
@@ -527,7 +531,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     marginTop: THEME.spacing.md,
-    paddingHorizontal: THEME.spacing.md,
+    paddingHorizontal: THEME.spacing.xs,
     paddingVertical: THEME.spacing.sm,
   },
   addConnectionPressed: {
