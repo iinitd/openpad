@@ -272,7 +272,14 @@ export function WorkspacePane({
         const connecting = live?.connectionState.status === "connecting";
         const onThisConnection = source.connectionId === activeConnectionId;
         const addDisabled = Boolean(busyKey) || opening || isSwitchingConnection || !connected;
-        const statusLabel = connected ? "Connected" : connecting ? "Connecting…" : "Offline";
+        // Only three states are worth naming: connected, still trying, and
+        // failed. A plain disconnect reads as "Connecting" because the app will
+        // keep retrying.
+        const errored =
+          live?.connectionState.status === "disposed" ||
+          (live?.connectionState.status === "disconnected" &&
+            Boolean(live.connectionState.reason));
+        const statusLabel = connected ? "Connected" : errored ? "Error" : "Connecting";
         // "OpenCode · host" on one line is a mouthful; split it into a name and
         // the address it points at.
         const [backendName, ...restLabel] = source.label.split(" · ");
@@ -542,6 +549,7 @@ const styles = StyleSheet.create({
   },
   sourceDotOn: { backgroundColor: THEME.colors.success },
   sourceDotPending: { backgroundColor: THEME.colors.warning },
+  sourceDotError: { backgroundColor: THEME.colors.error },
   sourceDotOff: { backgroundColor: THEME.colors.textMuted },
   sourceStatus: {
     fontSize: 11,
