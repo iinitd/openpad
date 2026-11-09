@@ -157,7 +157,7 @@ export function WorkspacePane({
           <View style={styles.rowInner}>
             <View style={styles.rowIcon}>
               <Icon
-                name="folder"
+                name="grid"
                 size={16}
                 color={active ? THEME.colors.text : THEME.colors.textSecondary}
               />
@@ -243,9 +243,7 @@ export function WorkspacePane({
               accessibilityRole="button"
               accessibilityLabel={`Add a project to ${source.label}`}
             >
-              <View style={styles.rowIcon}>
-                <Icon name="plus" size={16} color={THEME.colors.textSecondary} />
-              </View>
+              <Icon name="plus" size={16} color={THEME.colors.text} />
               <Text style={styles.addRowText}>New working directory</Text>
             </PressableRow>
           ) : null}
@@ -358,14 +356,23 @@ const styles = StyleSheet.create({
   pinButtonPressed: {
     opacity: 0.6,
   },
-  // Matches a project row's geometry, so the label lines up with the names.
+  // A white button rather than another list row: this is the one action on the
+  // screen, and the border + shadow make it read as something to press.
   addRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: 9,
-    borderRadius: 8,
+    justifyContent: "center",
+    gap: 6,
+    height: 40,
+    borderRadius: THEME.radii.lg,
+    borderWidth: 1,
+    borderColor: THEME.colors.border,
+    backgroundColor: THEME.colors.background,
+    shadowColor: "#18181b",
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
   addRowPressed: {
     backgroundColor: THEME.colors.backgroundSecondary,
@@ -375,7 +382,8 @@ const styles = StyleSheet.create({
   },
   addRowText: {
     fontSize: 15,
-    color: THEME.colors.textSecondary,
+    fontWeight: "600",
+    color: THEME.colors.text,
   },
   loadingRow: {
     flexDirection: "row",
