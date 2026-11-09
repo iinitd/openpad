@@ -93,11 +93,10 @@ export function ConnectionForm({
     })),
   );
 
-  const [expanded, setExpanded] = useState<Transport>(() => {
-    if (mode === "opencode") return "opencode-direct";
-    if (mode === "relay") return "paseo-relay";
-    return "paseo-direct";
-  });
+  // Nothing is open until the reader asks for it; the page starts as a short
+  // menu of four ways in.
+  const [backend, setBackend] = useState<"opencode" | "paseo">("opencode");
+  const [expanded, setExpanded] = useState<Transport | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const connectPending = useRef(false);
@@ -107,6 +106,7 @@ export function ConnectionForm({
   // The card is the source of truth for which mode the store is in. OpenClaw is
   // no longer offered, so a stored selection lands on Paseo direct.
   useEffect(() => {
+    if (!expanded) return;
     if (expanded.startsWith("opencode")) {
       if (mode !== "opencode") setMode("opencode");
       return;
@@ -219,13 +219,8 @@ export function ConnectionForm({
     );
   }
 
-  const activeBackend = expanded.startsWith("opencode") ? "opencode" : "paseo";
-  const lastTransport = useRef<Record<"paseo" | "opencode", Transport>>({
-    paseo: "paseo-direct",
-    opencode: "opencode-direct",
-  });
   const visibleTransports = TRANSPORT_ORDER.filter((transport) =>
-    activeBackend === "opencode"
+    backend === "opencode"
       ? transport.startsWith("opencode")
       : transport.startsWith("paseo"),
   );
@@ -238,16 +233,17 @@ export function ConnectionForm({
             ["opencode", "OpenCode"],
             ["paseo", "Paseo"],
           ] as const
-        ).map(([backend, label]) => {
-          const active = activeBackend === backend;
+        ).map(([selected, label]) => {
+          const active = backend === selected;
           return (
             <TouchableOpacity
-              key={backend}
+              key={selected}
               style={[styles.tab, active && styles.tabActive]}
               onPress={() => {
                 if (active) return;
                 hapticTap("selection");
-                setExpanded(lastTransport.current[backend]);
+                setBackend(selected);
+                setExpanded(null);
               }}
               disabled={isBusy}
               activeOpacity={0.8}
@@ -267,11 +263,8 @@ export function ConnectionForm({
             <TouchableOpacity
               style={[styles.cardHeader, open && styles.cardHeaderOpen]}
               onPress={() => {
-                if (open) return;
                 hapticTap("selection");
-                lastTransport.current[transport.startsWith("opencode") ? "opencode" : "paseo"] =
-                  transport;
-                setExpanded(transport);
+                setExpanded(open ? null : transport);
               }}
               disabled={isBusy}
               activeOpacity={0.8}
