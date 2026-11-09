@@ -414,6 +414,7 @@ export function WorkspacePane({
               </PressableRow>
             </View>
 
+            {!collapsed ? <View style={styles.sourceDivider} /> : null}
             {groupCard}
             {!collapsed ? (
               <View style={styles.sourceChildren}>
@@ -516,7 +517,8 @@ const styles = StyleSheet.create({
   // A quiet action on the group's top edge: no box, so it sits beside the
   // project rows instead of competing with them.
   sourceAdd: {
-    width: 30,
+    // Same trailing edge as the pin stars below, so the column lines up.
+    width: 26,
     height: 30,
     alignItems: "center",
     justifyContent: "center",
@@ -582,6 +584,14 @@ const styles = StyleSheet.create({
   sourceDotPending: { backgroundColor: THEME.colors.warning },
   sourceDotError: { backgroundColor: THEME.colors.error },
   sourceDotOff: { backgroundColor: THEME.colors.textMuted },
+  // A rule between the group's title and its projects, inset from both edges.
+  sourceDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: THEME.colors.border,
+    marginTop: THEME.spacing.sm,
+    marginBottom: THEME.spacing.sm,
+    marginHorizontal: THEME.spacing.sm,
+  },
   sourceChildren: {
     gap: 2,
   },
