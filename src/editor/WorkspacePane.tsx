@@ -492,11 +492,12 @@ const styles = StyleSheet.create({
   sourceSpacer: {
     flex: 1,
   },
+  // Hierarchy through size and tone, not weight: the connection reads as a
+  // heading because it is larger and darker than the project names below it.
   sourceLabel: {
     flexShrink: 1,
-    fontSize: 14,
-    fontWeight: "600",
-    letterSpacing: 0.1,
+    fontSize: 16,
+    letterSpacing: 0.2,
     color: THEME.colors.text,
   },
   sourceDot: {
