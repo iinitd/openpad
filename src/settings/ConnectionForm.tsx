@@ -114,13 +114,6 @@ export function ConnectionForm({
     if (mode !== next) setMode(next);
   }, [expanded, mode, setMode]);
 
-  // A bare host:port defaults to http://, so both spellings mean plaintext.
-  const openCodePlaintext = (() => {
-    const target = opencodePairLink.trim() || opencodeUrl.trim();
-    if (!target) return false;
-    return !/^https:\/\//i.test(target);
-  })();
-
   async function handleConnect() {
     if (connectPending.current) return;
     connectPending.current = true;
@@ -157,6 +150,7 @@ export function ConnectionForm({
           password={password}
           onPasswordChange={setPassword}
           passwordPlaceholder="Optional"
+          insecureHint="Not encrypted. WebSocket traffic and the daemon password travel in the clear. Prefer SSL, or a private network such as Tailscale."
         />
       );
     }
@@ -214,14 +208,8 @@ export function ConnectionForm({
           password={opencodePassword}
           onPasswordChange={setOpenCodePassword}
           passwordPlaceholder="OPENCODE_SERVER_PASSWORD"
+          insecureHint="Not encrypted. HTTP sends the server password and session token in the clear. Prefer HTTPS, or a private network such as Tailscale."
         />
-        {openCodePlaintext ? (
-          <Text style={[styles.hint, styles.warningHint]}>
-            This connection is not encrypted. HTTP sends the server password and
-            session token in the clear, so anyone on the same network can read them.
-            Prefer HTTPS, or a private network such as Tailscale.
-          </Text>
-        ) : null}
         <Text style={styles.hint}>
           Run `opencode serve`, then use the printed server password. For the web app,
           allow this page's origin with `--cors`.
@@ -412,9 +400,6 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     color: THEME.colors.textMuted,
     marginTop: -THEME.spacing.xs,
-  },
-  warningHint: {
-    color: THEME.colors.warning,
   },
   button: {
     height: 46,

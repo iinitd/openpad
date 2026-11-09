@@ -23,6 +23,8 @@ interface UrlFieldsProps {
   password?: string;
   onPasswordChange?: (value: string) => void;
   passwordPlaceholder?: string;
+  /** Shown under the switch whenever SSL is off. */
+  insecureHint?: string;
 }
 
 interface ParsedUrl {
@@ -88,6 +90,7 @@ export function UrlFields({
   password,
   onPasswordChange,
   passwordPlaceholder = "Optional",
+  insecureHint = "Not encrypted. Everything sent here, including the password, can be read on the network. Prefer SSL, or a private network such as Tailscale.",
 }: UrlFieldsProps) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [reveal, setReveal] = useState(false);
@@ -130,6 +133,10 @@ export function UrlFields({
           thumbColor="#fff"
         />
       </View>
+
+      {!parts.secure ? (
+        <Text style={styles.warning}>{insecureHint}</Text>
+      ) : null}
 
       {onUsernameChange ? (
         <>
@@ -240,6 +247,12 @@ const styles = StyleSheet.create({
   switchLabel: {
     fontSize: 14,
     color: THEME.colors.text,
+  },
+  warning: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: THEME.colors.warning,
+    marginTop: -THEME.spacing.xs,
   },
   passwordRow: {
     flexDirection: "row",
