@@ -284,17 +284,19 @@ export function WorkspacePane({
                   {source.label}
                 </Text>
                 <View style={styles.sourceSpacer} />
-                <View
-                  style={[
-                    styles.sourceDot,
-                    connected
-                      ? styles.sourceDotOn
-                      : connecting
-                        ? styles.sourceDotPending
-                        : styles.sourceDotOff,
-                  ]}
-                />
-                <Text style={styles.sourceStatus}>{statusLabel}</Text>
+                <View style={styles.sourceStatusPill}>
+                  <View
+                    style={[
+                      styles.sourceDot,
+                      connected
+                        ? styles.sourceDotOn
+                        : connecting
+                          ? styles.sourceDotPending
+                          : styles.sourceDotOff,
+                    ]}
+                  />
+                  <Text style={styles.sourceStatus}>{statusLabel}</Text>
+                </View>
               </Pressable>
               {!connected && !connecting ? (
                 <PressableRow
@@ -510,16 +512,25 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
     color: THEME.colors.text,
   },
+  sourceStatusPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 999,
+    backgroundColor: THEME.colors.surface,
+  },
   sourceDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
   },
   sourceDotOn: { backgroundColor: THEME.colors.success },
   sourceDotPending: { backgroundColor: THEME.colors.warning },
   sourceDotOff: { backgroundColor: THEME.colors.textMuted },
   sourceStatus: {
-    fontSize: 12,
+    fontSize: 11,
     color: THEME.colors.textSecondary,
   },
   sourceAction: {

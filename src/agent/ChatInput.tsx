@@ -141,19 +141,19 @@ const styles = StyleSheet.create({
     gap: THEME.spacing.xs,
   },
   queueList: {
-    gap: THEME.spacing.xs,
-    marginBottom: THEME.spacing.xs,
+    gap: 6,
+    marginBottom: THEME.spacing.sm,
   },
-  // Waiting messages read as pending by shape, not by a caption: a quiet
-  // white row with an accent rule, stacked directly above the composer.
+  // Waiting messages echo the transcript: a bubble on your side of the
+  // conversation, in grey because it has not gone out yet.
   queueChip: {
+    alignSelf: "flex-end",
+    maxWidth: "86%",
     flexDirection: "row",
     alignItems: "center",
     gap: THEME.spacing.sm,
-    backgroundColor: THEME.colors.background,
-    borderRadius: THEME.radii.md,
-    borderLeftWidth: 2,
-    borderLeftColor: THEME.colors.accent,
+    backgroundColor: THEME.colors.surface,
+    borderRadius: 16,
     paddingLeft: THEME.spacing.md,
     paddingRight: 6,
     paddingVertical: 7,
