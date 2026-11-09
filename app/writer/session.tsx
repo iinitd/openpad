@@ -478,20 +478,20 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
               style={[styles.mobileTab, page === 0 && styles.mobileTabActive]}
               onPress={() => goToPage(0)}
               haptic="light"
-              accessibilityLabel="Show directory"
+              accessibilityLabel="Show files"
             >
               <Text style={[styles.mobileTabLabel, page === 0 && styles.mobileTabLabelActive]}>
-                Directory
+                Files
               </Text>
             </PressableRow>
             <PressableRow
               style={[styles.mobileTab, page === 1 && styles.mobileTabActive]}
               onPress={() => goToPage(1)}
               haptic="light"
-              accessibilityLabel="Show agent"
+              accessibilityLabel="Show chat"
             >
               <Text style={[styles.mobileTabLabel, page === 1 && styles.mobileTabLabelActive]}>
-                Agent
+                Chat
               </Text>
             </PressableRow>
           </View>
