@@ -1,6 +1,7 @@
 import { createPluginContext } from "../../src/content/plugin-context";
 import { hapticTap } from "../../src/components/PressableRow";
 import { SettingsPane } from "../../src/settings/SettingsPane";
+import { ConnectionForm } from "../../src/settings/ConnectionForm";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   View,
@@ -14,6 +15,7 @@ import {
   Platform,
   Keyboard,
   PanResponder,
+  ScrollView,
   useWindowDimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -313,7 +315,6 @@ export default function WriterSessionScreen() {
 // Each page owns its composer: the document keeps the comment dock, the
 // conversation keeps its own input.
 function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset: number }) {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const keyboardInset = useKeyboardInset();
   // The editor publishes its live selection + send handlers here so the dock
@@ -331,6 +332,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   // browser as a sub-screen of the projects tab.
   const [projectsTab, setProjectsTab] = useState<"projects" | "settings">("projects");
   const [addProjectOpen, setAddProjectOpen] = useState(false);
+  const [addConnectionOpen, setAddConnectionOpen] = useState(false);
   // Folder currently expanded into the right-hand column of the files sheet.
   const [filesFolder, setFilesFolder] = useState<string | null>(null);
   const filesCwd = useFilesStore((state) => state.cwd);
@@ -661,6 +663,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         onDismiss={() => {
           setProjectsTab("projects");
           setAddProjectOpen(false);
+          setAddConnectionOpen(false);
           closeProjects();
         }}
       >
@@ -668,13 +671,16 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
           <View
             style={[
               styles.pageSheetHeader,
-              addProjectOpen ? null : styles.pageSheetHeaderFlush,
+              addProjectOpen || addConnectionOpen ? null : styles.pageSheetHeaderFlush,
             ]}
           >
-            {addProjectOpen ? (
+            {addProjectOpen || addConnectionOpen ? (
               <PressableRow
                 style={styles.pageSheetClose}
-                onPress={() => setAddProjectOpen(false)}
+                onPress={() => {
+                  setAddProjectOpen(false);
+                  setAddConnectionOpen(false);
+                }}
                 haptic="light"
                 accessibilityLabel="Back to projects"
               >
@@ -686,9 +692,11 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
             <Text style={styles.sheetTitle} numberOfLines={1}>
               {addProjectOpen
                 ? "New working directory"
-                : projectsTab === "projects"
-                  ? "Projects"
-                  : "Settings"}
+                : addConnectionOpen
+                  ? "Add connection"
+                  : projectsTab === "projects"
+                    ? "Projects"
+                    : "Settings"}
             </Text>
             <PressableRow
               style={styles.pageSheetClose}
@@ -700,7 +708,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
             </PressableRow>
           </View>
 
-          {addProjectOpen ? null : (
+          {addProjectOpen || addConnectionOpen ? null : (
             <View style={styles.sheetTabRow}>
               <View style={styles.sheetTabs}>
                 {(["projects", "settings"] as const).map((tab) => (
@@ -730,17 +738,27 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
             </View>
           )}
 
-          {projectsTab === "projects" ? (
+          {addConnectionOpen ? (
+            <ScrollView
+              style={styles.sheetScroll}
+              contentContainerStyle={styles.connectionFormContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              <ConnectionForm
+                onConnected={() => {
+                  setAddConnectionOpen(false);
+                  closeProjects();
+                }}
+              />
+            </ScrollView>
+          ) : projectsTab === "projects" ? (
             <FileTree
               mode="projects"
               showHeader={false}
               addProjectOpen={addProjectOpen}
               onAddProjectOpenChange={setAddProjectOpen}
               showConnections
-              onAddConnection={() => {
-                closeProjects();
-                router.push("/?add=1");
-              }}
+              onAddConnection={() => setAddConnectionOpen(true)}
               bottomInset={insets.bottom}
               onFileOpened={() => {
                 closeProjects();
@@ -970,6 +988,14 @@ const styles = StyleSheet.create({
   },
   sheetTabLabelActive: {
     color: THEME.colors.text,
+  },
+  sheetScroll: {
+    flex: 1,
+  },
+  connectionFormContent: {
+    paddingHorizontal: THEME.spacing.lg,
+    paddingTop: THEME.spacing.lg,
+    paddingBottom: THEME.spacing.xxl,
   },
   sheetTitle: {
     flex: 1,
