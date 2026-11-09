@@ -68,13 +68,13 @@ function buildMessage(selectionText: string, comment: string, blockIds: string[]
     selection: selectionText,
     message: instruction,
   });
-  // The message is the template rendered; there is no second assembly path.
-  // A template without {message} gets the instruction appended instead.
+  // The instruction is the message: the template's {message} slot is where the
+  // user's comment lands, so it is never appended a second time under a label.
+  // A template that omits {message} gets the comment appended as plain text.
   const carriesMessage = /\{message\}/i.test(template);
   const lines: string[] = rendered ? [rendered, ""] : [];
-  if (!carriesMessage) lines.push(`Instruction: ${instruction}`, "");
+  if (!carriesMessage) lines.push(instruction, "");
   if (blockIds.length > 0) lines.push(`Feishu block IDs: ${blockIds.join(" → ")}`, "");
-  lines.push(`Instruction: ${instruction}`);
   if (blockIds.length > 0) {
     lines.push("This is a pulled Feishu working copy. Edit this local file, preserve its block IDs and destination metadata, then use the established lark push/patch workflow when publishing; do not edit a raw mirror.");
   }
@@ -99,7 +99,7 @@ function buildImageMessage(
     "",
     `Referenced ${noun}: ${ref.path}`,
     "",
-    `Instruction: ${instruction}`,
+    instruction,
   ].join("\n");
 }
 

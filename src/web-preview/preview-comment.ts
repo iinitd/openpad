@@ -36,6 +36,8 @@ export async function sendPreviewComment(
   if (selected && !/\{selected_text\}/i.test(template)) {
     lines.push("Rendered selection:", '"""', selected, '"""', "");
   }
-  if (!/\{message\}/i.test(template)) lines.push(`Instruction: ${instruction}`);
+  // The comment is the message; only append it when the template left no
+  // {message} slot for it.
+  if (!/\{message\}/i.test(template)) lines.push(instruction);
   await useSessionStore.getState().sendMessage(lines.join("\n"), attachments);
 }
