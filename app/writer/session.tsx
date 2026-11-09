@@ -1,5 +1,6 @@
 import { createPluginContext } from "../../src/content/plugin-context";
 import { hapticTap } from "../../src/components/PressableRow";
+import { ToastHost } from "../../src/components/Toast";
 import { SettingsPane } from "../../src/settings/SettingsPane";
 import { ConnectionForm } from "../../src/settings/ConnectionForm";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -287,6 +288,7 @@ export default function WriterSessionScreen() {
 
   return (
     <View style={styles.writerContainer}>
+      <ToastHost />
       {showOpeningStatus ? (
         <View style={[styles.openingStatus, isCompact ? { paddingTop: insets.top + THEME.spacing.sm } : null]}>
           {opening ? <ActivityIndicator size="small" color={THEME.colors.primary} /> : null}

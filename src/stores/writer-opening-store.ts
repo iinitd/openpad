@@ -7,6 +7,7 @@ import { isSessionRestoreSuperseded, useSessionStore } from "./session-store";
 import { normalizeWorkspaceCwd, workspaceSessionKey } from "./workspace-session-key";
 import { groupDirectoryProjects } from "../editor/directory-projects";
 import { measureStartupTrace, noteStartupTrace } from "../utils/startup-trace";
+import { showToast } from "../components/Toast";
 
 /** Host navigation intent. Explicit sessions never fall back to another agent. */
 export interface WriterOpenTarget {
@@ -26,6 +27,8 @@ interface WriterOpeningStore {
 }
 
 class OpeningSuperseded extends Error {}
+/** The backend is mid-reconnect: worth a toast, not a persistent error. */
+class OpeningTransient extends Error {}
 let generation = 0;
 let queue: Promise<unknown> = Promise.resolve();
 let pending: { key: string; promise: Promise<boolean> } | null = null;
@@ -89,7 +92,7 @@ export const useWriterOpeningStore = create<WriterOpeningStore>()((set, get) => 
         activeClient = useConnectionStore.getState().client;
         checkCurrent();
         if (!activeClient || useConnectionStore.getState().connectionState.status !== "connected") {
-          throw new Error("This backend is reconnecting. Try again in a moment.");
+          throw new OpeningTransient("Reconnecting. Try again in a moment.");
         }
         const session = useSessionStore.getState();
         if (!target.agentId && !target.cwd && session.agentId) return finish();
@@ -186,6 +189,10 @@ export const useWriterOpeningStore = create<WriterOpeningStore>()((set, get) => 
         return finish();
       } catch (error) {
         if (generation !== requestGeneration || error instanceof OpeningSuperseded || isSessionRestoreSuperseded(error)) return false;
+        if (error instanceof OpeningTransient) {
+          showToast(error.message);
+          return false;
+        }
         set({ error: error instanceof Error ? error.message : "Could not open project." });
         return false;
       } finally {
