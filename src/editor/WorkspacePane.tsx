@@ -501,7 +501,23 @@ export function WorkspacePane({
           </View>
         );
       })}
-      {!loading && entries.length === 0 ? <Text style={styles.empty}>No backend connections available.</Text> : null}
+      {!loading && entries.length === 0 ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyText}>No connections available.</Text>
+          <PressableRow
+            style={styles.emptyAction}
+            haptic="light"
+            scale={false}
+            pressedStyle={styles.emptyActionPressed}
+            onPress={() => void useConnectionStore.getState().setDemoEnabled(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Add the demo workspace"
+          >
+            <Icon name="plus" size={13} color={THEME.colors.textSecondary} />
+            <Text style={styles.emptyActionText}>Add demo workspace</Text>
+          </PressableRow>
+        </View>
+      ) : null}
 
 
     </ScrollView>
@@ -763,5 +779,31 @@ const styles = StyleSheet.create({
     color: THEME.colors.textMuted,
     padding: THEME.spacing.md,
     marginHorizontal: THEME.spacing.xs,
+  },
+  emptyState: {
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: THEME.spacing.xxl,
+  },
+  emptyText: {
+    fontSize: 15,
+    color: THEME.colors.textMuted,
+  },
+  emptyAction: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    height: 34,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: THEME.colors.surface,
+  },
+  emptyActionPressed: {
+    backgroundColor: "#ececef",
+  },
+  emptyActionText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: THEME.colors.textSecondary,
   },
 });
