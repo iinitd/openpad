@@ -212,7 +212,9 @@ export function WorkspacePane({
               >
                 <Icon
                   name={pinned ? "star-filled" : "star"}
-                  size={14}
+                  // A filled shape carries no outline of its own, so it reads
+                  // one step smaller than the stroked star at the same size.
+                  size={pinned ? 15 : 14}
                   color={pinned ? "#eab308" : "rgba(161,161,170,0.55)"}
                 />
               </Pressable>
