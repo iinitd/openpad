@@ -23,11 +23,12 @@ type Transport =
   | "opencode-direct"
   | "opencode-pair";
 
+// The backend is the tab above, so the cards only name the transport.
 const TRANSPORT_TITLES: Record<Transport, string> = {
-  "paseo-direct": "Paseo · Direct",
-  "paseo-relay": "Paseo · Relay",
-  "opencode-direct": "OpenCode · Direct",
-  "opencode-pair": "OpenCode · Pair",
+  "paseo-direct": "Direct",
+  "paseo-relay": "Relay",
+  "opencode-direct": "Direct",
+  "opencode-pair": "Pair",
 };
 
 const TRANSPORT_ORDER: Transport[] = [
