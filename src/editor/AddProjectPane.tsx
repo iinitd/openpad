@@ -133,27 +133,12 @@ export function AddProjectPane({
   return (
     <View style={styles.pane}>
       <View style={styles.headerBand}>
-        <Pressable
-          onPress={goUp}
-          disabled={!canGoUp || loading}
-          hitSlop={8}
-          style={({ pressed }) => [
-            styles.upButton,
-            (!canGoUp || loading) && styles.upButtonDisabled,
-            pressed && canGoUp && styles.upButtonPressed,
-          ]}
-          accessibilityRole="button"
-          accessibilityLabel="Go to parent folder"
-          accessibilityState={{ disabled: !canGoUp }}
-        >
-          <Icon name="chevron-up" size={18} color={THEME.colors.textSecondary} />
-        </Pressable>
         <View style={styles.pathBody}>
           <Text style={styles.pathTitle} numberOfLines={1}>
             {currentLabel || "Folder"}
           </Text>
           <Text style={styles.pathText} numberOfLines={1}>
-            {`${sourceLabel} · ${browseRoot}${path ? `/${path}` : ""}`}
+            {sourceLabel}
           </Text>
         </View>
       </View>
@@ -171,8 +156,10 @@ export function AddProjectPane({
             accessibilityRole="button"
             accessibilityLabel="Go to parent folder"
           >
-            <Icon name="chevron-up" size={16} color={THEME.colors.textSecondary} />
-            <Text style={styles.rowText}>…</Text>
+            <View style={styles.rowIcon}>
+              <Icon name="chevron-up" size={15} color={THEME.colors.textMuted} />
+            </View>
+            <Text style={[styles.rowText, styles.parentText]}>Parent folder</Text>
           </Pressable>
         ) : null}
         {entries.map((entry) => (
@@ -184,7 +171,9 @@ export function AddProjectPane({
             accessibilityRole="button"
             accessibilityLabel={`Open ${entry.name}`}
           >
-            <Icon name="folder" size={16} color={THEME.colors.textSecondary} />
+            <View style={styles.rowIcon}>
+              <Icon name="folder" size={16} color={THEME.colors.textSecondary} />
+            </View>
             <Text style={styles.rowText} numberOfLines={1}>
               {entry.name}
             </Text>
@@ -204,9 +193,9 @@ export function AddProjectPane({
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: THEME.spacing.md + bottomInset }]}>
-        <Text style={styles.selection} numberOfLines={1}>
-          {path || browseRoot !== rootCwd
-            ? `Select: ${currentLabel}`
+        <Text style={styles.selection}>
+          {currentAbsolute
+            ? currentAbsolute
             : "Open a subfolder, or go up to choose another folder."}
         </Text>
         <Pressable
@@ -252,18 +241,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: THEME.colors.border,
   },
-  upButton: {
-    width: 26,
-    height: 26,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  upButtonDisabled: {
-    opacity: 0.35,
-  },
-  upButtonPressed: {
-    opacity: 0.5,
-  },
   pathBody: {
     flex: 1,
     minWidth: 0,
@@ -293,6 +270,14 @@ const styles = StyleSheet.create({
     minHeight: 40,
     paddingHorizontal: THEME.spacing.xs,
     borderRadius: 9,
+  },
+  rowIcon: {
+    width: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  parentText: {
+    color: THEME.colors.textSecondary,
   },
   rowPressed: {
     backgroundColor: THEME.colors.backgroundSecondary,
@@ -330,6 +315,7 @@ const styles = StyleSheet.create({
   },
   selection: {
     fontSize: 12,
+    lineHeight: 17,
     color: THEME.colors.textMuted,
   },
   selectButton: {
