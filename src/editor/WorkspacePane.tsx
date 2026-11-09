@@ -362,7 +362,8 @@ export function WorkspacePane({
                 <Icon
                   name={collapsed ? "chevron-right" : "chevron-down"}
                   size={14}
-                  color={THEME.colors.textMuted}
+                  strokeWidth={2.25}
+                  color={THEME.colors.textSecondary}
                 />
                 <View style={styles.sourceHeaderText}>
                   <Text style={styles.sourceLabel} numberOfLines={1}>
@@ -541,12 +542,14 @@ const styles = StyleSheet.create({
   sourceHeader: {
     flex: 1,
     paddingVertical: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.xs,
+    // The chevron sits on the same column as the project icons below.
+    paddingLeft: 14,
+    paddingRight: THEME.spacing.xs,
   },
   sourceHeaderInner: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 8,
   },
   sourceHeaderPressed: {
     // Cancel PressableRow's translucent tint; the scale is the feedback.
