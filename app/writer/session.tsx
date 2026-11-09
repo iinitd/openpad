@@ -739,6 +739,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
               style={styles.sheetScroll}
               contentContainerStyle={styles.connectionFormContent}
               keyboardShouldPersistTaps="handled"
+              automaticallyAdjustKeyboardInsets
             >
               <ConnectionForm
                 onConnected={() => {

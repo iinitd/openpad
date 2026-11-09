@@ -42,6 +42,8 @@ export function SettingsPane() {
       style={styles.container}
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
+      // Keeps a focused prompt field above the keyboard inside the sheet.
+      automaticallyAdjustKeyboardInsets
     >
       <Text style={styles.sectionLabel}>Workspace</Text>
 
