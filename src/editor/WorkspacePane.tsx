@@ -462,6 +462,7 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.background,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: THEME.colors.border,
+    marginBottom: THEME.spacing.sm,
   },
   // Same geometry as a file row: a narrow icon column, and the open item gets
   // an outline rather than a filled block.
@@ -517,9 +518,12 @@ const styles = StyleSheet.create({
   // A quiet action on the group's top edge: no box, so it sits beside the
   // project rows instead of competing with them.
   sourceAdd: {
-    // Same trailing edge as the pin stars below, so the column lines up.
+    // Same trailing edge as the pin stars below, so the column lines up:
+    // the block and header insets add up to the row's, minus the button's
+    // own icon padding.
     width: 26,
     height: 30,
+    marginRight: THEME.spacing.sm,
     alignItems: "center",
     justifyContent: "center",
   },
