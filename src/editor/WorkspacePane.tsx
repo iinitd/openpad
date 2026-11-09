@@ -368,22 +368,26 @@ export function WorkspacePane({
                   <Text style={styles.sourceLabel} numberOfLines={1}>
                     {backendName}
                   </Text>
-                  <Text style={styles.sourceEndpoint} numberOfLines={1}>
-                    {backendHost}
-                  </Text>
-                </View>
-                <View style={styles.sourceStatusPill}>
-                  <View
-                    style={[
-                      styles.sourceDot,
-                      connected
-                        ? styles.sourceDotOn
-                        : connecting
-                          ? styles.sourceDotPending
-                          : styles.sourceDotOff,
-                    ]}
-                  />
-                  <Text style={styles.sourceStatus}>{statusLabel}</Text>
+                  <View style={styles.sourceMeta}>
+                    <View
+                      style={[
+                        styles.sourceDot,
+                        connected
+                          ? styles.sourceDotOn
+                          : errored
+                            ? styles.sourceDotError
+                            : styles.sourceDotPending,
+                      ]}
+                    />
+                    <Text style={styles.sourceEndpoint} numberOfLines={1}>
+                      {backendHost}
+                    </Text>
+                    {connected ? null : (
+                      <Text style={styles.sourceState}>
+                        {errored ? "Error" : "Connecting"}
+                      </Text>
+                    )}
+                  </View>
                 </View>
                 <Pressable
                   style={({ pressed }) => [
@@ -401,8 +405,8 @@ export function WorkspacePane({
                   accessibilityLabel={`Add a project to ${source.label}`}
                 >
                   <Icon
-                    name="plus"
-                    size={14}
+                    name="folder-open"
+                    size={18}
                     color={addDisabled ? THEME.colors.textMuted : THEME.colors.textSecondary}
                   />
                 </Pressable>
@@ -512,15 +516,13 @@ const styles = StyleSheet.create({
   // A quiet action on the group's top edge: no box, so it sits beside the
   // project rows instead of competing with them.
   sourceAdd: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 30,
+    height: 30,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: THEME.colors.surface,
   },
   sourceAddPressed: {
-    backgroundColor: "#ececef",
+    opacity: 0.45,
   },
   addRowDisabled: {
     opacity: 0.4,
@@ -561,14 +563,15 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
     color: THEME.colors.text,
   },
-  sourceStatusPill: {
+  sourceMeta: {
     flexDirection: "row",
     alignItems: "center",
     gap: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 999,
-    backgroundColor: THEME.colors.surface,
+    marginTop: 1,
+  },
+  sourceState: {
+    fontSize: 11,
+    color: THEME.colors.textMuted,
   },
   sourceDot: {
     width: 5,
@@ -579,10 +582,6 @@ const styles = StyleSheet.create({
   sourceDotPending: { backgroundColor: THEME.colors.warning },
   sourceDotError: { backgroundColor: THEME.colors.error },
   sourceDotOff: { backgroundColor: THEME.colors.textMuted },
-  sourceStatus: {
-    fontSize: 11,
-    color: THEME.colors.textSecondary,
-  },
   sourceChildren: {
     gap: 2,
   },

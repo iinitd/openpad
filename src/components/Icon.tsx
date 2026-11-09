@@ -7,6 +7,7 @@ import { THEME } from "../styles/theme";
 // icon API; stroke width scales lightly with size to stay crisp.
 export type IconName =
   | "folder"
+  | "folder-open"
   | "edit"
   | "check"
   | "stop"
@@ -56,6 +57,12 @@ export function Icon({
 
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
+      {name === "folder-open" ? (
+        <>
+          <Path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V10H3z" {...common} />
+          <Path d="M3 10h18l-2.2 7.6a2 2 0 0 1-1.9 1.4H6.1a2 2 0 0 1-1.9-1.4z" {...common} />
+        </>
+      ) : null}
       {name === "folder" ? (
         <Path
           d="M3 6a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z"
