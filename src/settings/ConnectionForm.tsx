@@ -377,6 +377,7 @@ const styles = StyleSheet.create({
   cardBody: {
     gap: 10,
     paddingHorizontal: THEME.spacing.md,
+    paddingTop: THEME.spacing.md,
     paddingBottom: THEME.spacing.md,
   },
   label: {
