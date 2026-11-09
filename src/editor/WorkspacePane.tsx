@@ -18,7 +18,6 @@ import { getBackendPreferences, toggleBackendWorkspacePin, usePreferencesStore }
 import { normalizeWorkspaceCwd } from "../stores/workspace-session-key";
 import { groupDirectoryProjects, type DirectoryProject } from "./directory-projects";
 import { AddProjectPane } from "./AddProjectPane";
-import { BackendConnections } from "../components/BackendConnections";
 import { PressableRow } from "../components/PressableRow";
 import { Icon } from "../components/Icon";
 import { THEME } from "../styles/theme";
@@ -71,7 +70,6 @@ export function WorkspacePane({
     return () => { mounted.current = false; };
   }, []);
 
-  const singleSource = entries.length === 1;
   const sources = useMemo(() => entries.map((source) => {
     const contextKey = connections.find((connection) => connection.id === source.connectionId)?.contextKey;
     const recents = getBackendPreferences(contextKey ?? null).recentWorkspaces;
@@ -137,6 +135,21 @@ export function WorkspacePane({
         operationInFlight.current = false;
         if (mounted.current) setBusyKey(null);
       }
+    }
+  }
+
+  async function openConnection(source: BackendCatalogEntry) {
+    if (operationInFlight.current || opening || isSwitchingConnection) return;
+    operationInFlight.current = true;
+    setError(null);
+    try {
+      const opened = await useWriterOpeningStore.getState().open({
+        connectionId: source.connectionId,
+      });
+      if (opened) onSwitched?.();
+      else setError(useWriterOpeningStore.getState().error);
+    } finally {
+      operationInFlight.current = false;
     }
   }
 
@@ -237,87 +250,130 @@ export function WorkspacePane({
         const collapsed = Boolean(preferences.collapsedProjectSources[source.connectionId]);
         const live = connections.find((connection) => connection.id === source.connectionId);
         const connected = live?.connectionState.status === "connected";
+        const connecting = live?.connectionState.status === "connecting";
+        const onThisConnection = source.connectionId === activeConnectionId;
         const addDisabled = Boolean(busyKey) || opening || isSwitchingConnection || !connected;
+        const statusLabel = connected ? "Connected" : connecting ? "Connecting…" : "Offline";
         return (
-        <View key={source.connectionId} style={styles.sourceBlock}>
-          {/* One connection is the normal case: the label already carries the
-              backend and host, and the endpoint line repeats it. */}
-          {singleSource ? null : (
-            <Pressable
-              style={({ pressed }) => [styles.sourceHeader, pressed && styles.sourceHeaderPressed]}
-              onPress={() => preferences.toggleProjectSource(source.connectionId)}
-              accessibilityRole="button"
-              accessibilityLabel={`${collapsed ? "Expand" : "Collapse"} ${source.label}`}
-              accessibilityState={{ expanded: !collapsed }}
-              hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }}
-            >
-              <View pointerEvents="none">
-                <Icon name={collapsed ? "chevron-right" : "chevron-down"} size={15} color={THEME.colors.textSecondary} />
+          <View key={source.connectionId} style={styles.sourceBlock}>
+            {/* The connection is the parent of its projects: one header, with
+                its state, and the projects nested underneath. */}
+            <View style={styles.sourceRow}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.sourceHeader,
+                  pressed && styles.sourceHeaderPressed,
+                ]}
+                onPress={() => preferences.toggleProjectSource(source.connectionId)}
+                accessibilityRole="button"
+                accessibilityLabel={`${collapsed ? "Expand" : "Collapse"} ${source.label}`}
+                accessibilityState={{ expanded: !collapsed }}
+              >
+                <Icon
+                  name={collapsed ? "chevron-right" : "chevron-down"}
+                  size={14}
+                  color={THEME.colors.textMuted}
+                />
+                <Text style={styles.sourceLabel} numberOfLines={1}>
+                  {source.label}
+                </Text>
+                <View
+                  style={[
+                    styles.sourceDot,
+                    connected
+                      ? styles.sourceDotOn
+                      : connecting
+                        ? styles.sourceDotPending
+                        : styles.sourceDotOff,
+                  ]}
+                />
+                <Text style={styles.sourceStatus}>{statusLabel}</Text>
+              </Pressable>
+              {!connected && !connecting ? (
+                <PressableRow
+                  style={styles.sourceAction}
+                  haptic="light"
+                  scale={false}
+                  onPress={() => void openConnection(source)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Reconnect ${source.label}`}
+                >
+                  <Text style={styles.sourceActionText}>Reconnect</Text>
+                </PressableRow>
+              ) : connected && !onThisConnection ? (
+                <PressableRow
+                  style={styles.sourceAction}
+                  haptic="light"
+                  scale={false}
+                  onPress={() => void openConnection(source)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Switch to ${source.label}`}
+                >
+                  <Text style={styles.sourceActionText}>Switch</Text>
+                </PressableRow>
+              ) : null}
+            </View>
+
+            {!collapsed ? (
+              <View style={styles.sourceChildren}>
+                {!source.workspacesLoaded ? (
+                  <Text style={styles.loadingText}>Loading projects…</Text>
+                ) : null}
+                {source.workspacesError ? (
+                  <>
+                    <Text style={styles.error}>Projects: {source.workspacesError}</Text>
+                    <PressableRow
+                      onPress={() =>
+                        void useBackendCatalogStore
+                          .getState()
+                          .refresh(source.connectionId, { workspaces: true })
+                      }
+                    >
+                      <Text style={styles.loadingText}>Retry</Text>
+                    </PressableRow>
+                  </>
+                ) : null}
+                {source.workspacesLoaded && !source.workspacesError ? (
+                  <PressableRow
+                    style={[styles.addRow, addDisabled && styles.addRowDisabled]}
+                    onPress={() => openAddProject(source)}
+                    haptic="selection"
+                    // Without this PressableRow wraps its children in an
+                    // Animated.View, which loses the row direction.
+                    scale={false}
+                    pressedStyle={styles.addRowPressed}
+                    disabled={addDisabled}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Add a project to ${source.label}`}
+                  >
+                    <Icon name="plus" size={16} color={THEME.colors.text} />
+                    <Text style={styles.addRowText}>New working directory</Text>
+                  </PressableRow>
+                ) : null}
+                {workspaces.map((ws) => renderRow(source, contextKey, ws))}
+                {source.workspacesLoaded && !source.workspacesError && workspaces.length === 0 ? (
+                  <Text style={styles.empty}>No projects yet.</Text>
+                ) : null}
               </View>
-              <View style={styles.sourceHeaderText} pointerEvents="none">
-                <Text style={styles.sourceLabel} numberOfLines={1}>{source.label}</Text>
-              </View>
-            </Pressable>
-          )}
-          {!collapsed ? <>
-          {!source.workspacesLoaded ? <Text style={styles.loadingText}>Loading projects…</Text> : null}
-          {source.workspacesError ? <Text style={styles.error}>Projects: {source.workspacesError}</Text> : null}
-          {source.workspacesError ? (
-            <PressableRow onPress={() => void useBackendCatalogStore.getState().refresh(source.connectionId, { workspaces: true })}>
-              <Text style={styles.loadingText}>Retry {source.label}</Text>
-            </PressableRow>
-          ) : null}
-          {/* An outlined row reads as "create" and never competes with the
-              filled row that marks the project you are currently in. */}
-          {source.workspacesLoaded && !source.workspacesError ? (
-            <PressableRow
-              style={[styles.addRow, addDisabled && styles.addRowDisabled]}
-              onPress={() => openAddProject(source)}
-              haptic="selection"
-              // Without this PressableRow wraps its children in an Animated.View,
-              // which loses the row direction and stacks the icon above the label.
-              scale={false}
-              pressedStyle={styles.addRowPressed}
-              disabled={addDisabled}
-              accessibilityRole="button"
-              accessibilityLabel={`Add a project to ${source.label}`}
-            >
-              <Icon name="plus" size={16} color={THEME.colors.text} />
-              <Text style={styles.addRowText}>New working directory</Text>
-            </PressableRow>
-          ) : null}
-          {workspaces.map((ws) => renderRow(source, contextKey, ws))}
-          {source.workspacesLoaded && !source.workspacesError && workspaces.length === 0
-            ? <Text style={styles.empty}>No projects yet.</Text> : null}
-          </> : null}
-        </View>
+            ) : null}
+          </View>
         );
       })}
       {!loading && entries.length === 0 ? <Text style={styles.empty}>No backend connections available.</Text> : null}
 
       {showConnections ? (
-        <View style={styles.connections}>
-          <Text style={styles.connectionsLabel}>Connections</Text>
-          <BackendConnections />
-          <PressableRow
-            style={styles.addConnection}
-            haptic="light"
-            scale={false}
-            pressedStyle={styles.addConnectionPressed}
-            onPress={() => onAddConnection?.()}
-            accessibilityRole="button"
-            accessibilityLabel="Add connection"
-          >
-            <View style={styles.addConnectionGlyph}>
-              <Icon name="plus" size={15} color={THEME.colors.accent} />
-            </View>
-            <View style={styles.addConnectionBody}>
-              <Text style={styles.addConnectionTitle}>Add connection</Text>
-              <Text style={styles.addConnectionHint}>Server URL, or pair with a relay</Text>
-            </View>
-            <Icon name="chevron-right" size={16} color={THEME.colors.textMuted} />
-          </PressableRow>
-        </View>
+        <PressableRow
+          style={styles.addConnectionRow}
+          haptic="light"
+          scale={false}
+          pressedStyle={styles.addConnectionPressed}
+          onPress={() => onAddConnection?.()}
+          accessibilityRole="button"
+          accessibilityLabel="Add connection"
+        >
+          <Icon name="plus" size={15} color={THEME.colors.textSecondary} />
+          <Text style={styles.addConnectionText}>Add connection</Text>
+        </PressableRow>
       ) : null}
     </ScrollView>
 
@@ -336,29 +392,6 @@ const styles = StyleSheet.create({
   },
   sourceBlock: {
     gap: THEME.spacing.sm,
-  },
-  sourceHeader: {
-    alignSelf: "stretch",
-    minHeight: 40,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: THEME.spacing.sm,
-    paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.sm,
-    borderRadius: 8,
-  },
-  sourceHeaderPressed: {
-    backgroundColor: "rgba(15, 23, 42, 0.06)",
-  },
-  sourceHeaderText: {
-    flex: 1,
-    minWidth: 0,
-    gap: 2,
-  },
-  sourceLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: THEME.colors.textSecondary,
   },
   // Same geometry as a file row: a narrow icon column, and the open item gets
   // an outline rather than a filled block.
@@ -437,53 +470,72 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: THEME.colors.text,
   },
-  connections: {
-    marginTop: THEME.spacing.md,
-    paddingTop: THEME.spacing.md,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: THEME.colors.border,
-    gap: THEME.spacing.sm,
-  },
-  connectionsLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
-    color: THEME.colors.textMuted,
-    paddingHorizontal: THEME.spacing.md,
-  },
-  addConnection: {
+  sourceRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: THEME.spacing.md,
+    gap: THEME.spacing.sm,
+  },
+  sourceHeader: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: THEME.spacing.xs,
+    borderRadius: 8,
+  },
+  sourceHeaderPressed: {
+    backgroundColor: THEME.colors.backgroundSecondary,
+  },
+  sourceLabel: {
+    flexShrink: 1,
+    fontSize: 13,
+    fontWeight: "600",
+    color: THEME.colors.textMuted,
+  },
+  sourceDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    marginLeft: 2,
+  },
+  sourceDotOn: { backgroundColor: THEME.colors.success },
+  sourceDotPending: { backgroundColor: THEME.colors.warning },
+  sourceDotOff: { backgroundColor: THEME.colors.textMuted },
+  sourceStatus: {
+    fontSize: 11,
+    color: THEME.colors.textMuted,
+  },
+  sourceAction: {
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+  },
+  sourceActionText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: THEME.colors.textSecondary,
+  },
+  sourceChildren: {
+    gap: 2,
+    paddingLeft: THEME.spacing.md,
+    marginLeft: 3,
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderLeftColor: THEME.colors.border,
+  },
+  addConnectionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: THEME.spacing.md,
     paddingHorizontal: THEME.spacing.md,
-    paddingVertical: THEME.spacing.md,
-    borderRadius: THEME.radii.lg,
-    backgroundColor: THEME.colors.surface,
+    paddingVertical: THEME.spacing.sm,
   },
   addConnectionPressed: {
-    backgroundColor: "#ececef",
+    backgroundColor: THEME.colors.backgroundSecondary,
   },
-  addConnectionGlyph: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: THEME.colors.accentSoft,
-  },
-  addConnectionBody: {
-    flex: 1,
-    gap: 2,
-  },
-  addConnectionTitle: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: THEME.colors.text,
-  },
-  addConnectionHint: {
-    fontSize: 12,
-    color: THEME.colors.textMuted,
+  addConnectionText: {
+    fontSize: 14,
+    color: THEME.colors.textSecondary,
   },
   loadingRow: {
     flexDirection: "row",
