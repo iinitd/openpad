@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.backgroundSecondary,
   },
   content: {
-    paddingTop: 0,
+    paddingTop: THEME.spacing.md,
     gap: 0,
   },
   // Each connection is a white band on the grey page: rules top and bottom,
