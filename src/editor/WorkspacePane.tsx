@@ -245,6 +245,22 @@ export function WorkspacePane({
     <ScrollView style={styles.container}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={[styles.content, { paddingBottom: bottomInset + THEME.spacing.md }]}>
+      {showConnections ? (
+        <View style={styles.addConnectionBar}>
+          <PressableRow
+            style={styles.addConnectionButton}
+            haptic="light"
+            scale={false}
+            pressedStyle={styles.addConnectionPressed}
+            onPress={() => onAddConnection?.()}
+            accessibilityRole="button"
+            accessibilityLabel="Add connection"
+          >
+            <Icon name="plus" size={14} color={THEME.colors.textSecondary} />
+            <Text style={styles.addConnectionText}>Add connection</Text>
+          </PressableRow>
+        </View>
+      ) : null}
       {loading && entries.length === 0 ? (
         <View style={styles.loadingRow}><ActivityIndicator size="small" color={THEME.colors.primary} /><Text style={styles.loadingText}>Loading projects…</Text></View>
       ) : null}
@@ -375,20 +391,7 @@ export function WorkspacePane({
       })}
       {!loading && entries.length === 0 ? <Text style={styles.empty}>No backend connections available.</Text> : null}
 
-      {showConnections ? (
-        <PressableRow
-          style={styles.addConnectionRow}
-          haptic="light"
-          scale={false}
-          pressedStyle={styles.addConnectionPressed}
-          onPress={() => onAddConnection?.()}
-          accessibilityRole="button"
-          accessibilityLabel="Add connection"
-        >
-          <Icon name="plus" size={16} color={THEME.colors.text} />
-          <Text style={styles.addConnectionText}>Add connection</Text>
-        </PressableRow>
-      ) : null}
+
     </ScrollView>
 
     </>
@@ -556,24 +559,30 @@ const styles = StyleSheet.create({
   sourceChildren: {
     gap: 2,
   },
-  addConnectionRow: {
+  addConnectionBar: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    paddingHorizontal: THEME.spacing.md,
+    paddingBottom: THEME.spacing.sm,
+  },
+  addConnectionButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    height: 40,
-    marginVertical: THEME.spacing.md,
-    marginHorizontal: THEME.spacing.md,
-    paddingHorizontal: THEME.spacing.md,
-    borderRadius: 9,
-    backgroundColor: THEME.colors.surface,
+    gap: 4,
+    height: 30,
+    paddingHorizontal: 10,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: THEME.colors.border,
+    backgroundColor: THEME.colors.background,
   },
   addConnectionPressed: {
     backgroundColor: THEME.colors.backgroundSecondary,
   },
   addConnectionText: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: "500",
-    color: THEME.colors.text,
+    color: THEME.colors.textSecondary,
   },
   loadingRow: {
     flexDirection: "row",
