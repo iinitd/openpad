@@ -15,6 +15,8 @@ export type IconName =
   | "settings"
   | "chevron-right"
   | "chevron-left"
+  | "eye"
+  | "eye-off"
   | "chevron-down"
   | "chevron-up"
   | "file"
@@ -103,6 +105,19 @@ export function Icon({
       ) : null}
       {name === "chevron-left" ? (
         <Polyline points="15 6 9 12 15 18" {...common} />
+      ) : null}
+      {name === "eye" ? (
+        <>
+          <Path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" {...common} />
+          <Circle cx="12" cy="12" r="3" {...common} />
+        </>
+      ) : null}
+      {name === "eye-off" ? (
+        <>
+          <Path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" {...common} />
+          <Circle cx="12" cy="12" r="3" {...common} />
+          <Line x1="3" y1="21" x2="21" y2="3" {...common} />
+        </>
       ) : null}
       {name === "chevron-down" ? (
         <Polyline points="6 9 12 15 18 9" {...common} />

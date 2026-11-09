@@ -13,6 +13,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useConnectionStore } from "../stores/connection-store";
 import { useWriterOpeningStore } from "../stores/writer-opening-store";
 import { Icon } from "../components/Icon";
+import { UrlFields } from "./UrlFields";
 import { THEME } from "../styles/theme";
 import { hapticTap } from "../components/PressableRow";
 
@@ -147,30 +148,16 @@ export function ConnectionForm({
   function renderFields(transport: Transport): ReactNode {
     if (transport === "paseo-direct") {
       return (
-        <>
-          <Text style={styles.label}>Daemon URL</Text>
-          <TextInput
-            style={styles.input}
-            value={daemonUrl}
-            onChangeText={setDaemonUrl}
-            editable={!isBusy}
-            placeholder="ws://localhost:6767/ws"
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="url"
-          />
-          <Text style={styles.label}>Password (optional)</Text>
-          <TextInput
-            style={styles.input}
-            value={password}
-            onChangeText={setPassword}
-            editable={!isBusy}
-            placeholder="Leave empty if no password"
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-        </>
+        <UrlFields
+          value={daemonUrl}
+          onChange={setDaemonUrl}
+          schemes={{ plain: "ws", secure: "wss" }}
+          defaultPort="6767"
+          pathSuffix="/ws"
+          password={password}
+          onPasswordChange={setPassword}
+          passwordPlaceholder="Optional"
+        />
       );
     }
     if (transport === "paseo-relay") {
@@ -217,16 +204,16 @@ export function ConnectionForm({
     }
     return (
       <>
-        <Text style={styles.label}>Server URL</Text>
-        <TextInput
-          style={styles.input}
+        <UrlFields
           value={opencodeUrl}
-          onChangeText={setOpenCodeUrl}
-          editable={!isBusy}
-          placeholder="http://localhost:4096"
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="url"
+          onChange={setOpenCodeUrl}
+          schemes={{ plain: "http", secure: "https" }}
+          defaultPort="4096"
+          username={opencodeUsername}
+          onUsernameChange={setOpenCodeUsername}
+          password={opencodePassword}
+          onPasswordChange={setOpenCodePassword}
+          passwordPlaceholder="OPENCODE_SERVER_PASSWORD"
         />
         {openCodePlaintext ? (
           <Text style={[styles.hint, styles.warningHint]}>
@@ -235,27 +222,6 @@ export function ConnectionForm({
             Prefer HTTPS, or a private network such as Tailscale.
           </Text>
         ) : null}
-        <Text style={styles.label}>Username (optional)</Text>
-        <TextInput
-          style={styles.input}
-          value={opencodeUsername}
-          onChangeText={setOpenCodeUsername}
-          editable={!isBusy}
-          placeholder="opencode"
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        <Text style={styles.label}>Server password (optional)</Text>
-        <TextInput
-          style={styles.input}
-          value={opencodePassword}
-          onChangeText={setOpenCodePassword}
-          editable={!isBusy}
-          placeholder="OPENCODE_SERVER_PASSWORD"
-          secureTextEntry
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
         <Text style={styles.hint}>
           Run `opencode serve`, then use the printed server password. For the web app,
           allow this page's origin with `--cors`.
