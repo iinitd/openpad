@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { SettingsPane } from "../../src/settings/SettingsPane";
+import { ConnectionsPane } from "../../src/settings/ConnectionsPane";
 import { Icon } from "../../src/components/Icon";
 import { THEME } from "../../src/styles/theme";
 
@@ -30,12 +30,12 @@ export default function WriterSettingsScreen() {
         </TouchableOpacity>
         <View style={styles.titleWrap}>
           <Icon name="settings" size={16} color={THEME.colors.textSecondary} />
-          <Text style={styles.title}>Settings</Text>
+          <Text style={styles.title}>Connections</Text>
         </View>
         <View style={styles.backBtn} />
       </View>
       <View style={[styles.body, { paddingBottom: insets.bottom }]}>
-        <SettingsPane />
+        <ConnectionsPane />
       </View>
     </View>
   );

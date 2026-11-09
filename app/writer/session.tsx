@@ -1,5 +1,7 @@
 import { createPluginContext } from "../../src/content/plugin-context";
+import { hapticTap } from "../../src/components/PressableRow";
 import { SettingsPane } from "../../src/settings/SettingsPane";
+import { ConnectionsPane } from "../../src/settings/ConnectionsPane";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   View,
@@ -326,9 +328,11 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
   // corners and the swipe-to-dismiss.
   const [filesOpen, setFilesOpen] = useState(false);
   const [projectsOpen, setProjectsOpen] = useState(false);
-  // Settings and the add-project browser open inside the projects sheet rather
-  // than pushing a screen.
-  const [projectsScreen, setProjectsScreen] = useState<"list" | "settings">("list");
+  // The projects sheet is a small navigator: three top tabs, with the folder
+  // browser as a sub-screen of the projects tab.
+  const [projectsTab, setProjectsTab] = useState<"projects" | "connections" | "settings">(
+    "projects",
+  );
   const [addProjectOpen, setAddProjectOpen] = useState(false);
   // Folder currently expanded into the right-hand column of the files sheet.
   const [filesFolder, setFilesFolder] = useState<string | null>(null);
@@ -621,7 +625,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
                 mode="files"
                 showHeader={false}
                 bottomInset={insets.bottom}
-                onCloseDrawer={closeFiles}
+    
                 onSelectFolder={setFilesFolder}
                 selectedFolder={filesFolder}
                 onFileOpened={() => {
@@ -657,38 +661,58 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
         presentationStyle="pageSheet"
         onRequestClose={closeProjects}
         onDismiss={() => {
-          setProjectsScreen("list");
+          setProjectsTab("projects");
           setAddProjectOpen(false);
           closeProjects();
         }}
       >
         <View style={styles.pageSheet}>
           <View style={styles.pageSheetHeader}>
-            {projectsScreen === "settings" || addProjectOpen ? (
-              <PressableRow
-                style={styles.pageSheetClose}
-                onPress={() => {
-                  if (addProjectOpen) {
-                    setAddProjectOpen(false);
-                    return;
-                  }
-                  setProjectsScreen("list");
-                }}
-                haptic="light"
-                accessibilityLabel="Back to projects"
-              >
-                <Icon name="chevron-left" size={20} color={THEME.colors.text} />
-              </PressableRow>
+            {addProjectOpen ? (
+              <>
+                <PressableRow
+                  style={styles.pageSheetClose}
+                  onPress={() => setAddProjectOpen(false)}
+                  haptic="light"
+                  accessibilityLabel="Back to projects"
+                >
+                  <Icon name="chevron-left" size={20} color={THEME.colors.text} />
+                </PressableRow>
+                <Text style={[styles.sheetTitle, styles.sheetTitleCentered]} numberOfLines={1}>
+                  New working directory
+                </Text>
+              </>
             ) : (
-              <View style={styles.pageSheetClose} />
+              <View style={styles.sheetTabs}>
+                {(["projects", "connections", "settings"] as const).map((tab) => (
+                  <PressableRow
+                    key={tab}
+                    style={[styles.sheetTab, projectsTab === tab && styles.sheetTabActive]}
+                    onPress={() => {
+                      hapticTap("light");
+                      setProjectsTab(tab);
+                    }}
+                    haptic="none"
+                    scale={false}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: projectsTab === tab }}
+                  >
+                    <Text
+                      style={[
+                        styles.sheetTabLabel,
+                        projectsTab === tab && styles.sheetTabLabelActive,
+                      ]}
+                    >
+                      {tab === "projects"
+                        ? "Projects"
+                        : tab === "connections"
+                          ? "Connections"
+                          : "Settings"}
+                    </Text>
+                  </PressableRow>
+                ))}
+              </View>
             )}
-            <Text style={styles.sheetTitle}>
-              {projectsScreen === "settings"
-                ? "Settings"
-                : addProjectOpen
-                  ? "New working directory"
-                  : "Projects"}
-            </Text>
             <PressableRow
               style={styles.pageSheetClose}
               onPress={closeProjects}
@@ -698,29 +722,28 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
               <Icon name="close" size={18} color={THEME.colors.textSecondary} />
             </PressableRow>
           </View>
-          {projectsScreen === "settings" ? (
-            <SettingsPane
-              onAddConnection={() => {
-                setProjectsScreen("list");
-                closeProjects();
-                router.push("/?add=1");
-              }}
-            />
-          ) : (
+
+          {projectsTab === "projects" ? (
             <FileTree
               mode="projects"
               showHeader={false}
-              showSettingsFooter
-              onOpenSettings={() => setProjectsScreen("settings")}
               addProjectOpen={addProjectOpen}
               onAddProjectOpenChange={setAddProjectOpen}
               bottomInset={insets.bottom}
-              onCloseDrawer={closeProjects}
               onFileOpened={() => {
                 closeProjects();
                 showDocument();
               }}
             />
+          ) : projectsTab === "connections" ? (
+            <ConnectionsPane
+              onAddConnection={() => {
+                closeProjects();
+                router.push("/?add=1");
+              }}
+            />
+          ) : (
+            <SettingsPane />
           )}
         </View>
       </Modal>
@@ -905,6 +928,38 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: THEME.radii.md,
+  },
+  sheetTabs: {
+    flex: 1,
+    flexDirection: "row",
+    gap: 2,
+    padding: 2,
+    borderRadius: 9,
+    backgroundColor: THEME.colors.surface,
+  },
+  sheetTab: {
+    flex: 1,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 7,
+  },
+  sheetTabActive: {
+    backgroundColor: THEME.colors.background,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: THEME.colors.border,
+  },
+  sheetTabLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: THEME.colors.textSecondary,
+  },
+  sheetTabLabelActive: {
+    color: THEME.colors.text,
+  },
+  sheetTitleCentered: {
+    flex: 1,
+    textAlign: "center",
   },
   sheetTitle: {
     fontSize: 17,

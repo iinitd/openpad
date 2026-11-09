@@ -162,11 +162,8 @@ const TreeRow = memo(function TreeRow({
 export const FileTree = memo(function FileTree({
   onFileOpened,
   showHeader = true,
-  showSettingsFooter = false,
-  onOpenSettings,
   addProjectOpen = false,
   onAddProjectOpenChange,
-  onCloseDrawer,
   bottomInset = 0,
   mode,
   onSelectFolder,
@@ -178,16 +175,9 @@ export const FileTree = memo(function FileTree({
   mode?: "files" | "projects";
   // The mobile overlay supplies its own header, so it hides the built-in one.
   showHeader?: boolean;
-  // Mobile app sidebar pins a Settings entry at the bottom; the desktop pane
-  // uses the gear in the header instead.
-  showSettingsFooter?: boolean;
-  // The mobile sheet opens settings in place instead of pushing a route.
-  onOpenSettings?: () => void;
-  // Likewise for the add-project browser: the host draws its header.
+  // The host draws the header for the add-project browser.
   addProjectOpen?: boolean;
   onAddProjectOpenChange?: (open: boolean) => void;
-  // Mobile sidebar passes a callback so Settings tap closes the drawer first.
-  onCloseDrawer?: () => void;
   // Honor the safe-area bottom inset for the pinned footer.
   bottomInset?: number;
   // When set, tapping a folder selects it instead of expanding it in place —
@@ -362,26 +352,7 @@ export const FileTree = memo(function FileTree({
           {openError ? <Text style={styles.error}>{openError}</Text> : null}
         </ScrollView>
       )}
-      {showSettingsFooter ? (
-        <PressableRow
-          style={[styles.settingsFooter, { paddingBottom: THEME.spacing.md + bottomInset }]}
-          onPress={() => {
-            if (onOpenSettings) {
-              onOpenSettings();
-              return;
-            }
-            onCloseDrawer?.();
-            router.push("/writer/settings");
-          }}
-          haptic="light"
-          accessibilityLabel="Settings"
-        >
-          <View style={styles.settingsFooterInner}>
-            <Icon name="settings" size={17} color={THEME.colors.textSecondary} />
-            <Text style={styles.settingsFooterLabel}>Settings</Text>
-          </View>
-        </PressableRow>
-      ) : null}
+
     </View>
   );
 });
