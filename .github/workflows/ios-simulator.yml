@@ -1,0 +1,64 @@
+name: iOS Simulator Build
+
+# Builds a standalone simulator .app (no Metro needed) so screenshots for
+# larger displays can be taken on this machine's simulators.
+# Simulator builds need no signing credentials; only Actions minutes are used.
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "sim-*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-simulator-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # SDK 57 needs Xcode 26.4+.
+    runs-on: macos-26
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Check Xcode version
+        run: |
+          xcodebuild -version
+          version="$(xcodebuild -version | awk '/^Xcode/{print $2}')"
+          major="${version%%.*}"
+          rest="${version#*.}"
+          minor="${rest%%.*}"
+          if [ "$major" -lt 26 ] || { [ "$major" -eq 26 ] && [ "$minor" -lt 4 ]; }; then
+            echo "Puff SDK 57 requires Xcode 26.4 or newer; this runner has Xcode $version."
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci --include=dev --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
+
+      - name: Build simulator app
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          npx eas-cli@latest build \
+            --local \
+            --platform ios \
+            --profile simulator \
+            --non-interactive \
+            --output build/Puff-simulator.tar.gz
+
+      - name: Upload simulator app
+        uses: actions/upload-artifact@v4
+        with:
+          name: puff-simulator
+          path: build/Puff-simulator.tar.gz
+          if-no-files-found: error
