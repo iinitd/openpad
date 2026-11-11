@@ -1,0 +1,34 @@
+name: Site
+
+# Pages serves the gh-pages branch. The dev client installer already owns the
+# dev/ subtree there, so the site is merged into the branch instead of replacing
+# it, and the two stay in one place.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "scripts/publish-site.sh"
+      - ".github/workflows/site.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gh-pages-site
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Publish site to gh-pages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x scripts/publish-site.sh
+          scripts/publish-site.sh

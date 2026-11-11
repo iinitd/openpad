@@ -82,7 +82,7 @@ jobs:
             echo
             echo "[Install ${install_url}](${install_url})"
             echo
-            echo "Or open the page: https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/"
+            echo "Or open the page: https://${GITHUB_REPOSITORY_OWNER}.github.io/${GITHUB_REPOSITORY#*/}/dev/"
           } >> "$GITHUB_STEP_SUMMARY"
 
       # gh-pages only ever holds generated build output, so each run replaces it

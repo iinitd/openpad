@@ -32,6 +32,10 @@ SHORT_VERSION="$(plutil -extract CFBundleShortVersionString raw "$PLIST")"
 DISPLAY_NAME="$(plutil -extract CFBundleDisplayName raw "$PLIST" 2>/dev/null || echo "Puff Dev")"
 
 mkdir -p "$OUT/$SUBDIR"
+# The Pages root is the product site; this installer is published under dev/ so
+# the two can share one branch.
+cp -R "$(cd "$(dirname "$0")/.." && pwd)/site/." "$OUT"/
+rm -f "$OUT/README.md"
 IPA_NAME="$(basename "$IPA")"
 cp "$IPA" "$OUT/$SUBDIR/$IPA_NAME"
 
@@ -73,7 +77,7 @@ cat > "$OUT/$SUBDIR/manifest.plist" <<PLIST
 </plist>
 PLIST
 
-cat > "$OUT/index.html" <<HTML
+cat > "$OUT/$SUBDIR/index.html" <<HTML
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
