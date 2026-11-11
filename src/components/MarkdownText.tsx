@@ -1,13 +1,17 @@
-import { useMemo, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   Linking,
+  Pressable,
   StyleSheet,
   Text,
   View,
   type StyleProp,
   type TextStyle,
 } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import { marked, type Token, type Tokens } from "marked";
+import { Icon } from "./Icon";
+import { hapticTap } from "./PressableRow";
 import { THEME } from "../styles/theme";
 
 /**
@@ -177,6 +181,36 @@ function BlockText({
   );
 }
 
+function CodeBlock({ code, lang }: { code: string; lang?: string }) {
+  const [copied, setCopied] = useState(false);
+
+  return (
+    <View style={styles.codeBlock}>
+      {lang ? <Text style={styles.codeLang}>{lang}</Text> : null}
+      <Pressable
+        style={({ pressed }) => [styles.codeCopyButton, pressed && styles.codeCopyButtonPressed]}
+        onPress={() => {
+          hapticTap("light");
+          void Clipboard.setStringAsync(code).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1400);
+          });
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={copied ? "代码已复制" : "复制代码"}
+        hitSlop={8}
+      >
+        <Icon
+          name={copied ? "check" : "copy"}
+          size={14}
+          color={copied ? THEME.colors.textSecondary : THEME.colors.textMuted}
+        />
+      </Pressable>
+      <Text style={[styles.codeText, styles.codeTextWithCopy]}>{code}</Text>
+    </View>
+  );
+}
+
 function renderBlocks(tokens: Token[]): ReactNode[] {
   return tokens.map((token, index) => {
     const key = `${token.type}-${index}`;
@@ -224,12 +258,7 @@ function renderBlocks(tokens: Token[]): ReactNode[] {
       }
       case "code": {
         const code = token as Tokens.Code;
-        return (
-          <View key={key} style={styles.codeBlock}>
-            {code.lang ? <Text style={styles.codeLang}>{code.lang}</Text> : null}
-            <Text style={styles.codeText}>{code.text}</Text>
-          </View>
-        );
+        return <CodeBlock key={key} code={code.text} lang={code.lang || undefined} />;
       }
       case "blockquote": {
         const quote = token as Tokens.Blockquote;
@@ -399,13 +428,30 @@ const styles = StyleSheet.create({
   h2: { fontSize: 17, lineHeight: 24 },
   h3: { fontSize: 16, lineHeight: 23 },
   codeBlock: {
+    position: "relative",
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 8,
     backgroundColor: "#f4f4f6",
   },
+  codeCopyButton: {
+    position: "absolute",
+    top: 6,
+    right: 6,
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(244,244,246,0.92)",
+    zIndex: 1,
+  },
+  codeCopyButtonPressed: {
+    backgroundColor: "#e8e8ec",
+  },
   codeLang: {
     marginBottom: 4,
+    paddingRight: 30,
     fontSize: 11,
     color: THEME.colors.textMuted,
   },
@@ -414,6 +460,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 19,
     color: THEME.colors.primaryLight,
+  },
+  codeTextWithCopy: {
+    paddingRight: 2,
   },
   quote: {
     paddingLeft: 10,

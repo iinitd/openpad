@@ -479,21 +479,30 @@ export const AgentChatPanel = memo(function AgentChatPanel({
                 setSwitcherOpen((v) => !v);
               }}
             >
-              {/* The caret hangs off the title without shifting it: the group is
-                  nudged right by half the caret width so the text itself sits on
-                  the screen's centre line. */}
-              <View style={styles.mobileHeaderTitleGroup}>
-                <Text style={styles.mobileHeaderTitle} numberOfLines={1}>
-                  {sessionTitle}
-                </Text>
-                <Icon
-                  name={switcherOpen ? "chevron-up" : "chevron-down"}
-                  size={16}
-                  color={THEME.colors.textSecondary}
-                />
-              </View>
+              <Text style={styles.mobileHeaderTitle} numberOfLines={1}>
+                {sessionTitle}
+              </Text>
             </TouchableOpacity>
-            <View style={styles.mobileHeaderSide} />
+            {/* The caret sits on the right edge, the way the document page puts
+                its pane switch there, instead of hugging the title. */}
+            <TouchableOpacity
+              style={[styles.mobileHeaderSide, styles.mobileHeaderAction]}
+              activeOpacity={0.6}
+              accessibilityRole="button"
+              accessibilityLabel={switcherOpen ? "Close session list" : "Open session list"}
+              accessibilityState={{ expanded: switcherOpen }}
+              onPress={() => {
+                hapticTap("light");
+                setSwitcherOpen((v) => !v);
+              }}
+              hitSlop={8}
+            >
+              <Icon
+                name={switcherOpen ? "chevron-up" : "chevron-down"}
+                size={16}
+                color={THEME.colors.textSecondary}
+              />
+            </TouchableOpacity>
           </View>
         </>
       ) : null}
@@ -711,11 +720,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  mobileHeaderTitleGroup: {
-    flexDirection: "row",
+  // The right-hand session caret; sized like the left spacer so the title keeps
+  // the screen's centre line.
+  mobileHeaderAction: {
     alignItems: "center",
-    gap: THEME.spacing.xs,
-    transform: [{ translateX: 10 }],
+    justifyContent: "center",
   },
   mobileHeaderTitle: {
     fontSize: 17,

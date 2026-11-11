@@ -243,6 +243,8 @@ export function WorkspacePane({
   function renderRow(source: BackendCatalogEntry, contextKey: string | undefined, ws: DirectoryProject) {
     const key = catalogItemKey(source.connectionId, ws.cwd);
     const active = source.connectionId === activeConnectionId && ws.cwd === activeCwd;
+    const connection = connections.find((item) => item.id === source.connectionId);
+    const isPaseo = connection?.mode === "direct" || connection?.mode === "relay";
     const recent = getBackendPreferences(contextKey ?? null).recentWorkspaces.find((entry) => normalizeWorkspaceCwd(entry.cwd) === ws.cwd);
     const pinned = Boolean(recent?.pinnedAt);
     return (
@@ -265,7 +267,7 @@ export function WorkspacePane({
               <Text style={[styles.rowTitle, active && styles.rowTitleActive]} numberOfLines={1} ellipsizeMode="head">
                 {directoryLabel(ws.cwd)}
               </Text>
-              {ws.label !== directoryLabel(ws.cwd) ? <Text style={styles.rowAlias} numberOfLines={1}>{ws.label}</Text> : null}
+              {!isPaseo && ws.label !== directoryLabel(ws.cwd) ? <Text style={styles.rowAlias} numberOfLines={1}>{ws.label}</Text> : null}
             </View>
             {busyKey === key ? <ActivityIndicator size="small" color={THEME.colors.primary} /> : contextKey ? (
               <Pressable
