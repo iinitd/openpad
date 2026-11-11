@@ -193,7 +193,7 @@ export const usePreferencesStore = create<PreferencesStore>()(
       preferencesByBackend: {},
       lastProvider: null,
       lastModel: null,
-      lastCwd: "/tmp/kel-writer",
+      lastCwd: "/tmp/puff",
       lastWorkspaceId: null,
       lastDocumentByCwd: {},
       scrollByDocument: {},
@@ -352,7 +352,7 @@ export const usePreferencesStore = create<PreferencesStore>()(
       _setHydrated: () => set({ hasHydrated: true }),
     }),
     {
-      name: "kel-writer-preferences",
+      name: "puff-preferences",
       storage: persistStorage,
       onRehydrateStorage: () => (state) => {
         state?._setHydrated();

@@ -16,7 +16,7 @@ function injectGlobalStyles() {
   if (Platform.OS !== "web") return;
   if (typeof document === "undefined") return;
 
-  const id = "kel-writer-global-styles";
+  const id = "puff-global-styles";
   if (document.getElementById(id)) return;
 
   const style = document.createElement("style");

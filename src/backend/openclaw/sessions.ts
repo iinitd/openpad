@@ -40,7 +40,7 @@ export class OpenClawSessionRegistry {
   private readonly archiveKey: string;
   constructor(private readonly transport: OpenClawTransport, readonly models: OpenClawModels,
     private readonly storage: OpenClawStorage = defaultOpenClawStorage) {
-    this.archiveKey = `kel-writer:openclaw:archived:v1:${encodeURIComponent(transport.url)}`;
+    this.archiveKey = `puff:openclaw:archived:v1:${encodeURIComponent(transport.url)}`;
   }
 
   private loadArchives(): Promise<void> {

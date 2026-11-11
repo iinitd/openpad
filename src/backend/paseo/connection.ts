@@ -18,7 +18,7 @@ const CONNECT_TIMEOUT_MS = 10_000;
 // set, while newer clients get every installed provider (trae, cursor, etc.).
 // We announce a version at/above that threshold so the full, availability-aware
 // provider list is returned.
-const KEL_WRITER_APP_VERSION = "0.1.999";
+const PUFF_APP_VERSION = "0.1.999";
 
 function directConnectionError(error: unknown, url: string, password?: string): Error {
   const message = error instanceof Error ? error.message : String(error || "Connection failed");
@@ -56,14 +56,14 @@ function directConnectionError(error: unknown, url: string, password?: string): 
   return error instanceof Error ? error : new Error(message);
 }
 
-export function createOpenPadClient(url: string, password?: string): WriterBackend {
+export function createPuffClient(url: string, password?: string): WriterBackend {
   const clientType = Platform.OS === "web" ? ("browser" as const) : ("mobile" as const);
 
   return new PaseoBackend(new DaemonClient({
     url,
-    clientId: `kel-writer-${crypto.randomUUID()}`,
+    clientId: `puff-${crypto.randomUUID()}`,
     clientType,
-    appVersion: KEL_WRITER_APP_VERSION,
+    appVersion: PUFF_APP_VERSION,
     password: password && password.length > 0 ? password : undefined,
     reconnect: { enabled: false },
     suppressSendErrors: true,
@@ -83,9 +83,9 @@ function createRelayClient(offer: ConnectionOffer): WriterBackend {
 
   return new PaseoBackend(new DaemonClient({
     url,
-    clientId: `kel-writer-${crypto.randomUUID()}`,
+    clientId: `puff-${crypto.randomUUID()}`,
     clientType,
-    appVersion: KEL_WRITER_APP_VERSION,
+    appVersion: PUFF_APP_VERSION,
     reconnect: { enabled: false },
     suppressSendErrors: true,
     e2ee: { enabled: true, daemonPublicKeyB64: offer.daemonPublicKeyB64 },
@@ -102,7 +102,7 @@ export async function connectWithTimeout(
   password?: string,
   timeoutMs: number = CONNECT_TIMEOUT_MS,
 ): Promise<WriterBackend> {
-  const client = createOpenPadClient(url, password);
+  const client = createPuffClient(url, password);
 
   return new Promise<WriterBackend>((resolve, reject) => {
     const timer = setTimeout(() => {

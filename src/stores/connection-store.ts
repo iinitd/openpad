@@ -580,7 +580,7 @@ export const useConnectionStore = create<ConnectionStore>()(
         };
       },
       {
-        name: "kel-writer-connection",
+        name: "puff-connection",
         storage: persistStorage,
         version: 1,
         migrate: (persisted) => {

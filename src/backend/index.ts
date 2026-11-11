@@ -34,7 +34,7 @@ export type {
 export {
   connectWithTimeout,
   connectViaRelay,
-  createOpenPadClient,
+  createPuffClient,
 } from "./paseo/connection";
 
 export { createOpenClawClient, connectOpenClawGateway } from "./openclaw/connection";

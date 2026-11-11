@@ -11,7 +11,7 @@ export interface OpenClawStorage {
 }
 
 export const defaultOpenClawStorage: OpenClawStorage = AsyncStorage;
-const IDENTITY_KEY = "kel-writer:openclaw:device-identity:v1";
+const IDENTITY_KEY = "puff:openclaw:device-identity:v1";
 const BASE64URL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
 /** No Buffer, btoa or Node crypto: these codecs also run in Hermes. */
@@ -131,7 +131,7 @@ export type OpenClawDeviceToken = { token: string; scopes: string[] };
 
 function tokenKey(endpoint: string, deviceId: string, role: string): string {
   const scope = openClawGatewayScope(endpoint);
-  return `kel-writer:openclaw:device-token:v1:${bytesToHex(sha256(utf8ToBytes(JSON.stringify([scope, deviceId, role]))))}`;
+  return `puff:openclaw:device-token:v1:${bytesToHex(sha256(utf8ToBytes(JSON.stringify([scope, deviceId, role]))))}`;
 }
 
 export async function loadOpenClawDeviceToken(storage: OpenClawStorage, endpoint: string, deviceId: string, role: string): Promise<OpenClawDeviceToken | null> {

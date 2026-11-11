@@ -2,5 +2,5 @@
 export {
   connectWithTimeout,
   connectViaRelay,
-  createOpenPadClient,
+  createPuffClient,
 } from "../backend";

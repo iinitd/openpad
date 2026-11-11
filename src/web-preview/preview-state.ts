@@ -3,7 +3,7 @@ export interface PreviewStateStorage {
   setItem: (key: string, value: string) => void | Promise<void>;
 }
 
-const PREFIX = "kel-writer:preview-state:v1";
+const PREFIX = "puff:preview-state:v1";
 const KEY_PATTERN = /^[a-z0-9][a-z0-9._:-]{0,79}$/i;
 const MAX_VALUE_BYTES = 8192;
 

@@ -90,7 +90,7 @@ function getClient(): WriterBackend {
 // The daemon echoes the agent's initial/system prompt back as the first
 // user_message in the timeline. We prefix that prompt with this sentinel so the
 // stream handler can recognise and hide it from the visible chat transcript.
-const SYSTEM_PROMPT_MARKER = "\u200b[kel-writer-system]";
+const SYSTEM_PROMPT_MARKER = "\u200b[puff-system]";
 
 // The editable part of the prompt. The marker stays fixed so the transcript can
 // keep hiding the system message.

@@ -36,7 +36,7 @@ import { openWorkspaceDocument } from "./open-document";
 function injectEditorStyles() {
   if (!isWeb) return;
 
-  const id = "kel-writer-editor-styles";
+  const id = "puff-editor-styles";
   // Reuse the existing tag if present (so hot reload refreshes the rules in
   // place instead of leaving a stale stylesheet without the newest classes).
   const style = document.getElementById(id) ?? document.createElement("style");
