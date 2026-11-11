@@ -8,7 +8,7 @@
     "userInterfaceStyle": "automatic",
     "scheme": "puff",
     "ios": {
-      "bundleIdentifier": "lol.milio.openpad",
+      "bundleIdentifier": "lol.milio.puff",
       "appleTeamId": "CH854588A4",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
@@ -20,7 +20,7 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "lol.milio.openpad",
+      "package": "lol.milio.puff",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",

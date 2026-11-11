@@ -8,10 +8,10 @@ Workflow: `.github/workflows/ios-testflight.yml`
 
 - Expo SDK 57 (Xcode 26.4+ required; the `macos-26` runner must ship Xcode 26.x).
 - A paid Apple Developer Program membership, with the app's team in `app.json` (`expo.ios.appleTeamId`).
-- An App Store Connect app record for `lol.milio.openpad` (ascAppId `6831709046`).
-- EAS build credentials already configured (distribution certificate + App Store provisioning profile).
+- An App Store Connect app record for `lol.milio.puff`, created with that bundle ID. The record's numeric app ID goes into `eas.json`.
+- EAS build credentials configured for the `lol.milio.puff` bundle ID (distribution certificate + App Store provisioning profile).
 - An Expo access token stored as the `EXPO_TOKEN` GitHub secret.
-- An App Store Connect app ID in `eas.json` for non-interactive submission.
+- The App Store Connect app ID in `eas.json` for non-interactive submission.
 
 ## 1. Add the Expo token
 
@@ -39,7 +39,7 @@ Set up:
 
 - Distribution certificate
 - App Store provisioning profile
-- The correct Apple team (`CH854588A4` for this project) and the `lol.milio.openpad` bundle ID
+- The correct Apple team (`CH854588A4` for this project) and the `lol.milio.puff` bundle ID
 
 `eas build --local --non-interactive` reuses these credentials on the runner. Without them it will fail instead of prompting.
 

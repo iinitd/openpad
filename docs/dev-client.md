@@ -14,7 +14,7 @@ Workflow: build with EAS, install from the QR code, run Metro.
   npx eas-cli device:list --apple-team-id <TEAM_ID>
   ```
   Register a new device with `npx eas-cli device:create`; the owner opens the printed link on the phone and installs the profile.
-- Ad Hoc credentials for the development bundle identifier (`lol.milio.openpad.dev`):
+- Ad Hoc credentials for the development bundle identifier (`lol.milio.puff.dev`):
   ```bash
   npx eas-cli credentials -p ios
   ```
