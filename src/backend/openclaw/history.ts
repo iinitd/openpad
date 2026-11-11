@@ -26,7 +26,7 @@ export function messageId(message: unknown, envelope?: Record<string, unknown>):
   return asString(envelope?.messageId) ?? asString(messageMetadata(message).id) ?? asString(row.id);
 }
 
-/** The gateway suffixes persisted user receipts; OpenPad keeps the original send ID. */
+/** The gateway suffixes persisted user receipts; Puff keeps the original send ID. */
 export function inputMessageId(message: unknown, envelope?: Record<string, unknown>): string | undefined {
   const meta = messageMetadata(message);
   const input = asString(meta.idempotencyKey) ?? asString(asRecord(message).idempotencyKey) ?? asString(envelope?.idempotencyKey);

@@ -1,6 +1,6 @@
 // Render document source into HTML for the TipTap editor.
 //
-// OpenPad documents are mixed-format: a file can be plain Markdown, Lark "docx-xml"
+// Puff documents are mixed-format: a file can be plain Markdown, Lark "docx-xml"
 // (custom block tags like <title>/<callout>/<whiteboard>/<cite> plus HTML
 // tables), or a blend of both. We therefore:
 //   1. strip YAML frontmatter,

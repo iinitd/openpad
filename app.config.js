@@ -11,7 +11,7 @@ module.exports = ({ config }) => {
   return {
     ...config,
     name: "Puff Dev",
-    scheme: "openpad-dev",
+    scheme: "puff-dev",
     ios: {
       ...config.ios,
       bundleIdentifier: "lol.milio.openpad.dev",

@@ -1,5 +1,5 @@
 /**
- * Simplified head/tail stream reducer for OpenPad.
+ * Simplified head/tail stream reducer for Puff.
  * Adapted from Paseo's packages/app/src/types/stream.ts
  *
  * - Tail: committed history items

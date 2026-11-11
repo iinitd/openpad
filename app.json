@@ -6,15 +6,16 @@
     "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "scheme": "openpad",
+    "scheme": "puff",
     "ios": {
       "bundleIdentifier": "lol.milio.openpad",
       "appleTeamId": "CH854588A4",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": true
-        }
+          "NSAllowsLocalNetworking": true
+        },
+        "NSLocalNetworkUsageDescription": "Puff connects to agent servers running on your computer or local network, such as Paseo, OpenClaw, and OpenCode."
       },
       "supportsTablet": true
     },

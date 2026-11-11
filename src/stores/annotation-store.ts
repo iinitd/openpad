@@ -42,7 +42,7 @@ interface AnnotationStore {
   ) => Promise<void>;
 }
 
-// OpenPad's only job is to locate the text and pass it, verbatim, to the
+// Puff's only job is to locate the text and pass it, verbatim, to the
 // agent. The agent already knows how to edit files in the workspace, so we send
 // a plain instruction referencing the file, the exact selected text, and the
 // user's comment — nothing more.

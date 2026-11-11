@@ -1,0 +1,149 @@
+:root {
+  --ink: #1b1b1f;
+  --muted: #5d5d68;
+  --line: #e3e3e9;
+  --paper: #fbfbfc;
+  --accent: #2f6f5e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.65;
+}
+
+.page {
+  width: min(720px, 100% - 48px);
+  margin: 0 auto;
+  padding: 40px 0 96px;
+}
+
+header.site {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 24px;
+  margin-bottom: 48px;
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.brand img {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+}
+
+nav.site {
+  display: flex;
+  gap: 20px;
+  font-size: 15px;
+}
+
+nav.site a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+nav.site a:hover {
+  color: var(--ink);
+}
+
+h1 {
+  font-size: 34px;
+  line-height: 1.25;
+  letter-spacing: -0.4px;
+  margin: 0 0 16px;
+}
+
+h2 {
+  font-size: 20px;
+  line-height: 1.35;
+  margin: 40px 0 12px;
+}
+
+p {
+  margin: 0 0 16px;
+  color: var(--ink);
+}
+
+.lede {
+  font-size: 19px;
+  color: var(--muted);
+}
+
+ul {
+  margin: 0 0 16px;
+  padding-left: 22px;
+}
+
+li {
+  margin-bottom: 8px;
+}
+
+a {
+  color: var(--accent);
+}
+
+.meta {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 40px 0;
+}
+
+footer.site {
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+  color: var(--muted);
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+  background: #f0f0f3;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #ececf1;
+    --muted: #a0a0ad;
+    --line: #2c2c33;
+    --paper: #141417;
+    --accent: #7fc7b0;
+  }
+
+  code {
+    background: #24242a;
+  }
+}

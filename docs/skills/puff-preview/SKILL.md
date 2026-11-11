@@ -1,9 +1,9 @@
 ---
-name: openpad-preview
-description: Author a `preview/` subtree that renders inside OpenPad's Web Preview. Use when creating or editing a Paseo project's visual preview (dashboards, canvases, mini apps) that reads data or assets from files in the project.
+name: puff-preview
+description: Author a `preview/` subtree that renders inside Puff's Web Preview. Use when creating or editing a Paseo project's visual preview (dashboards, canvases, mini apps) that reads data or assets from files in the project.
 ---
 
-# openpad-preview
+# puff-preview
 
 The Web Preview surface in this app is an iframe/WebView that renders a single
 project's **`preview/index.html`**, with every referenced asset inlined as a

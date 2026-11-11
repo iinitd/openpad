@@ -43,7 +43,7 @@ jobs:
           rest="${version#*.}"
           minor="${rest%%.*}"
           if [ "$major" -lt 26 ] || { [ "$major" -eq 26 ] && [ "$minor" -lt 4 ]; }; then
-            echo "OpenPad SDK 57 requires Xcode 26.4 or newer; this runner has Xcode $version."
+            echo "Puff SDK 57 requires Xcode 26.4 or newer; this runner has Xcode $version."
             exit 1
           fi
 
@@ -60,23 +60,23 @@ jobs:
             --profile development \
             --non-interactive \
             --message "${{ inputs.message }}" \
-            --output build/OpenPadDev.ipa
+            --output build/PuffDev.ipa
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: openpad-dev-client
-          path: build/OpenPadDev.ipa
+          name: puff-dev-client
+          path: build/PuffDev.ipa
           if-no-files-found: error
 
       - name: Build install page
         id: page
         run: |
           chmod +x scripts/publish-dev-client.sh
-          scripts/publish-dev-client.sh build/OpenPadDev.ipa build/pages | tee publish.env
+          scripts/publish-dev-client.sh build/PuffDev.ipa build/pages | tee publish.env
           install_url="$(sed -n 's/^install_url=//p' publish.env)"
           {
-            echo "### OpenPad Dev"
+            echo "### Puff Dev"
             echo
             echo "Open this on a registered iOS device in Safari:"
             echo

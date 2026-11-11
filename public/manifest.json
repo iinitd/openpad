@@ -1,6 +1,6 @@
 {
-  "name": "OpenPad",
-  "short_name": "OpenPad",
+  "name": "Puff",
+  "short_name": "Puff",
   "description": "A focused writing workspace powered by Paseo, OpenClaw, and OpenCode.",
   "start_url": "/",
   "scope": "/",

@@ -8,7 +8,7 @@ const [connectingView, connectScreen, writerShell, openingStore] = await Promise
 ]);
 
 const requirements = [
-  ["loading view carries the OpenPad identity", /<Icon\s+name="edit"[\s\S]*<Text style=\{styles\.brand\}>OpenPad<\/Text>/, connectingView],
+  ["loading view carries the Puff identity", /<Icon\s+name="edit"[\s\S]*<Text style=\{styles\.brand\}>Puff<\/Text>/, connectingView],
   ["loading view uses a restrained animated progress line", /Animated\.loop[\s\S]*style=\{styles\.progressTrack\}[\s\S]*styles\.progressBar/, connectingView],
   ["loading animation is stopped on unmount", /return\s*\(\)\s*=>\s*animation\.stop\(\)/, connectingView],
   ["loading subtitle keeps long endpoints legible", /ellipsizeMode="middle"/, connectingView],
