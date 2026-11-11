@@ -16,7 +16,7 @@ One-time setup in the repository: **Settings → Pages → Build and deployment 
 Source: GitHub Actions**. After that, the site is at:
 
 ```
-https://iinitd.github.io/openpad/
+https://iinitd.github.io/puff/
 ```
 
 That hostname is what `src/settings/about-links.ts` and the App Store Connect
