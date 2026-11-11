@@ -30,7 +30,7 @@ opencode pair
 
 Puff redeems the link once through `/auth/connect/<code>` (asking for JSON), receives the session token, and stores that token as the server password. The link itself is not saved. Pair links are single-use and expire in five minutes; the resulting session token is long-lived (about 30 days). When it expires, generate another pair link.
 
-Pair links work over both HTTP and HTTPS on the local network: the iOS app allows plain HTTP to local hosts and IP addresses, because user-hosted OpenCode servers often run without a TLS certificate. A public hostname still needs HTTPS. Prefer HTTPS anyway — the link carries the one-time code, and a session token travels in the `Authorization` header afterwards. The OpenCode server must also allow the Puff page's origin for the redemption request, same as the normal CORS requirement.
+Pair links work over both HTTP and HTTPS: the iOS app declares an App Transport Security exception for plain HTTP, because user-hosted OpenCode servers often run without a TLS certificate, including servers reached over a tailnet. Prefer HTTPS anyway — the link carries the one-time code, and a session token travels in the `Authorization` header afterwards. Prefer HTTPS anyway — the link carries the one-time code, and a session token travels in the `Authorization` header afterwards. The OpenCode server must also allow the Puff page's origin for the redemption request, same as the normal CORS requirement.
 
 Treat the session token like the server password: it grants API access.
 
