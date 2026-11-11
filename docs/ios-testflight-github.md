@@ -45,7 +45,7 @@ Set up:
 
 ## 3. Add the App Store Connect app ID
 
-Create the app record at App Store Connect if it does not exist, then copy the numeric app ID from the app's URL.
+Create the app record at App Store Connect if it does not exist, then copy the numeric app ID from the app's URL. For this project the record for `lol.milio.puff` is `6833494534`.
 
 Edit `eas.json`:
 
