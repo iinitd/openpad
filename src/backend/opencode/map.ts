@@ -1,4 +1,4 @@
-import type { BackendTimelineItem } from "../types";
+import type { BackendTimelineItem, BackendUsage } from "../types";
 import { asNumber, asRecord, asString, isoTime } from "./wire";
 
 export interface MappedMessage {
@@ -150,6 +150,46 @@ export function sessionTimestamp(info: Record<string, unknown>): { created: stri
   const created = asNumber(time.created) ?? Date.now();
   const updated = asNumber(time.updated) ?? asNumber(time.idle) ?? created;
   return { created: new Date(created).toISOString(), updated: new Date(updated).toISOString() };
+}
+
+function definedUsage(usage: BackendUsage): BackendUsage | undefined {
+  const entries = Object.entries(usage).filter(
+    ([, value]) => typeof value === "number" && Number.isFinite(value),
+  );
+  return entries.length > 0 ? (Object.fromEntries(entries) as BackendUsage) : undefined;
+}
+
+/**
+ * A session object carries totals for its whole life: `cost` plus the four
+ * token buckets. This is the authoritative figure and survives reconnects.
+ */
+export function usageFromSession(info: Record<string, unknown>): BackendUsage | undefined {
+  const tokens = asRecord(info.tokens);
+  const cache = asRecord(tokens.cache);
+  return definedUsage({
+    inputTokens: asNumber(tokens.input),
+    outputTokens: asNumber(tokens.output),
+    reasoningTokens: asNumber(tokens.reasoning),
+    cachedTokens: asNumber(cache.read),
+    costUsd: asNumber(info.cost),
+  });
+}
+
+/**
+ * A finished step is one model call, so its tokens describe how full the
+ * context window was for that call, not a session total.
+ */
+export function usageFromStep(tokens: Record<string, unknown>): BackendUsage | undefined {
+  const cache = asRecord(tokens.cache);
+  const parts = [
+    asNumber(tokens.input),
+    asNumber(tokens.output),
+    asNumber(tokens.reasoning),
+    asNumber(cache.read),
+    asNumber(cache.write),
+  ].filter((value): value is number => value !== undefined);
+  if (parts.length === 0) return undefined;
+  return definedUsage({ contextUsedTokens: parts.reduce((sum, value) => sum + value, 0) });
 }
 
 export function basename(path: string): string {

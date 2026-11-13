@@ -10,6 +10,26 @@ export type ConnectionState =
 
 export type BackendAgentStatus = "initializing" | "idle" | "running" | "error" | "closed";
 
+/**
+ * Session usage a backend knows how to report. Every field is optional because
+ * providers expose different pieces: OpenCode prices a whole session, while a
+ * provider that only tracks a context window fills the two context fields.
+ */
+export interface BackendUsage {
+  /** Prompt tokens counted over the session. */
+  inputTokens?: number;
+  /** Completion tokens counted over the session. */
+  outputTokens?: number;
+  /** Prompt tokens the provider served from its cache. */
+  cachedTokens?: number;
+  reasoningTokens?: number;
+  /** Total session cost in USD, when the backend prices the session. */
+  costUsd?: number;
+  /** Tokens currently occupying the model's context window. */
+  contextUsedTokens?: number;
+  contextMaxTokens?: number;
+}
+
 export interface BackendAgent {
   /** An opaque writing-conversation ID, distinct from a configured runtime/profile ID. */
   id: string;
@@ -22,6 +42,8 @@ export interface BackendAgent {
   createdAt: string;
   updatedAt: string;
   archivedAt?: string | null;
+  /** Snapshot of the session's usage, when the backend reports any. */
+  usage?: BackendUsage;
 }
 
 export interface BackendAgentEntry {
@@ -99,7 +121,10 @@ export type BackendStreamEvent =
   | { type: "timeline"; item: BackendTimelineItem }
   | { type: "timeline_invalidated" }
   | { type: "permission_requested"; request: BackendPermissionRequest }
-  | { type: "thread_started" | "turn_started" | "turn_completed" | "turn_failed" | "turn_canceled" | "permission_resolved" | "attention_required" }
+  | { type: "turn_completed"; usage?: BackendUsage }
+  | { type: "thread_started" | "turn_started" | "turn_failed" | "turn_canceled" | "permission_resolved" | "attention_required" }
+  // A partial usage update; merge it into whatever the agent snapshot already has.
+  | { type: "usage"; usage: BackendUsage }
   | { type: "other" };
 
 export interface BackendAgentStreamMessage {

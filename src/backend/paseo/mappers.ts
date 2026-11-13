@@ -11,6 +11,7 @@ import type {
   AgentModelDefinition as PaseoAgentModelDefinition,
   AgentPermissionRequest,
   AgentTimelineItem,
+  AgentUsage as PaseoAgentUsage,
 } from "@getpaseo/protocol/agent-types";
 import type {
   AgentSnapshotPayload,
@@ -31,6 +32,7 @@ import type {
   BackendProvidersSnapshot,
   BackendStreamEvent,
   BackendTimelineItem,
+  BackendUsage,
   BackendWorkspaceEntry,
   ConnectionState,
 } from "../types";
@@ -46,7 +48,28 @@ export function mapConnectionState(state: PaseoConnectionState): ConnectionState
   }
 }
 
+/**
+ * Paseo providers report different subsets, so keep only the numbers they
+ * actually sent and leave the rest undefined.
+ */
+function mapUsage(usage: PaseoAgentUsage | undefined): BackendUsage | undefined {
+  if (!usage) return undefined;
+  const next: BackendUsage = {
+    inputTokens: usage.inputTokens,
+    outputTokens: usage.outputTokens,
+    cachedTokens: usage.cachedInputTokens,
+    costUsd: usage.totalCostUsd,
+    contextUsedTokens: usage.contextWindowUsedTokens,
+    contextMaxTokens: usage.contextWindowMaxTokens,
+  };
+  const entries = Object.entries(next).filter(
+    ([, value]) => typeof value === "number" && Number.isFinite(value),
+  );
+  return entries.length > 0 ? (Object.fromEntries(entries) as BackendUsage) : undefined;
+}
+
 export function mapAgent(agent: AgentSnapshotPayload): BackendAgent {
+  const usage = mapUsage(agent.lastUsage);
   return {
     id: agent.id,
     provider: agent.provider,
@@ -58,6 +81,7 @@ export function mapAgent(agent: AgentSnapshotPayload): BackendAgent {
     createdAt: agent.createdAt,
     updatedAt: agent.updatedAt,
     archivedAt: agent.archivedAt,
+    ...(usage ? { usage } : {}),
   };
 }
 
@@ -124,9 +148,12 @@ export function mapStreamEvent(event: AgentStreamEventPayload): BackendStreamEve
       return { type: event.type, item: mapTimelineItem(event.item) };
     case "permission_requested":
       return { type: event.type, request: mapPermissionRequest(event.request) };
+    case "turn_completed": {
+      const usage = mapUsage(event.usage);
+      return usage ? { type: "turn_completed", usage } : { type: "turn_completed" };
+    }
     case "thread_started":
     case "turn_started":
-    case "turn_completed":
     case "turn_failed":
     case "turn_canceled":
     case "permission_resolved":

@@ -9,7 +9,7 @@ import type {
   CreateAgentOptions,
   FetchAgentsOptions,
 } from "../types";
-import { basename, sessionTimestamp } from "./map";
+import { basename, sessionTimestamp, usageFromSession } from "./map";
 import type { OpenCodeTransport } from "./transport";
 import { asBoolean, asNumber, asRecord, asString, OpenCodeRequestError } from "./wire";
 
@@ -116,6 +116,9 @@ export class OpenCodeSessions {
       createdAt: timestamps.created,
       updatedAt: timestamps.updated,
       archivedAt: archived ? new Date(archived).toISOString() : null,
+      // A session row without token data (older server) keeps the last known
+      // usage rather than blanking the indicator.
+      usage: usageFromSession(info) ?? previous?.usage,
     };
     this.agents.set(id, next);
     return next;
@@ -228,6 +231,22 @@ export class OpenCodeSessions {
     const fetched = await this.fetchAgent(id);
     if (!fetched) throw new OpenCodeRequestError("HTTP_ERROR", `OpenCode session ${id} no longer exists.`, 404);
     return fetched.agent;
+  }
+
+  /**
+   * Re-read one session after a turn so its cumulative cost and token totals
+   * catch up. Cheaper than fetchAgent because it skips the activity probe; the
+   * status comes from the session's own busy/idle timestamps.
+   */
+  async refreshUsage(id: string): Promise<BackendAgent | null> {
+    try {
+      const response = await this.transport.requestJson<Record<string, unknown>>(
+        `/api/session/${encodeURIComponent(id)}`,
+      );
+      return this.upsertAgent(asRecord(response.data));
+    } catch {
+      return null;
+    }
   }
 
   async createAgent(options: CreateAgentOptions): Promise<BackendAgent> {

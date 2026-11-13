@@ -34,6 +34,7 @@ import {
   ProviderModelPickerModal,
   type ProviderModelSelection,
 } from "./ModelSwitcher";
+import { SessionUsageRow } from "./SessionUsageRow";
 import { Icon } from "../components/Icon";
 import { hapticTap } from "../components/PressableRow";
 import { THEME } from "../styles/theme";
@@ -647,9 +648,12 @@ export const AgentChatPanel = memo(function AgentChatPanel({
             ))}
           </ScrollView>
           {!showHeader ? (
-            <View style={styles.switcherModelRow}>
-              <Text style={styles.switcherModelLabel}>Model</Text>
-              <ModelSwitcher />
+            <View style={styles.switcherFooter}>
+              <SessionUsageRow />
+              <View style={styles.switcherModelRow}>
+                <Text style={styles.switcherModelLabel}>Model</Text>
+                <ModelSwitcher />
+              </View>
             </View>
           ) : null}
         </View>
@@ -858,17 +862,19 @@ const styles = StyleSheet.create({
     color: THEME.colors.textMuted,
     paddingVertical: THEME.spacing.sm,
   },
+  switcherFooter: {
+    marginTop: THEME.spacing.sm,
+    paddingTop: THEME.spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "rgba(15, 23, 42, 0.07)",
+  },
   switcherModelRow: {
     minHeight: 36,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: THEME.spacing.md,
-    marginTop: THEME.spacing.sm,
-    paddingTop: THEME.spacing.md,
     paddingHorizontal: THEME.spacing.xs,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "rgba(15, 23, 42, 0.07)",
   },
   switcherModelLabel: {
     fontSize: 14,

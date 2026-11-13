@@ -7,6 +7,7 @@ import type {
   BackendStreamEvent,
   BackendTimelineItem,
   BackendPermissionRequest,
+  BackendUsage,
 } from "../backend";
 import type { StreamItem } from "../types/stream";
 import { applyStreamEvent } from "../client/stream-reducer";
@@ -38,6 +39,8 @@ interface SessionStore {
   model: string | null;
   cwd: string | null;
   workspaceId: string | null;
+  /** Latest usage the active backend reported, merged from snapshots and events. */
+  usage: BackendUsage | null;
   initialPrompt: string;
   tail: StreamItem[];
   head: StreamItem[];
@@ -295,6 +298,15 @@ export function isSessionRestoreSuperseded(error: unknown): boolean {
   return error instanceof SessionRestoreSupersededError;
 }
 
+/**
+ * Usage arrives from two directions: a full snapshot on the agent, and partial
+ * events during a turn. Merge instead of replacing so a step's context reading
+ * does not wipe the session's cost or token totals.
+ */
+function mergeUsage(current: BackendUsage | null, next: BackendUsage): BackendUsage {
+  return { ...(current ?? {}), ...next };
+}
+
 function installTimelineCapture(
   client: WriterBackend,
   agentId: string,
@@ -414,6 +426,11 @@ function installAgentSubscriptions(
       return;
     }
 
+    if (typedEvent.type === "usage") {
+      set({ usage: mergeUsage(get().usage, typedEvent.usage) });
+      return;
+    }
+
     if (typedEvent.type === "timeline" && typedEvent.item.type === "user_message") {
       const echoedText = typedEvent.item.text;
       const echoedMessageId = typedEvent.item.messageId;
@@ -461,6 +478,10 @@ function installAgentSubscriptions(
       head: result.changedHead ? result.head : head,
     });
 
+    if (typedEvent.type === "turn_completed" && typedEvent.usage) {
+      set({ usage: mergeUsage(get().usage, typedEvent.usage) });
+    }
+
     // The revision (if any) is done — drop the banner's target for this
     // session's workspace so it stops advertising a file that's no longer
     // being edited. Other workspaces' revise targets are left alone.
@@ -497,6 +518,7 @@ function installAgentSubscriptions(
     set({
       agentStatus: status,
       isStreaming: status === "running",
+      ...(message.agent.usage ? { usage: mergeUsage(get().usage, message.agent.usage) } : {}),
     });
   });
 
@@ -602,9 +624,17 @@ async function hydrateAgentTimeline(args: {
 
   // Reapply events newer than the timeline window so a response that was
   // already streaming while history loaded remains lossless.
+  let nextUsage = current.usage;
   for (const { event } of eventsToReplay) {
+    if (event.type === "usage") {
+      nextUsage = mergeUsage(nextUsage, event.usage);
+      continue;
+    }
     const replayed = applyStreamEvent(restored.tail, restored.head, event);
     restored = { tail: replayed.tail, head: replayed.head };
+    if (event.type === "turn_completed" && event.usage) {
+      nextUsage = mergeUsage(nextUsage, event.usage);
+    }
     if (event.type === "turn_started") {
       nextStatus = "running";
       nextIsStreaming = true;
@@ -672,6 +702,7 @@ async function hydrateAgentTimeline(args: {
     agentStatus: nextStatus,
     isStreaming: nextIsStreaming,
     queued: reconciledQueue,
+    usage: nextUsage,
   });
 
   if (!nextIsStreaming && get().queued.length > 0) {
@@ -699,6 +730,7 @@ export const useSessionStore = create<SessionStore>()(
     model: null,
     cwd: null,
     workspaceId: null,
+    usage: null,
     initialPrompt: "",
     tail: [],
     head: [],
@@ -794,6 +826,7 @@ export const useSessionStore = create<SessionStore>()(
           model: agent.model,
           cwd: agent.cwd,
           workspaceId: agent.workspaceId ?? options?.workspaceId ?? null,
+          usage: agent.usage ?? null,
           initialPrompt,
         });
         usePreferencesStore
@@ -957,6 +990,7 @@ export const useSessionStore = create<SessionStore>()(
         model: agent.model,
         cwd: agent.cwd,
         workspaceId: agent.workspaceId ?? null,
+        usage: agent.usage ?? null,
         initialPrompt: "",
         tail: [],
         head: [],
@@ -1416,6 +1450,7 @@ export const useSessionStore = create<SessionStore>()(
         model: null,
         cwd: null,
         workspaceId: null,
+        usage: null,
         initialPrompt: "",
         tail: [],
         head: [],

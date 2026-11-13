@@ -21,6 +21,7 @@ export type {
   BackendStreamEvent,
   BackendTimelineEntry,
   BackendTimelineItem,
+  BackendUsage,
   BackendWorkspaceEntry,
   BackendWorkspacesResult,
   ConnectionState,

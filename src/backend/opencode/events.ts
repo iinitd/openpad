@@ -10,7 +10,7 @@ import type {
   BackendTimelineItem,
   FetchAgentTimelineOptions,
 } from "../types";
-import { mapSessionMessage } from "./map";
+import { mapSessionMessage, usageFromSession, usageFromStep } from "./map";
 import type { OpenCodeSessions } from "./sessions";
 import type { OpenCodeTransport } from "./transport";
 import { asNumber, asRecord, asString } from "./wire";
@@ -209,7 +209,21 @@ export class OpenCodeEvents {
         this.status(sessionID, "idle");
         this.emit(sessionID, { type: "turn_completed" });
         this.invalidate(sessionID);
+        // The turn's tokens only become authoritative on the session object.
+        void this.refreshUsage(sessionID);
         return;
+      case "session.usage.updated": {
+        const usage = usageFromSession(data);
+        if (usage) this.emit(sessionID, { type: "usage", usage });
+        return;
+      }
+      case "session.step.ended": {
+        // One step is one model call, so its tokens describe the context that
+        // call filled rather than a session total.
+        const usage = usageFromStep(asRecord(data.tokens));
+        if (usage) this.emit(sessionID, { type: "usage", usage });
+        return;
+      }
       case "session.execution.failed": {
         const error = asRecord(data.error);
         const message = asString(error.message) ?? "OpenCode execution failed.";
@@ -349,6 +363,11 @@ export class OpenCodeEvents {
     } catch {
       // A deleted session is reconciled by the catalog refresh.
     }
+  }
+
+  private async refreshUsage(id: string): Promise<void> {
+    const agent = await this.sessions.refreshUsage(id);
+    if (agent && !this.closed) this.publishAgent(id);
   }
 
   private ask(data: Record<string, unknown>): void {
