@@ -20,11 +20,24 @@ import {
   COMPACT_COMPOSER_STYLES,
 } from "./compact-composer-styles";
 import type { BackendAttachment } from "../backend";
+import { useConnectionStore } from "../stores/connection-store";
 import { THEME } from "../styles/theme";
 import { isWeb } from "../constants/platform";
 
-/** One placeholder for every composer, so the two inputs read as one control. */
-export const COMPOSER_PLACEHOLDER = "Ask Puff anything…";
+/**
+ * The composer addresses the server it talks to: "Talk to Bloop". The name is
+ * the one chosen when the connection was added, so the field reads as the
+ * conversation it belongs to rather than as a generic prompt.
+ */
+export function useComposerPlaceholder(): string {
+  const name = useConnectionStore((state) => {
+    const saved = state.savedConnections.find(
+      (entry) => entry.id === state.activeConnectionId,
+    );
+    return saved?.alias?.trim() ?? "";
+  });
+  return name ? `Talk to ${name}` : "Talk to Puff";
+}
 
 export interface PendingImage {
   id: string;

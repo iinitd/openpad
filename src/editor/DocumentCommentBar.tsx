@@ -2,9 +2,9 @@ import { memo } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { PressableRow } from "../components/PressableRow";
 import {
-  COMPOSER_PLACEHOLDER,
   ComposerField,
   toBackendAttachments,
+  useComposerPlaceholder,
   usePendingImages,
 } from "../components/ComposerField";
 import { useEditorStore } from "../stores/editor-store";
@@ -57,6 +57,7 @@ export const DocumentCommentBar = memo(function DocumentCommentBar({
   const comment = useEditorStore((s) => s.commentDraft);
   const setComment = useEditorStore((s) => s.setCommentDraft);
   const pending = usePendingImages();
+  const placeholder = useComposerPlaceholder();
   const backendKind = useConnectionStore((state) => state.client?.kind);
   const isStreaming = useSessionStore((state) => state.isStreaming);
   const canAttach = backendKind === "opencode" && !isStreaming;
@@ -142,7 +143,7 @@ export const DocumentCommentBar = memo(function DocumentCommentBar({
         onChangeText={setComment}
         onSend={() => void submit()}
         onKeyPress={handleKeyPress}
-        placeholder={COMPOSER_PLACEHOLDER}
+        placeholder={placeholder}
         sendDisabled={sendDisabled}
         images={pending.images}
         onRemoveImage={pending.remove}

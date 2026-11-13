@@ -3,9 +3,9 @@ import { Alert, View, Text, TouchableOpacity, StyleSheet, TextInput } from "reac
 import { useSessionStore } from "../stores/session-store";
 import { useConnectionStore } from "../stores/connection-store";
 import {
-  COMPOSER_PLACEHOLDER,
   ComposerField,
   toBackendAttachments,
+  useComposerPlaceholder,
   usePendingImages,
 } from "../components/ComposerField";
 import { hapticTap } from "../components/PressableRow";
@@ -32,6 +32,7 @@ export const ChatInput = memo(function ChatInput({
   const [editingQueuedId, setEditingQueuedId] = useState<string | null>(null);
   const [editingQueuedText, setEditingQueuedText] = useState("");
   const pending = usePendingImages();
+  const placeholder = useComposerPlaceholder();
   const backendKind = useConnectionStore((state) => state.client?.kind);
   // Only the OpenCode backend accepts attachments. A turn in flight no longer
   // blocks picking one: the image waits in the queue with its message and goes
@@ -206,7 +207,7 @@ export const ChatInput = memo(function ChatInput({
         onChangeText={setText}
         onSend={handleSend}
         onKeyPress={handleKeyPress}
-        placeholder={COMPOSER_PLACEHOLDER}
+        placeholder={placeholder}
         editable={!!agentId}
         images={pending.images}
         onRemoveImage={pending.remove}
