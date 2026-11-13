@@ -83,7 +83,15 @@ export type BackendTimelineItem =
   // Live text is incremental; a history entry contains the text for that entry.
   | { type: "assistant_message"; text: string; messageId?: string; replace?: boolean }
   | { type: "reasoning"; text: string }
-  | { type: "tool_call"; callId?: string; name: string; status: "running" | "completed" | "failed" | "canceled" }
+  | {
+      type: "tool_call";
+      callId?: string;
+      name: string;
+      status: "running" | "completed" | "failed" | "canceled";
+      /** Optional detail shown in activity UI (e.g. shell command, file path, args). */
+      detail?: string;
+      input?: unknown;
+    }
   | { type: "error"; message: string }
   | { type: "other" };
 

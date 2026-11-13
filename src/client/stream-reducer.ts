@@ -86,7 +86,15 @@ function reduceTimelineEvent(
       if (existingIdx !== -1) {
         const existing = state[existingIdx] as ToolCallItem;
         return state.map((s, i) =>
-          i === existingIdx ? { ...existing, name: item.name ?? existing.name, status } : s,
+          i === existingIdx
+            ? {
+                ...existing,
+                name: item.name ?? existing.name,
+                status,
+                detail: item.detail ?? existing.detail,
+                input: item.input ?? existing.input,
+              }
+            : s,
         );
       }
       return [
@@ -97,6 +105,8 @@ function reduceTimelineEvent(
           name: item.name,
           status,
           timestamp: new Date().toISOString(),
+          ...(item.detail ? { detail: item.detail } : {}),
+          ...(item.input !== undefined ? { input: item.input } : {}),
         } satisfies ToolCallItem,
       ];
     }

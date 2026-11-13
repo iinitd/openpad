@@ -73,14 +73,27 @@ export function mapSessionMessage(raw: unknown): MappedPart[] {
         const rawState: unknown = part.state;
         const state = typeof rawState === "string" ? { status: rawState } : asRecord(rawState);
         const status = asString(state.status) ?? asString(part.status);
+        const input = asRecord(part.input ?? part.args ?? state.input);
+        const command = asString(input.command) ?? asString(input.cmd);
+        const detail =
+          command ??
+          asString(input.filePath) ??
+          asString(input.path) ??
+          asString(input.pattern) ??
+          asString(input.query) ??
+          asString(input.url) ??
+          asString(input.description);
+        const name = asString(part.name) ?? asString(part.tool) ?? "tool";
         mapped.push({
           item: {
             type: "tool_call",
             callId: asString(part.id) ?? asString(part.callId),
-            name: asString(part.name) ?? asString(part.tool) ?? "tool",
+            name,
             status: status === "completed" || status === "success" ? "completed"
               : status === "error" || status === "failed" ? "failed"
               : "running",
+            ...(detail ? { detail } : {}),
+            ...(Object.keys(input).length > 0 ? { input } : {}),
           },
           timestamp: isoTime(asRecord(part.time).created, Date.parse(timestamp)),
         });
@@ -115,12 +128,14 @@ export function mapSessionMessage(raw: unknown): MappedPart[] {
 
   if (type === "shell") {
     const status = asString(message.status);
+    const command = asString(message.command);
     return [{
       item: {
         type: "tool_call",
         callId: asString(message.shellID) ?? messageId,
-        name: asString(message.command) ?? "shell",
+        name: "shell",
         status: status === "running" ? "running" : status === "exited" ? "completed" : "failed",
+        ...(command ? { detail: command, input: { command } } : {}),
       },
       timestamp,
     }];

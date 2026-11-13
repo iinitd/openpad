@@ -25,6 +25,10 @@ export interface QueuedMessage {
   id: string;
   text: string;
   messageId?: string;
+  // Images ride along in memory only. The persisted queue stays text-only so a
+  // base64 payload never lands in preferences; after a cold start the waiting
+  // message keeps its text and loses its pictures.
+  attachments?: BackendAttachment[];
 }
 
 interface SessionStore {
@@ -72,7 +76,10 @@ interface SessionStore {
   restoreAgentById: (agentId: string, workspaceKey: string) => Promise<boolean>;
   catchUpAgent: () => Promise<void>;
   sendMessage: (text: string, attachments?: BackendAttachment[]) => Promise<void>;
+  editQueued: (id: string, text: string) => void;
   removeQueued: (id: string) => void;
+  prioritizeQueued: (id: string) => void;
+  sendQueuedNow: (id: string) => Promise<void>;
   drainQueue: () => Promise<void>;
   cancelAgent: () => Promise<void>;
   setModel: (model: string | null) => Promise<void>;
@@ -88,12 +95,12 @@ function getClient(): WriterBackend {
 }
 
 // The daemon echoes the agent's initial/system prompt back as the first
-// user_message in the timeline. We prefix that prompt with this sentinel so the
-// stream handler can recognise and hide it from the visible chat transcript.
+// user_message in the timeline. We prefix that prompt with this sentinel so it
+// can be identified as the session system prompt.
 const SYSTEM_PROMPT_MARKER = "\u200b[puff-system]";
 
-// The editable part of the prompt. The marker stays fixed so the transcript can
-// keep hiding the system message.
+// The editable part of the prompt, sent as the first user message when a new
+// chat session starts.
 function writingSystemPrompt(): string {
   const configured = usePreferencesStore.getState().agentPrompt.trim();
   return `${SYSTEM_PROMPT_MARKER}
@@ -132,7 +139,13 @@ function persistVisibleQueue(
   const inFlight = preferences
     .queuedMessagesForAgent(agentId)
     .filter((item) => !visibleIds.has(item.id));
-  preferences.setQueuedMessagesForAgent(agentId, [...inFlight, ...nextVisible]);
+  // Images are memory-only: strip them so the persisted copy stays small.
+  const persisted = nextVisible.map((item) => ({
+    id: item.id,
+    text: item.text,
+    ...(item.messageId ? { messageId: item.messageId } : {}),
+  }));
+  preferences.setQueuedMessagesForAgent(agentId, [...inFlight, ...persisted]);
 }
 
 function removePersistedQueueEntries(
@@ -267,8 +280,8 @@ function isCurrentHydration(
   );
 }
 
-function isHiddenSystemPrompt(item: TimelineItem): boolean {
-  return item.type === "user_message" && item.text.startsWith(SYSTEM_PROMPT_MARKER);
+function isHiddenSystemPrompt(_item: TimelineItem): boolean {
+  return false;
 }
 
 export class SessionRestoreSupersededError extends Error {
@@ -324,7 +337,6 @@ function reduceTimeline(items: TimelineItem[]): Pick<SessionStore, "tail" | "hea
   let head: StreamItem[] = [];
 
   for (const item of items) {
-    if (isHiddenSystemPrompt(item)) continue;
     const result = applyStreamEvent(tail, head, {
       type: "timeline",
       item,
@@ -1049,16 +1061,13 @@ export const useSessionStore = create<SessionStore>()(
       // idle agent still flushes the queue instead of discarding typed text.
       const queueWasIdle = !get().isStreaming;
       if (get().isStreaming || get().queued.length > 0) {
-        // Attachments are not part of the text-only queue: they carry base64
-        // payloads that should not be persisted, so a turn in flight has to
-        // finish before an image can be sent.
-        if (attachments && attachments.length > 0) {
-          throw new Error("Wait for the current reply before sending an image.");
-        }
+        // Attachments wait with their message. The queue keeps them in memory
+        // only (see QueuedMessage), so the payload never reaches preferences.
         const currentQueue = get().queued;
-        const queuedMessage = {
+        const queuedMessage: QueuedMessage = {
           id: `q-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
           text,
+          ...(attachments && attachments.length > 0 ? { attachments } : {}),
         };
         const next = [
           ...currentQueue,
@@ -1129,6 +1138,17 @@ export const useSessionStore = create<SessionStore>()(
       }
     },
 
+    editQueued: (id: string, text: string) => {
+      const currentQueue = get().queued;
+      const next = currentQueue.map((q) => (q.id === id ? { ...q, text } : q));
+      if (next.every((q, index) => q === currentQueue[index])) return;
+      set({ queued: next });
+      const agentId = get().agentId;
+      if (agentId) {
+        persistVisibleQueue(agentId, currentQueue, next);
+      }
+    },
+
     removeQueued: (id: string) => {
       const currentQueue = get().queued;
       const next = currentQueue.filter((q) => q.id !== id);
@@ -1136,6 +1156,97 @@ export const useSessionStore = create<SessionStore>()(
       const agentId = get().agentId;
       if (agentId) {
         persistVisibleQueue(agentId, currentQueue, next);
+      }
+    },
+
+    prioritizeQueued: (id: string) => {
+      const currentQueue = get().queued;
+      const index = currentQueue.findIndex((q) => q.id === id);
+      if (index <= 0) return;
+      const item = currentQueue[index]!;
+      const next = [item, ...currentQueue.slice(0, index), ...currentQueue.slice(index + 1)];
+      set({ queued: next });
+      const agentId = get().agentId;
+      if (agentId) {
+        persistVisibleQueue(agentId, currentQueue, next);
+      }
+    },
+
+    sendQueuedNow: async (id: string) => {
+      const { agentId, queued, isStreaming, _restoreGeneration } = get();
+      if (!agentId) return;
+      const target = queued.find((q) => q.id === id);
+      if (!target) return;
+      const client = getClient();
+      const backendKey = usePreferencesStore.getState().activeBackendKey;
+
+      const remaining = queued.filter((q) => q.id !== id);
+      persistVisibleQueue(agentId, queued, remaining);
+      set({ queued: remaining });
+
+      if (isStreaming) {
+        try {
+          await client.cancelAgent(agentId);
+          if (get().agentId !== agentId || get()._restoreGeneration !== _restoreGeneration) return;
+          set({ isStreaming: false, agentStatus: "idle" });
+        } catch {
+          // If cancel fails, fall through and try sending when possible.
+        }
+      }
+
+      if (get().isStreaming) {
+        // Could not stop the running turn; keep message queued at front for next.
+        const current = get().queued;
+        const restored = [target, ...current.filter((q) => q.id !== target.id)];
+        set({ queued: restored });
+        if (get().agentId === agentId) {
+          persistVisibleQueue(agentId, current, restored);
+        }
+        return;
+      }
+
+      const messageId = target.messageId ?? client.createMessageId?.() ?? createClientMessageId();
+      const attachments = target.attachments ?? [];
+      const optimisticItem: StreamItem = {
+        kind: "user_message",
+        id: `user-${messageId}`,
+        messageId,
+        text: target.text,
+        ...(attachments.length > 0
+          ? { images: attachments.map((file) => `data:${file.mime};base64,${file.base64}`) }
+          : {}),
+        timestamp: new Date().toISOString(),
+        optimistic: true,
+      };
+      set((state: SessionStore) => ({
+        tail: [...state.tail, optimisticItem],
+        agentStatus: "running",
+        isStreaming: true,
+      }));
+
+      try {
+        await client.sendAgentMessage(agentId, target.text, {
+          messageId,
+          attachments: attachments.length > 0 ? attachments : undefined,
+        });
+        watchFirstStreamStep(agentId, get);
+        removePersistedQueueEntries(agentId, new Set([target.id]), new Set(), backendKey);
+      } catch {
+        if (get().agentId !== agentId || get()._restoreGeneration !== _restoreGeneration) return;
+        const stillOptimistic = get().tail.some(
+          (item) => item.id === optimisticItem.id && item.kind === "user_message" && item.optimistic,
+        );
+        if (!stillOptimistic) {
+          removePersistedQueueEntries(agentId, new Set([target.id]));
+          return;
+        }
+        set((state: SessionStore) => ({
+          tail: state.tail.filter((item) => item.id !== optimisticItem.id),
+          queued: state.queued.some((q) => q.id === target.id) ? state.queued : [target, ...state.queued],
+          agentStatus: "idle",
+          isStreaming: false,
+        }));
+        persistVisibleQueue(agentId, get().queued.filter((q) => q.id !== target.id), get().queued);
       }
     },
 
@@ -1172,6 +1283,8 @@ export const useSessionStore = create<SessionStore>()(
       const batch = queued.slice(0, batchEnd);
       const remainingQueue = queued.slice(batchEnd);
       const merged = batch.map((q) => q.text).join("\n\n");
+      // Images from every entry in the batch ride with the merged text.
+      const attachments = batch.flatMap((item) => item.attachments ?? []);
       const messageId =
         retryMessageId ?? client.createMessageId?.() ?? createClientMessageId();
       const inFlightEntry: QueuedMessage = retryMessageId
@@ -1180,12 +1293,16 @@ export const useSessionStore = create<SessionStore>()(
             id: `q-send-${messageId}`,
             text: merged,
             messageId,
+            ...(attachments.length > 0 ? { attachments } : {}),
           };
       const optimisticItem: StreamItem = {
         kind: "user_message",
         id: `user-${messageId}`,
         messageId,
         text: merged,
+        ...(attachments.length > 0
+          ? { images: attachments.map((file) => `data:${file.mime};base64,${file.base64}`) }
+          : {}),
         timestamp: new Date().toISOString(),
         optimistic: true,
       };
@@ -1199,7 +1316,10 @@ export const useSessionStore = create<SessionStore>()(
 
       const backendKey = usePreferencesStore.getState().activeBackendKey;
       try {
-        await client.sendAgentMessage(agentId, merged, { messageId });
+        await client.sendAgentMessage(agentId, merged, {
+          messageId,
+          attachments: attachments.length > 0 ? attachments : undefined,
+        });
         watchFirstStreamStep(agentId, get);
         removePersistedQueueEntries(agentId, new Set([inFlightEntry.id]), new Set(), backendKey);
       } catch {

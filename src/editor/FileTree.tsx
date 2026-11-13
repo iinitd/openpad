@@ -27,7 +27,7 @@ export { openWorkspaceDocument };
 
 const FILE_TREE_REFRESH_MS = 2000;
 
-// Extensions we can meaningfully load into the text editor.
+// Extensions we can meaningfully load into the text editor or preview.
 const OPENABLE = new Set([
   ".md",
   ".markdown",
@@ -74,6 +74,15 @@ const OPENABLE = new Set([
   ".mjs",
   ".cjs",
   ".jsonc",
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".webp",
+  ".svg",
+  ".bmp",
+  ".ico",
+  ".avif",
 ]);
 
 export function isOpenableFile(name: string): boolean {
@@ -184,8 +193,6 @@ export const FileTree = memo(function FileTree({
   showHeader = true,
   addProjectOpen = false,
   onAddProjectOpenChange,
-  showConnections = false,
-  onAddConnection,
   bottomInset = 0,
   mode,
   onSelectFolder,
@@ -200,9 +207,6 @@ export const FileTree = memo(function FileTree({
   // The host draws the header for the add-project browser.
   addProjectOpen?: boolean;
   onAddProjectOpenChange?: (open: boolean) => void;
-  // The mobile sheet folds connections into the projects list.
-  showConnections?: boolean;
-  onAddConnection?: () => void;
   // Honor the safe-area bottom inset for the pinned footer.
   bottomInset?: number;
   // When set, tapping a folder selects it instead of expanding it in place —
@@ -323,8 +327,6 @@ export const FileTree = memo(function FileTree({
           onSwitched={onFileOpened}
           addProjectOpen={addProjectOpen}
           onAddProjectOpenChange={onAddProjectOpenChange}
-          showConnections={showConnections}
-          onAddConnection={onAddConnection}
         />
       ) : (
         <ScrollView style={styles.tree} contentContainerStyle={styles.treeContent}>

@@ -38,6 +38,9 @@ export interface ToolCallItem {
   name: string;
   status: "running" | "completed" | "failed";
   timestamp: string;
+  /** Optional detail shown in activity UI (e.g. shell command, file path, args). */
+  detail?: string;
+  input?: unknown;
 }
 
 export interface ErrorMessageItem {

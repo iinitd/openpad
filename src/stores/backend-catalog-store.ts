@@ -52,6 +52,25 @@ export const useBackendCatalogStore = create<BackendCatalogStore>()((set, get) =
       return entry && entry.label === connection.label ? entry : entry
         ? { ...entry, label: connection.label } : emptyEntry(connection);
     });
+    // Saved servers that are not live right now (disconnected, or still waking
+    // up) keep a row too. The workspace list is where a server is opened, so it
+    // must not hide the ones that are currently offline — otherwise the only way
+    // back to them is retyping the URL in Add connection.
+    const savedConnections = useConnectionStore.getState().savedConnections;
+    for (const saved of savedConnections) {
+      if (ids.has(saved.id)) continue;
+      entries.push({
+        connectionId: saved.id,
+        label: saved.label,
+        endpoint: saved.mode === "relay" ? "Relay" : saved.endpoint,
+        workspaces: [],
+        sessions: [],
+        workspacesLoaded: true,
+        sessionsLoaded: true,
+        workspacesError: null,
+        sessionsError: null,
+      });
+    }
     if (entries.length !== oldEntries.length || entries.some((entry, index) => entry !== oldEntries[index])) set({ entries });
   },
   refresh: async (connectionId, options) => {

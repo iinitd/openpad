@@ -16,6 +16,13 @@ import { isNative } from "../constants/platform";
 import { startVisibilityAwarePoller } from "../utils/visibility-poller";
 
 const POLL_INTERVAL_MS = 2000;
+const IMAGE_EXTS = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp", ".ico", ".avif"]);
+
+function isImagePath(path: string | null): boolean {
+  if (!path) return false;
+  const dot = path.lastIndexOf(".");
+  return dot >= 0 && IMAGE_EXTS.has(path.slice(dot).toLowerCase());
+}
 
 /**
  * Watch the currently-open workspace file for on-disk changes (the agent edits
@@ -44,7 +51,7 @@ export function useWatchOpenFile(): number {
   }, [cwd, documentPath]);
 
   useEffect(() => {
-    if (!connected || !cwd || !documentPath) return;
+    if (!connected || !cwd || !documentPath || isImagePath(documentPath)) return;
     const watchedCwd = cwd;
     const watchedDocumentPath = documentPath;
 

@@ -94,13 +94,23 @@ export function mapTimelineItem(item: AgentTimelineItem): BackendTimelineItem {
       return { type: item.type, text: item.text, messageId: item.messageId };
     case "reasoning":
       return { type: item.type, text: item.text };
-    case "tool_call":
+    case "tool_call": {
+      const tool = item as AgentTimelineItem & { detail?: unknown; input?: unknown; command?: unknown };
+      const detail =
+        typeof tool.detail === "string"
+          ? tool.detail
+          : typeof tool.command === "string"
+            ? tool.command
+            : undefined;
       return {
         type: item.type,
         callId: item.callId,
         name: item.name,
         status: item.status,
+        ...(detail ? { detail } : {}),
+        ...(tool.input !== undefined ? { input: tool.input } : {}),
       };
+    }
     case "error":
       return { type: item.type, message: item.message };
     default:

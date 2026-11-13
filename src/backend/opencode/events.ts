@@ -263,27 +263,69 @@ export class OpenCodeEvents {
       }
       case "session.tool.input.started": {
         const callId = asString(data.id);
-        const name = asString(data.name) ?? "tool";
+        const name = asString(data.name) ?? asString(asRecord(data.tool).name) ?? "tool";
         if (callId) this.journal(sessionID).tools.set(callId, name);
+        const input = asRecord(data.input ?? data.args ?? data.arguments);
+        const command = asString(input.command) ?? asString(input.cmd);
+        const detail =
+          command ??
+          asString(input.filePath) ??
+          asString(input.path) ??
+          asString(input.pattern) ??
+          asString(input.query) ??
+          asString(input.url) ??
+          asString(input.description);
         this.emit(sessionID, {
           type: "timeline",
-          item: { type: "tool_call", callId, name, status: "running" },
+          item: {
+            type: "tool_call",
+            callId,
+            name,
+            status: "running",
+            ...(detail ? { detail } : {}),
+            ...(Object.keys(input).length > 0 ? { input } : {}),
+          },
         });
         return;
       }
       case "session.tool.called": {
         const callId = asString(data.id);
-        const name = (callId ? this.journal(sessionID).tools.get(callId) : undefined) ?? "tool";
+        const name =
+          asString(data.name) ??
+          asString(asRecord(data.tool).name) ??
+          (callId ? this.journal(sessionID).tools.get(callId) : undefined) ??
+          "tool";
+        if (callId) this.journal(sessionID).tools.set(callId, name);
+        const input = asRecord(data.input ?? data.args ?? data.arguments ?? asRecord(data.tool).input);
+        const command = asString(input.command) ?? asString(input.cmd);
+        const detail =
+          command ??
+          asString(input.filePath) ??
+          asString(input.path) ??
+          asString(input.pattern) ??
+          asString(input.query) ??
+          asString(input.url) ??
+          asString(input.description);
         this.emit(sessionID, {
           type: "timeline",
-          item: { type: "tool_call", callId, name, status: "running" },
+          item: {
+            type: "tool_call",
+            callId,
+            name,
+            status: "running",
+            ...(detail ? { detail } : {}),
+            ...(Object.keys(input).length > 0 ? { input } : {}),
+          },
         });
         return;
       }
       case "session.tool.success":
       case "session.tool.failed": {
         const callId = asString(data.id);
-        const name = (callId ? this.journal(sessionID).tools.get(callId) : undefined) ?? "tool";
+        const name =
+          asString(data.name) ??
+          (callId ? this.journal(sessionID).tools.get(callId) : undefined) ??
+          "tool";
         this.emit(sessionID, {
           type: "timeline",
           item: {

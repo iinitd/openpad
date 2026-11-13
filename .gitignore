@@ -45,3 +45,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Per-task records and preview pages opened from the workspace pane; they live
+# with the working copy, not in the app history.
+/projects/

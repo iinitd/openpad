@@ -1,7 +1,8 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Image,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -11,6 +12,7 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import { File } from "expo-file-system";
 import { Icon } from "./Icon";
+import { ImageViewer } from "./ImageViewer";
 import { hapticTap } from "./PressableRow";
 import { PressableRow } from "./PressableRow";
 import {
@@ -144,6 +146,13 @@ export function ComposerField({
   // fixed height, so long single lines that wrap visually were never counted.
   const [fieldWidth, setFieldWidth] = useState(0);
   const [contentHeight, setContentHeight] = useState(0);
+  // Which pending image is open full-screen, if any.
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  // Sending clears the strip while the viewer may still be up; close it rather
+  // than leave an index pointing at an image that no longer exists.
+  useEffect(() => {
+    if (viewerIndex !== null && viewerIndex >= images.length) setViewerIndex(null);
+  }, [images.length, viewerIndex]);
   const inputHeight = Math.min(
     maxInputHeight,
     Math.max(minInputHeight, contentHeight + verticalPadding),
@@ -166,9 +175,18 @@ export function ComposerField({
       ) : null}
       {images.length > 0 ? (
         <View style={styles.attachmentRow}>
-          {images.map((image) => (
+          {images.map((image, index) => (
             <View key={image.id} style={styles.attachmentThumbWrap}>
-              <Image source={{ uri: image.uri }} style={styles.attachmentThumb} />
+              <Pressable
+                onPress={() => {
+                  hapticTap("light");
+                  setViewerIndex(index);
+                }}
+                accessibilityRole="imagebutton"
+                accessibilityLabel={`Open image ${index + 1} of ${images.length}`}
+              >
+                <Image source={{ uri: image.uri }} style={styles.attachmentThumb} />
+              </Pressable>
               <TouchableOpacity
                 style={styles.attachmentRemove}
                 onPress={() => {
@@ -277,6 +295,11 @@ export function ComposerField({
           </TouchableOpacity>
         ) : null}
       </View>
+      <ImageViewer
+        images={images.map((image) => image.uri)}
+        index={viewerIndex}
+        onClose={() => setViewerIndex(null)}
+      />
     </View>
   );
 }

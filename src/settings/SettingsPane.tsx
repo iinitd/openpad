@@ -7,14 +7,13 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   TextInput,
   View,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { Icon } from "../components/Icon";
-import { useConnectionStore } from "../stores/connection-store";
+import { HalfSheet } from "../components/HalfSheet";
 import {
   DEFAULT_AGENT_PROMPT,
   DEFAULT_COMMENT_PROMPT,
@@ -23,22 +22,25 @@ import {
 import { COMMENT_PROMPT_PLACEHOLDERS } from "../editor/comment-prompt";
 import { exportConfig, importConfig } from "./config-transfer";
 import { PRIVACY_URL, SUPPORT_URL } from "./about-links";
-import { PressableRow, hapticTap } from "../components/PressableRow";
+import { PressableRow } from "../components/PressableRow";
 import { THEME } from "../styles/theme";
 
 /**
- * App-level settings. The demo workspace lives here: it is a sandbox, so
- * showing it is a preference rather than a connection.
+ * App-level settings: connections, prompts, config, about.
  */
-export function SettingsPane() {
-  const demoEnabled = useConnectionStore((state) => state.demoEnabled);
-  const setDemoEnabled = useConnectionStore((state) => state.setDemoEnabled);
+export function SettingsPane({
+  onAddConnection,
+}: {
+  /** Opens the full-page connection form the workspace sheet hosts. */
+  onAddConnection?: () => void;
+} = {}) {
   const agentPrompt = usePreferencesStore((state) => state.agentPrompt);
   const commentPrompt = usePreferencesStore((state) => state.commentPrompt);
   const setAgentPrompt = usePreferencesStore((state) => state.setAgentPrompt);
   const setCommentPrompt = usePreferencesStore((state) => state.setCommentPrompt);
-  // Where the caret sits in the files prompt, so a placeholder lands there.
-  const caretRef = useRef<{ start: number; end: number } | null>(null);
+  // Where the caret sits in the files prompt editor, so a placeholder lands there.
+  const filesCaretRef = useRef<{ start: number; end: number } | null>(null);
+  const [promptEditor, setPromptEditor] = useState<"agent" | "files" | null>(null);
   const [importVisible, setImportVisible] = useState(false);
   const [importText, setImportText] = useState("");
   const [importError, setImportError] = useState<string | null>(null);
@@ -49,17 +51,20 @@ export function SettingsPane() {
       await Clipboard.setStringAsync(json);
       if (Platform.OS === "web") {
         // eslint-disable-next-line no-alert
-        alert("配置已复制到剪贴板（包含连接凭据等敏感信息）。");
+        alert("Config copied to clipboard (includes sensitive credentials such as passwords and tokens).");
       } else {
-        Alert.alert("已导出", "配置 JSON 已复制到剪贴板（包含连接凭据等敏感信息）。");
+        Alert.alert(
+          "Exported",
+          "Config JSON copied to clipboard (includes sensitive credentials such as passwords and tokens).",
+        );
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : "导出失败。";
+      const message = error instanceof Error ? error.message : "Export failed.";
       if (Platform.OS === "web") {
         // eslint-disable-next-line no-alert
         alert(message);
       } else {
-        Alert.alert("导出失败", message);
+        Alert.alert("Export failed", message);
       }
     }
   };
@@ -75,141 +80,101 @@ export function SettingsPane() {
     setImportError(null);
     if (Platform.OS === "web") {
       // eslint-disable-next-line no-alert
-      alert("配置已导入。连接与部分运行状态可能需要重启应用后完全生效。");
+      alert("Config imported. Connections and some runtime state may fully apply after restarting the app.");
     } else {
-      Alert.alert("已导入", "配置已导入。连接与部分运行状态可能需要重启应用后完全生效。");
+      Alert.alert(
+        "Imported",
+        "Config imported. Connections and some runtime state may fully apply after restarting the app.",
+      );
     }
   };
 
   const insertPlaceholder = (token: string) => {
-    const caret = caretRef.current;
+    const caret = filesCaretRef.current;
     const current = commentPrompt;
     if (caret && caret.start <= current.length) {
-      setCommentPrompt(
-        current.slice(0, caret.start) + token + current.slice(caret.end),
-      );
+      setCommentPrompt(current.slice(0, caret.start) + token + current.slice(caret.end));
       return;
     }
     setCommentPrompt(current.trim().length > 0 ? `${current.trimEnd()} ${token}` : token);
   };
 
+  const promptPreview = (value: string, fallback: string) => {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : fallback;
+  };
+
   return (
+    <>
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
-      // Keeps a focused prompt field above the keyboard inside the sheet.
-      automaticallyAdjustKeyboardInsets
     >
-      <Text style={styles.sectionLabel}>Workspace</Text>
-
+      <Text style={styles.sectionLabel}>Connections</Text>
       <View style={styles.card}>
-        <View style={styles.row}>
+        <PressableRow
+          style={styles.actionRow}
+          haptic="light"
+          scale={false}
+          onPress={() => onAddConnection?.()}
+          accessibilityRole="button"
+          accessibilityLabel="Add connection"
+        >
           <View style={styles.rowGlyph}>
-            <Icon name="grid" size={16} color={THEME.colors.textSecondary} />
+            <Icon name="plus" size={15} color={THEME.colors.textSecondary} />
           </View>
           <View style={styles.rowBody}>
-            <Text style={styles.rowTitle}>Show demo workspace</Text>
-            <Text style={styles.rowHint}>
-              A sandbox project with sample files and a scripted agent. Turn it off
-              once you have a real backend.
-            </Text>
+            <Text style={styles.rowTitle}>Add connection</Text>
+            <Text style={styles.rowHint}>Server URL, or pair with a relay. Servers you save show up in Workspace.</Text>
           </View>
-          <Switch
-            value={demoEnabled}
-            onValueChange={(value) => {
-              hapticTap("selection");
-              void setDemoEnabled(value);
-            }}
-            trackColor={{ true: THEME.colors.primary, false: THEME.colors.border }}
-            thumbColor="#fff"
-          />
-        </View>
+          <Icon name="chevron-right" size={16} color={THEME.colors.textMuted} />
+        </PressableRow>
       </View>
 
       <Text style={styles.sectionLabel}>Prompts</Text>
       <View style={styles.card}>
-        <View style={styles.promptHeader}>
-          <Text style={styles.promptLabel}>Agent</Text>
-          {agentPrompt.trim() !== DEFAULT_AGENT_PROMPT ? (
-            <PressableRow
-              style={styles.resetButton}
-              haptic="light"
-              scale={false}
-              onPress={() => setAgentPrompt(DEFAULT_AGENT_PROMPT)}
-              accessibilityRole="button"
-              accessibilityLabel="Reset agent prompt"
-            >
-              <Text style={styles.resetText}>Reset</Text>
-            </PressableRow>
-          ) : null}
-        </View>
-        <TextInput
-          style={styles.promptInput}
-          value={agentPrompt}
-          onChangeText={setAgentPrompt}
-          placeholder={DEFAULT_AGENT_PROMPT}
-          placeholderTextColor={THEME.colors.textMuted}
-          multiline
-          autoCapitalize="sentences"
-          autoCorrect={false}
-        />
-        <Text style={styles.rowHint}>
-          Sent when a new chat starts. Open chats keep the prompt they began with.
-        </Text>
+        <PressableRow
+          style={styles.actionRow}
+          haptic="light"
+          scale={false}
+          onPress={() => setPromptEditor("agent")}
+          accessibilityRole="button"
+          accessibilityLabel="Edit system prompt"
+        >
+          <View style={styles.rowGlyph}>
+            <Icon name="file" size={16} color={THEME.colors.textSecondary} />
+          </View>
+          <View style={styles.rowBody}>
+            <Text style={styles.rowTitle}>System prompt</Text>
+            <Text style={styles.rowHint}>
+              Sent as the first user message when a new chat session starts. It sets the agent's behavior for that session; existing chats keep the prompt they started with.
+            </Text>
+          </View>
+          <Icon name="chevron-right" size={16} color={THEME.colors.textMuted} />
+        </PressableRow>
       </View>
 
       <View style={styles.card}>
-        <View style={styles.promptHeader}>
-          <Text style={styles.promptLabel}>Files</Text>
-          {commentPrompt.trim() !== DEFAULT_COMMENT_PROMPT.trim() ? (
-            <PressableRow
-              style={styles.resetButton}
-              haptic="light"
-              scale={false}
-              onPress={() => setCommentPrompt(DEFAULT_COMMENT_PROMPT)}
-              accessibilityRole="button"
-              accessibilityLabel="Reset file prompt"
-            >
-              <Text style={styles.resetText}>Reset</Text>
-            </PressableRow>
-          ) : null}
-        </View>
-        <TextInput
-          style={styles.promptInput}
-          value={commentPrompt}
-          onChangeText={setCommentPrompt}
-          onSelectionChange={(event) => {
-            caretRef.current = event.nativeEvent.selection;
-          }}
-          onBlur={() => {
-            caretRef.current = null;
-          }}
-          placeholder={DEFAULT_COMMENT_PROMPT}
-          placeholderTextColor={THEME.colors.textMuted}
-          multiline
-          autoCapitalize="sentences"
-          autoCorrect={false}
-        />
-        <View style={styles.placeholders}>
-          <Text style={styles.placeholderLead}>Insert</Text>
-          {COMMENT_PROMPT_PLACEHOLDERS.map((token) => (
-            <PressableRow
-              key={token}
-              style={styles.placeholderChip}
-              haptic="light"
-              scale={false}
-              onPress={() => insertPlaceholder(token)}
-              accessibilityRole="button"
-              accessibilityLabel={`Insert ${token}`}
-            >
-              <Text style={styles.placeholderChipText}>{token}</Text>
-            </PressableRow>
-          ))}
-        </View>
-        <Text style={styles.rowHint}>
-          Prepended to the message when you comment on a file or quote a passage.
-        </Text>
+        <PressableRow
+          style={styles.actionRow}
+          haptic="light"
+          scale={false}
+          onPress={() => setPromptEditor("files")}
+          accessibilityRole="button"
+          accessibilityLabel="Edit files prompt"
+        >
+          <View style={styles.rowGlyph}>
+            <Icon name="file" size={16} color={THEME.colors.textSecondary} />
+          </View>
+          <View style={styles.rowBody}>
+            <Text style={styles.rowTitle}>Files prompt</Text>
+            <Text style={styles.rowHint}>
+              Prepended to the message when you comment on a file or quote a passage in the editor.
+            </Text>
+          </View>
+          <Icon name="chevron-right" size={16} color={THEME.colors.textMuted} />
+        </PressableRow>
       </View>
 
       <Text style={styles.sectionLabel}>Config</Text>
@@ -226,9 +191,9 @@ export function SettingsPane() {
             <Icon name="copy" size={16} color={THEME.colors.textSecondary} />
           </View>
           <View style={styles.rowBody}>
-            <Text style={styles.rowTitle}>导出配置</Text>
+            <Text style={styles.rowTitle}>Export config</Text>
             <Text style={styles.rowHint}>
-              将连接与设置导出为 JSON 并复制到剪贴板（包含密码/token 等敏感信息）。
+              Copy connections and settings as JSON to the clipboard (includes sensitive credentials such as passwords and tokens).
             </Text>
           </View>
         </PressableRow>
@@ -249,8 +214,8 @@ export function SettingsPane() {
             <Icon name="file" size={16} color={THEME.colors.textSecondary} />
           </View>
           <View style={styles.rowBody}>
-            <Text style={styles.rowTitle}>导入配置</Text>
-            <Text style={styles.rowHint}>粘贴导出的 JSON 覆盖当前连接与设置。</Text>
+            <Text style={styles.rowTitle}>Import config</Text>
+            <Text style={styles.rowHint}>Paste exported JSON to replace current connections and settings.</Text>
           </View>
         </PressableRow>
       </View>
@@ -300,8 +265,8 @@ export function SettingsPane() {
         <View style={styles.modalOverlay}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setImportVisible(false)} />
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>导入配置</Text>
-            <Text style={styles.rowHint}>粘贴此前导出的 Puff 配置 JSON。导入会覆盖当前连接与设置，可能需要重启应用后完全生效。</Text>
+            <Text style={styles.modalTitle}>Import config</Text>
+            <Text style={styles.rowHint}>Paste a previously exported Puff config JSON. Import replaces current connections and settings and may fully apply after restarting the app.</Text>
             <TextInput
               style={styles.importInput}
               value={importText}
@@ -323,20 +288,115 @@ export function SettingsPane() {
                 onPress={() => setImportVisible(false)}
                 accessibilityRole="button"
               >
-                <Text style={styles.modalCancelText}>取消</Text>
+                <Text style={styles.modalCancelText}>Cancel</Text>
               </Pressable>
               <Pressable
                 style={({ pressed }) => [styles.modalAction, styles.modalConfirm, pressed && styles.modalActionPressed]}
                 onPress={handleImport}
                 accessibilityRole="button"
               >
-                <Text style={styles.modalConfirmText}>导入</Text>
+                <Text style={styles.modalConfirmText}>Import</Text>
               </Pressable>
             </View>
           </View>
         </View>
       </Modal>
     </ScrollView>
+
+    <HalfSheet
+      visible={promptEditor === "agent"}
+      title="System prompt"
+      onClose={() => setPromptEditor(null)}
+      headerActions={
+        agentPrompt.trim() !== DEFAULT_AGENT_PROMPT ? (
+          <PressableRow
+            style={styles.sheetAction}
+            haptic="light"
+            scale={false}
+            onPress={() => setAgentPrompt(DEFAULT_AGENT_PROMPT)}
+            accessibilityRole="button"
+            accessibilityLabel="Reset system prompt"
+          >
+            <Text style={styles.resetText}>Reset</Text>
+          </PressableRow>
+        ) : undefined
+      }
+    >
+      <Text style={styles.rowHint}>
+        Used as the first user message when a new chat session is created. It defines how the agent should behave in that session. Existing sessions keep the system prompt they began with.
+      </Text>
+      <TextInput
+        style={styles.sheetPromptInput}
+        value={agentPrompt}
+        onChangeText={setAgentPrompt}
+        placeholder={DEFAULT_AGENT_PROMPT}
+        placeholderTextColor={THEME.colors.textMuted}
+        multiline
+        autoFocus
+        autoCapitalize="sentences"
+        autoCorrect={false}
+        textAlignVertical="top"
+      />
+    </HalfSheet>
+
+    <HalfSheet
+      visible={promptEditor === "files"}
+      title="Files prompt"
+      onClose={() => {
+        filesCaretRef.current = null;
+        setPromptEditor(null);
+      }}
+      headerActions={
+        commentPrompt.trim() !== DEFAULT_COMMENT_PROMPT.trim() ? (
+          <PressableRow
+            style={styles.sheetAction}
+            haptic="light"
+            scale={false}
+            onPress={() => setCommentPrompt(DEFAULT_COMMENT_PROMPT)}
+            accessibilityRole="button"
+            accessibilityLabel="Reset files prompt"
+          >
+            <Text style={styles.resetText}>Reset</Text>
+          </PressableRow>
+        ) : undefined
+      }
+    >
+      <Text style={styles.rowHint}>
+        Used when you comment on a file or quote a passage in the editor. This prompt is prepended to that message.
+      </Text>
+      <TextInput
+        style={styles.sheetPromptInput}
+        value={commentPrompt}
+        onChangeText={setCommentPrompt}
+        onSelectionChange={(event) => {
+          filesCaretRef.current = event.nativeEvent.selection;
+        }}
+        placeholder={DEFAULT_COMMENT_PROMPT}
+        placeholderTextColor={THEME.colors.textMuted}
+        multiline
+        autoFocus
+        autoCapitalize="sentences"
+        autoCorrect={false}
+        textAlignVertical="top"
+      />
+      <View style={styles.placeholders}>
+        <Text style={styles.placeholderLead}>Insert</Text>
+        {COMMENT_PROMPT_PLACEHOLDERS.map((token) => (
+          <PressableRow
+            key={token}
+            style={styles.placeholderChip}
+            haptic="light"
+            scale={false}
+            onPress={() => insertPlaceholder(token)}
+            accessibilityRole="button"
+            accessibilityLabel={`Insert ${token}`}
+          >
+            <Text style={styles.placeholderChipText}>{token}</Text>
+          </PressableRow>
+        ))}
+      </View>
+    </HalfSheet>
+    </>
   );
 }
 
@@ -405,20 +465,41 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: THEME.colors.textSecondary,
   },
-  promptInput: {
-    minHeight: 136,
+  promptPreviewRow: {
     marginTop: THEME.spacing.xs,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: THEME.spacing.sm,
     paddingHorizontal: THEME.spacing.md,
     paddingVertical: THEME.spacing.md,
     borderRadius: THEME.radii.lg,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: THEME.colors.border,
     backgroundColor: THEME.colors.background,
+  },
+  promptPreviewText: {
+    flex: 1,
     fontSize: 15,
     lineHeight: 22,
     letterSpacing: 0.2,
     color: THEME.colors.text,
-    textAlignVertical: "top",
+  },
+  sheetAction: {
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+  },
+  sheetPromptInput: {
+    minHeight: 220,
+    paddingHorizontal: THEME.spacing.md,
+    paddingVertical: THEME.spacing.md,
+    borderRadius: THEME.radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: THEME.colors.border,
+    backgroundColor: THEME.colors.backgroundSecondary,
+    fontSize: 15,
+    lineHeight: 22,
+    letterSpacing: 0.2,
+    color: THEME.colors.text,
   },
   placeholders: {
     flexDirection: "row",

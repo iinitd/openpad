@@ -16,7 +16,7 @@ import { catalogItemKey, useBackendCatalog, useBackendCatalogStore, type Backend
 import { useConnectionStore } from "../stores/connection-store";
 import { useSessionStore } from "../stores/session-store";
 import { useWriterOpeningStore } from "../stores/writer-opening-store";
-import { getBackendPreferences, toggleBackendWorkspacePin, usePreferencesStore } from "../stores/preferences-store";
+import { getBackendPreferences, hiddenProjectKey, toggleBackendWorkspacePin, usePreferencesStore } from "../stores/preferences-store";
 import { normalizeWorkspaceCwd } from "../stores/workspace-session-key";
 import { groupDirectoryProjects, type DirectoryProject } from "./directory-projects";
 import { AddProjectPane } from "./AddProjectPane";
@@ -37,15 +37,9 @@ export function WorkspacePane({
   onSwitched,
   addProjectOpen = false,
   onAddProjectOpenChange,
-  showConnections = false,
-  onAddConnection,
 }: {
   bottomInset?: number;
   onSwitched?: () => void;
-  // The mobile sheet shows the backend connections under the projects, so one
-  // scroll covers "which project" and "which server".
-  showConnections?: boolean;
-  onAddConnection?: () => void;
   // Adding a folder is a screen of the projects sheet, not a dialog on top of
   // it, so the host owns the title and the back affordance.
   addProjectOpen?: boolean;
@@ -81,14 +75,17 @@ export function WorkspacePane({
   const sources = useMemo(() => entries.map((source) => {
     const contextKey = connections.find((connection) => connection.id === source.connectionId)?.contextKey;
     const recents = getBackendPreferences(contextKey ?? null).recentWorkspaces;
-    const workspaces = groupDirectoryProjects(source.workspaces, source.sessions);
+    // Removed projects stay in the backend catalog; the list just leaves them
+    // out until something opens the folder again.
+    const workspaces = groupDirectoryProjects(source.workspaces, source.sessions)
+      .filter((ws) => !preferences.hiddenProjects[hiddenProjectKey(source.connectionId, ws.cwd)]);
     workspaces.sort((a, b) => {
       const pinnedA = Boolean(recents.find((entry) => normalizeWorkspaceCwd(entry.cwd) === a.cwd)?.pinnedAt);
       const pinnedB = Boolean(recents.find((entry) => normalizeWorkspaceCwd(entry.cwd) === b.cwd)?.pinnedAt);
       return Number(pinnedB) - Number(pinnedA) || directoryLabel(a.cwd).localeCompare(directoryLabel(b.cwd)) || a.cwd.localeCompare(b.cwd);
     });
     return { source, contextKey, workspaces };
-  }), [entries, connections, preferences.recentWorkspaces, preferences.preferencesByBackend, preferences.activeBackendKey]);
+  }), [entries, connections, preferences.recentWorkspaces, preferences.preferencesByBackend, preferences.hiddenProjects, preferences.activeBackendKey]);
 
   async function switchTo(source: BackendCatalogEntry, ws: DirectoryProject) {
     const key = catalogItemKey(source.connectionId, ws.cwd);
@@ -183,14 +180,14 @@ export function WorkspacePane({
   }, [addProjectOpen]);
 
   function openConnectionMenu(source: BackendCatalogEntry, alias: string, live: boolean) {
-    // The demo is not a server: disconnecting it is the same as turning off the
-    // demo workspace in Settings.
-    const isDemo = source.endpoint === "demo://welcome" || source.label.startsWith("Demo");
+    // The sample workspace is not a server: disconnecting it hides it until you
+    // add it again from the Add connection page.
+    const isDemo = source.endpoint === "demo://welcome" || source.label.startsWith("Sample");
     const disconnect = () => {
       Alert.alert(
         `Disconnect ${alias}?`,
         isDemo
-          ? "This hides the demo workspace. Turn it back on from Settings."
+          ? "This hides the sample workspace. You can add it again from Add connection."
           : "Its projects stay listed; you can reconnect any time.",
         [
           { text: "Cancel", style: "cancel" },
@@ -240,6 +237,32 @@ export function WorkspacePane({
     ]);
   }
 
+  // Removing a project is a list operation, not a delete: the backend keeps the
+  // directory and every session in it, and opening the folder again brings the
+  // row back. Sessions are only archived from the session list, so this never
+  // cascades into archiveAgent().
+  function confirmRemoveProject(source: BackendCatalogEntry, ws: DirectoryProject) {
+    const label = directoryLabel(ws.cwd);
+    const active = source.connectionId === activeConnectionId && ws.cwd === activeCwd;
+    Alert.alert(
+      `Remove ${label}?`,
+      active
+        ? "It disappears from this list on this device and stays open until you switch away. Its sessions stay on the server and are not archived."
+        : "It disappears from this list on this device. Its sessions stay on the server and are not archived; open the folder again to bring it back.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: () => {
+            hapticTap("warning");
+            usePreferencesStore.getState().hideProject(source.connectionId, ws.cwd);
+          },
+        },
+      ],
+    );
+  }
+
   function renderRow(source: BackendCatalogEntry, contextKey: string | undefined, ws: DirectoryProject) {
     const key = catalogItemKey(source.connectionId, ws.cwd);
     const active = source.connectionId === activeConnectionId && ws.cwd === activeCwd;
@@ -252,6 +275,8 @@ export function WorkspacePane({
         <PressableRow
           style={[styles.row, active && styles.rowActive]}
           onPress={() => void switchTo(source, ws)}
+          onLongPress={() => confirmRemoveProject(source, ws)}
+          delayLongPress={350}
           haptic="selection"
           disabled={Boolean(busyKey) || opening || isSwitchingConnection}
         >
@@ -316,22 +341,6 @@ export function WorkspacePane({
     <ScrollView style={styles.container}
       keyboardShouldPersistTaps="handled"
       contentContainerStyle={[styles.content, { paddingBottom: bottomInset + THEME.spacing.md }]}>
-      {showConnections ? (
-        <View style={styles.addConnectionBar}>
-          <PressableRow
-            style={styles.addConnectionButton}
-            haptic="light"
-            scale={false}
-            pressedStyle={styles.addConnectionPressed}
-            onPress={() => onAddConnection?.()}
-            accessibilityRole="button"
-            accessibilityLabel="Add connection"
-          >
-            <Icon name="plus" size={14} color={THEME.colors.textSecondary} />
-            <Text style={styles.addConnectionText}>Add connection</Text>
-          </PressableRow>
-        </View>
-      ) : null}
       {loading && entries.length === 0 ? (
         <View style={styles.loadingState}>
           <ActivityIndicator size="small" color={THEME.colors.textMuted} />
@@ -342,6 +351,10 @@ export function WorkspacePane({
         const live = connections.find((connection) => connection.id === source.connectionId);
         const connected = live?.connectionState.status === "connected";
         const connecting = live?.connectionState.status === "connecting";
+        // No live connection means the server is saved but offline: disconnected
+        // by the user earlier, or not awake yet. The row stays so it can be
+        // reconnected from here.
+        const offline = !live;
         const addDisabled = Boolean(busyKey) || opening || isSwitchingConnection || !connected;
         // Only three states are worth naming: connected, still trying, and
         // failed. A plain disconnect reads as "Connecting" because the app will
@@ -350,7 +363,7 @@ export function WorkspacePane({
           live?.connectionState.status === "disposed" ||
           (live?.connectionState.status === "disconnected" &&
             Boolean(live.connectionState.reason));
-        const statusLabel = connected ? "Connected" : errored ? "Error" : "Connecting";
+        const statusLabel = connected ? "Connected" : offline ? "Offline" : errored ? "Error" : "Connecting";
         // "OpenCode · host" on one line is a mouthful; split it into a name and
         // the address it points at.
         const [backendName, ...restLabel] = source.label.split(" · ");
@@ -417,7 +430,11 @@ export function WorkspacePane({
             <View style={styles.sourceRow}>
               <PressableRow
                 style={styles.sourceHeader}
-                onPress={() => preferences.toggleProjectSource(source.connectionId)}
+                onPress={() =>
+                  offline
+                    ? void openConnection(source)
+                    : preferences.toggleProjectSource(source.connectionId)
+                }
                 onLongPress={() => openConnectionMenu(source, alias, Boolean(live))}
                 delayLongPress={350}
                 haptic="light"
@@ -426,8 +443,10 @@ export function WorkspacePane({
                 scale={0.985}
                 pressedStyle={styles.sourceHeaderPressed}
                 accessibilityRole="button"
-                accessibilityLabel={`${collapsed ? "Expand" : "Collapse"} ${source.label}`}
-                accessibilityState={{ expanded: !collapsed }}
+                accessibilityLabel={
+                  offline ? `Connect ${source.label}` : `${collapsed ? "Expand" : "Collapse"} ${source.label}`
+                }
+                accessibilityState={offline ? undefined : { expanded: !collapsed }}
               >
                 <View style={styles.sourceHeaderInner}>
                 <View style={styles.sourceHeaderText}>
@@ -440,11 +459,13 @@ export function WorkspacePane({
                     <View
                       style={[
                         styles.sourceDot,
-                        connected
-                          ? styles.sourceDotOn
-                          : errored
-                            ? styles.sourceDotError
-                            : styles.sourceDotPending,
+                        offline
+                          ? styles.sourceDotOff
+                          : connected
+                            ? styles.sourceDotOn
+                            : errored
+                              ? styles.sourceDotError
+                              : styles.sourceDotPending,
                       ]}
                     />
                     <Text style={styles.sourceEndpoint} numberOfLines={1}>
@@ -452,7 +473,7 @@ export function WorkspacePane({
                     </Text>
                     {connected ? null : (
                       <Text style={styles.sourceState}>
-                        {errored ? "Error" : "Connecting"}
+                        {offline ? "Offline" : errored ? "Error" : "Connecting"}
                       </Text>
                     )}
                   </View>
@@ -495,7 +516,7 @@ export function WorkspacePane({
 
 
                 {workspaces.map((ws) => renderRow(source, contextKey, ws))}
-                {source.workspacesLoaded && !source.workspacesError && workspaces.length === 0 ? (
+                {source.workspacesLoaded && !source.workspacesError && !offline && workspaces.length === 0 ? (
                   <Text style={styles.empty}>No projects yet.</Text>
                 ) : null}
               </View>
@@ -513,7 +534,7 @@ export function WorkspacePane({
             pressedStyle={styles.emptyActionPressed}
             onPress={() => void useConnectionStore.getState().setDemoEnabled(true)}
             accessibilityRole="button"
-            accessibilityLabel="Add the demo workspace"
+            accessibilityLabel="Add sample workspace"
           >
             <Icon name="plus" size={13} color={THEME.colors.textSecondary} />
             <Text style={styles.emptyActionText}>Say hi to Puff</Text>
@@ -705,31 +726,6 @@ const styles = StyleSheet.create({
   },
   sourceChildren: {
     gap: 2,
-  },
-  addConnectionBar: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    paddingHorizontal: THEME.spacing.md,
-    paddingBottom: THEME.spacing.md,
-  },
-  addConnectionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    height: 30,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: THEME.colors.border,
-    backgroundColor: THEME.colors.background,
-  },
-  addConnectionPressed: {
-    backgroundColor: THEME.colors.backgroundSecondary,
-  },
-  addConnectionText: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: THEME.colors.textSecondary,
   },
   groupError: {
     gap: 3,

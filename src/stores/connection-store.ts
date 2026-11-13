@@ -11,10 +11,10 @@ import { activateBackendContext, resetBackendViews } from "./backend-context";
 
 export type ConnectionMode = "direct" | "relay" | "openclaw" | "opencode" | "demo";
 
-/** A demo workspace that ships with the app so a fresh install is explorable. */
+/** A sample workspace that ships with the app so a fresh install is explorable. */
 const DEMO_ENDPOINT = "demo://welcome";
 const DEMO_CONTEXT_KEY = "demo:welcome";
-const DEMO_ALIAS = "Puff";
+const DEMO_ALIAS = "Sample workspace";
 
 export interface BackendConnection {
   id: string;
@@ -91,7 +91,7 @@ function connectionId(contextKey: string): string {
 }
 
 function connectionLabel(mode: ConnectionMode, endpoint: string): string {
-  if (mode === "demo") return "Demo · Welcome tour";
+  if (mode === "demo") return "Built-in · Sample workspace";
   if (mode === "relay") return "Paseo relay";
   const label = mode === "openclaw" ? "OpenClaw" : mode === "opencode" ? "OpenCode" : "Paseo";
   return `${label} · ${new URL(endpoint).host}`;
@@ -155,7 +155,7 @@ interface ConnectionStore {
   serverVersion: string | null;
   // Compatibility launch flag: at least one saved profile enables auto-connect.
   lastConnectedOk: boolean;
-  /** Whether the bundled demo workspace is listed and connected. */
+  /** Whether the bundled sample workspace is listed and connected. */
   demoEnabled: boolean;
   // Flipped once the persisted state has been rehydrated from storage, so
   // consumers know whether it's safe to read lastConnectedOk for auto-connect.
@@ -505,12 +505,20 @@ export const useConnectionStore = create<ConnectionStore>()(
                   {
                     id,
                     alias: DEMO_ALIAS,
-                    label: "Demo · Welcome tour",
+                    label: "Built-in · Sample workspace",
                     mode: "demo" as const,
                     endpoint: DEMO_ENDPOINT,
                     autoConnect: true,
                   },
                 ],
+              }));
+            } else {
+              set((state) => ({
+                savedConnections: state.savedConnections.map((entry) => {
+                  if (entry.id !== id) return entry;
+                  const alias = !entry.alias || entry.alias === "Puff" ? DEMO_ALIAS : entry.alias;
+                  return { ...entry, alias, label: connectionLabel("demo", DEMO_ENDPOINT) };
+                }),
               }));
             }
             await get().connectSaved(id).catch(() => {});
@@ -528,7 +536,7 @@ export const useConnectionStore = create<ConnectionStore>()(
                   if (get().hasHydrated) { unsubscribe(); resolve(); }
                 });
               }
-              // A fresh install starts inside a demo workspace instead of a
+              // A fresh install starts inside a sample workspace instead of a
               // connection form, so the product can be explored immediately.
               if (get().demoEnabled && get().savedConnections.length === 0) {
                 set((state) => ({
@@ -537,7 +545,7 @@ export const useConnectionStore = create<ConnectionStore>()(
                     {
                       id: connectionId(DEMO_CONTEXT_KEY),
                       alias: DEMO_ALIAS,
-                      label: "Demo · Welcome tour",
+                      label: "Built-in · Sample workspace",
                       mode: "demo" as const,
                       endpoint: DEMO_ENDPOINT,
                       autoConnect: true,
@@ -547,9 +555,15 @@ export const useConnectionStore = create<ConnectionStore>()(
               }
               const demoId = connectionId(DEMO_CONTEXT_KEY);
               set((state) => ({
-                savedConnections: state.savedConnections.map((entry) =>
-                  entry.id === demoId && !entry.alias ? { ...entry, alias: DEMO_ALIAS } : entry,
-                ),
+                savedConnections: state.savedConnections.map((entry) => {
+                  if (entry.id !== demoId) return entry;
+                  const alias = !entry.alias || entry.alias === "Puff" ? DEMO_ALIAS : entry.alias;
+                  return {
+                    ...entry,
+                    alias,
+                    label: connectionLabel("demo", DEMO_ENDPOINT),
+                  };
+                }),
               }));
               const preferredId = get().activeConnectionId;
               const selection = selectionGeneration;

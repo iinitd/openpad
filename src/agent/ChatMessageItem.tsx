@@ -8,6 +8,7 @@ import { Icon } from "../components/Icon";
 import { MarkdownText, markdownPlainText } from "../components/MarkdownText";
 import { SelectableText } from "../components/SelectableText";
 import { hapticLongPress, SelectableSheet } from "../components/SelectableSheet";
+import { ImageViewer } from "../components/ImageViewer";
 import { summarizeActivity } from "../hooks/use-agent-progress";
 import type { StreamItem, ThoughtItem, ToolCallItem } from "../types/stream";
 
@@ -40,6 +41,56 @@ function StatusDot({ status }: { status: ToolCallItem["status"] }) {
  * scroll view so it can stay pinned while a long reasoning body scrolls under
  * it.
  */
+function toolHeaderText(item: ToolCallItem): string {
+  const detail = item.detail?.trim();
+  if (detail) return detail;
+  const input = item.input as Record<string, unknown> | undefined;
+  if (input && typeof input === "object") {
+    for (const key of ["command", "cmd"]) {
+      const value = input[key];
+      if (typeof value === "string" && value.trim()) return value.trim();
+    }
+    for (const key of ["filePath", "path", "file", "pattern", "query", "url"]) {
+      const value = input[key];
+      if (typeof value === "string" && value.trim()) return value.trim();
+    }
+  }
+  return item.name;
+}
+
+function toolBodyText(item: ToolCallItem): string {
+  const lines: string[] = [];
+  lines.push(`Tool: ${item.name}`);
+  lines.push(`Status: ${item.status}`);
+  if (item.detail?.trim()) lines.push(`Detail: ${item.detail.trim()}`);
+  if (item.input !== undefined) {
+    try {
+      const input = item.input as unknown;
+      if (input && typeof input === "object" && !Array.isArray(input)) {
+        const entries = Object.entries(input as Record<string, unknown>);
+        if (entries.length > 0) {
+          lines.push("Input:");
+          for (const [key, value] of entries) {
+            if (value === undefined || value === null || value === "") continue;
+            const text =
+              typeof value === "string"
+                ? value
+                : typeof value === "number" || typeof value === "boolean"
+                  ? String(value)
+                  : JSON.stringify(value);
+            lines.push(`${key}: ${text}`);
+          }
+        }
+      } else if (typeof input === "string" && input.trim()) {
+        lines.push(`Input: ${input}`);
+      }
+    } catch {
+      // Ignore non-serializable tool input.
+    }
+  }
+  return lines.join("\n");
+}
+
 const ActivityStepHeader = memo(function ActivityStepHeader({
   item,
   first,
@@ -52,8 +103,10 @@ const ActivityStepHeader = memo(function ActivityStepHeader({
   onToggle: () => void;
 }) {
   const isThought = item.kind === "thought";
-  const text = isThought ? item.text.trim() || "…" : item.name;
-  const failed = item.kind === "tool_call" && item.status === "failed";
+  const isTool = item.kind === "tool_call";
+  const text = isThought ? item.text.trim() || "…" : toolHeaderText(item);
+  const failed = isTool && item.status === "failed";
+  const label = isThought ? "Thinking" : isTool && (item.name === "shell" || item.name === "bash") ? "Shell" : "Tool";
   return (
     <Pressable
       style={({ pressed }) => [
@@ -63,16 +116,14 @@ const ActivityStepHeader = memo(function ActivityStepHeader({
         // header show through, so the feedback is an opaque surface shift.
         pressed ? styles.stepRowPressed : null,
       ]}
-      disabled={!isThought}
       onPressIn={() => hapticTap("light")}
       onPress={onToggle}
-      accessibilityRole={isThought ? "button" : undefined}
-      accessibilityLabel={
-        isThought ? (open ? "Collapse thinking" : "Expand thinking") : undefined
-      }
+      accessibilityRole="button"
+      accessibilityLabel={open ? "Collapse activity step" : "Expand activity step"}
+      accessibilityState={{ expanded: open }}
     >
       <Text style={[styles.stepLabel, failed ? styles.stepFailed : null]}>
-        {isThought ? "Thinking" : "Tool"}
+        {label}
       </Text>
       <Text
         style={[styles.stepPreview, failed ? styles.stepFailed : null]}
@@ -80,13 +131,11 @@ const ActivityStepHeader = memo(function ActivityStepHeader({
       >
         {text}
       </Text>
-      {isThought ? (
-        <Icon
-          name={open ? "chevron-up" : "chevron-down"}
-          size={14}
-          color={THEME.colors.textMuted}
-        />
-      ) : null}
+      <Icon
+        name={open ? "chevron-up" : "chevron-down"}
+        size={14}
+        color={THEME.colors.textMuted}
+      />
     </Pressable>
   );
 });
@@ -119,10 +168,8 @@ export const ActivityRow = memo(function ActivityRow({
   const summary = summarizeActivity(items);
   const headerLabel = summary?.label ?? "";
   const preview = summary?.preview ?? "";
-  // The sheet opens the step the turn is actually on, and only when that step
-  // is reasoning: a run that ends on a command has nothing to read past its
-  // one-line row.
-  const autoOpenId = latest.kind === "thought" ? latest.id : null;
+  // The sheet opens the step the turn is actually on by default.
+  const autoOpenId = latest.id;
   // Steps the reader has opened or closed by hand; everything else follows the
   // automatic rule above.
   const [manualOpen, setManualOpen] = useState<Record<string, boolean>>({});
@@ -175,9 +222,11 @@ export const ActivityRow = memo(function ActivityRow({
         stickyHeaderIndices={items.map((_, index) => index * 2)}
       >
         {items.flatMap((item, index) => {
-          const isThought = item.kind === "thought";
-          const expanded =
-            isThought && (manualOpen[item.id] ?? item.id === autoOpenId);
+          const expanded = manualOpen[item.id] ?? item.id === autoOpenId;
+          const bodyText =
+            item.kind === "thought"
+              ? item.text.trim() || "…"
+              : toolBodyText(item);
           return [
             <ActivityStepHeader
               key={`${item.id}-header`}
@@ -185,14 +234,13 @@ export const ActivityRow = memo(function ActivityRow({
               first={index === 0}
               open={expanded}
               onToggle={() => {
-                if (!isThought) return;
                 setManualOpen((prev) => ({ ...prev, [item.id]: !expanded }));
               }}
             />,
             expanded ? (
               <SelectableText
                 key={`${item.id}-body`}
-                text={item.text.trim() || "…"}
+                text={bodyText}
                 style={styles.stepBody}
               />
             ) : (
@@ -237,6 +285,7 @@ const UserBubble = memo(function UserBubble({
   images?: string[];
 }) {
   const [open, setOpen] = useState(false);
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
   const hasText = text.trim().length > 0;
   return (
     <>
@@ -255,12 +304,21 @@ const UserBubble = memo(function UserBubble({
         {images && images.length > 0 ? (
           <View style={styles.userImages}>
             {images.map((uri, index) => (
-              <Image
+              <Pressable
                 key={`${index}-${uri.length}`}
-                source={{ uri }}
-                style={styles.userImage}
-                resizeMode="cover"
-              />
+                onPress={() => {
+                  hapticTap("light");
+                  setViewerIndex(index);
+                }}
+                accessibilityRole="imagebutton"
+                accessibilityLabel={`Open image ${index + 1} of ${images.length}`}
+              >
+                <Image
+                  source={{ uri }}
+                  style={styles.userImage}
+                  resizeMode="cover"
+                />
+              </Pressable>
             ))}
           </View>
         ) : null}
@@ -270,6 +328,11 @@ const UserBubble = memo(function UserBubble({
         visible={open}
         text={text}
         onClose={() => setOpen(false)}
+      />
+      <ImageViewer
+        images={images ?? []}
+        index={viewerIndex}
+        onClose={() => setViewerIndex(null)}
       />
     </>
   );
@@ -299,7 +362,7 @@ export const ChatMessageItem = memo(function ChatMessageItem({ item }: Props) {
         <View style={styles.toolMessage}>
           <StatusDot status={item.status} />
           <Text style={styles.toolText} numberOfLines={1}>
-            {item.name}
+            {item.detail?.trim() || item.name}
           </Text>
         </View>
       );

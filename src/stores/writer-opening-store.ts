@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { useConnectionStore } from "./connection-store";
 import { useBackendCatalogStore, type BackendCatalogEntry } from "./backend-catalog-store";
-import { usePreferencesStore } from "./preferences-store";
+import { hiddenProjectKey, usePreferencesStore } from "./preferences-store";
 import { useProvidersStore } from "./providers-store";
 import { isSessionRestoreSuperseded, useSessionStore } from "./session-store";
 import { normalizeWorkspaceCwd, workspaceSessionKey } from "./workspace-session-key";
@@ -69,6 +69,9 @@ export const useWriterOpeningStore = create<WriterOpeningStore>()((set, get) => 
         const session = useSessionStore.getState();
         const preferences = usePreferencesStore.getState();
         if (!session.agentId || !session.cwd) throw new Error("Could not open this project.");
+        // Opening a project is an explicit "I want this one", so it comes back
+        // to the list even if the user removed it earlier.
+        if (target.connectionId) preferences.showProject(target.connectionId, session.cwd);
         preferences.setLastCwd(session.cwd);
         preferences.setLastWorkspaceId(session.workspaceId);
         preferences.setLastProvider(session.provider);
@@ -127,7 +130,9 @@ export const useWriterOpeningStore = create<WriterOpeningStore>()((set, get) => 
           entry.connectionId === target.connectionId && entry.sessionsLoaded && !entry.sessionsError) : undefined;
         let source = cached ?? await loadCatalog();
         if (!target.cwd) {
-          const projects = groupDirectoryProjects(source.workspaces, source.sessions);
+          const projects = groupDirectoryProjects(source.workspaces, source.sessions)
+            .filter((entry) => !target.connectionId ||
+              !usePreferencesStore.getState().hiddenProjects[hiddenProjectKey(target.connectionId, entry.cwd)]);
           const project = projects.find((entry) => entry.cwd === normalizeWorkspaceCwd(cwd))
             ?? projects.find((entry) => workspaceId && entry.workspaceIds.includes(workspaceId))
             ?? projects[0];

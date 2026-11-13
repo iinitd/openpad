@@ -35,11 +35,23 @@ function oneLine(text: string, max = 140): string {
   return trimmed.slice(0, max - 1).trimEnd() + "…";
 }
 
+function toolPreview(item: ToolCallItem): string {
+  if (item.detail?.trim()) return oneLine(item.detail);
+  const input = item.input as Record<string, unknown> | undefined;
+  if (input && typeof input === "object") {
+    for (const key of ["command", "cmd", "filePath", "path", "file", "pattern", "query", "url", "description"]) {
+      const value = input[key];
+      if (typeof value === "string" && value.trim()) return oneLine(value);
+    }
+  }
+  return "";
+}
+
 /**
  * Summarise one continuous run of reasoning and tool calls. Shared by the
  * transcript's activity row and the document banners so they describe a turn
  * in the same words: the newest action as the label, and the most recent
- * reasoning as the preview. Tool names never stand in for the agent's words.
+ * reasoning or tool detail as the preview.
  */
 export function summarizeActivity(items: Array<StreamItem>): ActivitySummary | null {
   if (items.length === 0) return null;
@@ -52,11 +64,21 @@ export function summarizeActivity(items: Array<StreamItem>): ActivitySummary | n
       (entry): entry is ThoughtItem =>
         entry.kind === "thought" && entry.text.trim().length > 0,
     );
+  const latestToolDetail = latest.kind === "tool_call" ? toolPreview(latest) : "";
+  const lastToolDetail = [...items]
+    .reverse()
+    .map((entry) => (entry.kind === "tool_call" ? toolPreview(entry) : ""))
+    .find((value) => value.length > 0);
 
   return {
     label: latest.kind === "thought" ? "Thinking" : latest.name,
     steps: items.length,
-    preview: lastThought ? oneLine(lastThought.text) : "",
+    preview:
+      latest.kind === "tool_call"
+        ? latestToolDetail || (lastThought ? oneLine(lastThought.text) : lastToolDetail ?? "")
+        : lastThought
+          ? oneLine(lastThought.text)
+          : lastToolDetail ?? "",
   };
 }
 

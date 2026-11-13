@@ -678,7 +678,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
                   setAddConnectionOpen(false);
                 }}
                 haptic="light"
-                accessibilityLabel="Back to projects"
+                accessibilityLabel={addProjectOpen ? "Back to projects" : "Back to settings"}
               >
                 <Icon name="chevron-left" size={20} color={THEME.colors.text} />
               </PressableRow>
@@ -754,8 +754,6 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
               showHeader={false}
               addProjectOpen={addProjectOpen}
               onAddProjectOpenChange={setAddProjectOpen}
-              showConnections
-              onAddConnection={() => setAddConnectionOpen(true)}
               bottomInset={insets.bottom}
               onFileOpened={() => {
                 closeProjects();
@@ -763,7 +761,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
               }}
             />
           ) : (
-            <SettingsPane />
+            <SettingsPane onAddConnection={() => setAddConnectionOpen(true)} />
           )}
           <ToastHost />
         </View>

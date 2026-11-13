@@ -165,13 +165,13 @@ export function normalizeLarkTags(input: string): string {
     (_full, attrs: string) => {
       const title = attr(attrs, "title") || "reference";
       const docId = attr(attrs, "doc-id");
-      return `<div class="kel-embed-card kel-reference"${blockIdAttr(attrs)}${docId ? ` data-doc-id="${escapeAttr(docId)}"` : ""}><span class="kel-embed-icon">↗</span><span><strong>${title}</strong><small>飞书引用文档</small></span></div>`;
+      return `<div class="kel-embed-card kel-reference"${blockIdAttr(attrs)}${docId ? ` data-doc-id="${escapeAttr(docId)}"` : ""}><span class="kel-embed-icon">↗</span><span><strong>${title}</strong><small>Referenced Feishu document</small></span></div>`;
     },
   );
   out = out.replace(/<cite\b([^>]*)\/>/gi, (_full, attrs: string) => {
     const title = attr(attrs, "title") || "reference";
     const docId = attr(attrs, "doc-id");
-    return `<div class="kel-embed-card kel-reference"${blockIdAttr(attrs)}${docId ? ` data-doc-id="${escapeAttr(docId)}"` : ""}><span class="kel-embed-icon">↗</span><span><strong>${title}</strong><small>飞书引用文档</small></span></div>`;
+    return `<div class="kel-embed-card kel-reference"${blockIdAttr(attrs)}${docId ? ` data-doc-id="${escapeAttr(docId)}"` : ""}><span class="kel-embed-icon">↗</span><span><strong>${title}</strong><small>Referenced Feishu document</small></span></div>`;
   });
 
   out = out.replace(
@@ -187,7 +187,7 @@ export function normalizeLarkTags(input: string): string {
   const sheetCard = (attrs: string) => {
     const token = attr(attrs, "token");
     const sheetId = attr(attrs, "sheet-id");
-    return `<div class="kel-embed-card kel-sheet"${blockIdAttr(attrs)}${token ? ` data-sheet-token="${escapeAttr(token)}"` : ""}${sheetId ? ` data-sheet-id="${escapeAttr(sheetId)}"` : ""}><span class="kel-embed-icon">▦</span><span><strong>飞书电子表格</strong><small>${escapeAttr(sheetId || "嵌入对象")}</small></span></div>`;
+    return `<div class="kel-embed-card kel-sheet"${blockIdAttr(attrs)}${token ? ` data-sheet-token="${escapeAttr(token)}"` : ""}${sheetId ? ` data-sheet-id="${escapeAttr(sheetId)}"` : ""}><span class="kel-embed-icon">▦</span><span><strong>Feishu sheet</strong><small>${escapeAttr(sheetId || "Embedded object")}</small></span></div>`;
   };
   out = out.replace(/<sheet\b([^>]*?)\/>/gi, (_full, attrs: string) => sheetCard(attrs));
   out = out.replace(/<sheet\b([^>]*)>[\s\S]*?<\/sheet>/gi, (_full, attrs: string) => sheetCard(attrs));

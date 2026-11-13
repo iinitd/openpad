@@ -26,6 +26,7 @@ type ExportPreferences = {
   commentPrompt: unknown;
   sidebarTab: unknown;
   collapsedProjectSources: unknown;
+  hiddenProjects: unknown;
   activeBackendKey: unknown;
   preferencesByBackend: unknown;
 };
@@ -105,6 +106,7 @@ export function exportConfig(): string {
       commentPrompt: p.commentPrompt,
       sidebarTab: p.sidebarTab,
       collapsedProjectSources: p.collapsedProjectSources,
+      hiddenProjects: p.hiddenProjects,
       activeBackendKey: p.activeBackendKey,
       preferencesByBackend,
     },
@@ -166,15 +168,15 @@ export function importConfig(json: string): { ok: true } | { ok: false; error: s
   try {
     parsed = JSON.parse(json);
   } catch {
-    return { ok: false, error: "不是有效的 JSON。" };
+    return { ok: false, error: "Invalid JSON." };
   }
-  if (!isRecord(parsed)) return { ok: false, error: "配置格式无效。" };
-  if (parsed.format !== CONFIG_FORMAT) return { ok: false, error: "不是 Puff 配置文件（format 不匹配）。" };
-  if (parsed.version !== CONFIG_VERSION) return { ok: false, error: `不支持的配置版本：${String(parsed.version)}。` };
+  if (!isRecord(parsed)) return { ok: false, error: "Invalid config format." };
+  if (parsed.format !== CONFIG_FORMAT) return { ok: false, error: "Not a Puff config file (format mismatch)." };
+  if (parsed.version !== CONFIG_VERSION) return { ok: false, error: `Unsupported config version: ${String(parsed.version)}.` };
 
   const connection = isRecord(parsed.connection) ? parsed.connection : null;
   const preferences = isRecord(parsed.preferences) ? parsed.preferences : null;
-  if (!connection || !preferences) return { ok: false, error: "配置缺少 connection 或 preferences。" };
+  if (!connection || !preferences) return { ok: false, error: "Config is missing connection or preferences." };
 
   // Apply preferences
   const rawPrefsByBackend = isRecord(preferences.preferencesByBackend) ? preferences.preferencesByBackend : {};
@@ -191,6 +193,7 @@ export function importConfig(json: string): { ok: true } | { ok: false; error: s
       commentPrompt: typeof preferences.commentPrompt === "string" ? preferences.commentPrompt : state.commentPrompt,
       sidebarTab: preferences.sidebarTab === "projects" || preferences.sidebarTab === "files" ? preferences.sidebarTab : state.sidebarTab,
       collapsedProjectSources: isRecord(preferences.collapsedProjectSources) ? (preferences.collapsedProjectSources as Record<string, boolean>) : state.collapsedProjectSources,
+      hiddenProjects: isRecord(preferences.hiddenProjects) ? (preferences.hiddenProjects as Record<string, boolean>) : state.hiddenProjects,
       activeBackendKey,
       preferencesByBackend: { ...normalizedPrefsByBackend },
     } as any;

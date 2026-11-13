@@ -197,7 +197,7 @@ function CodeBlock({ code, lang }: { code: string; lang?: string }) {
           });
         }}
         accessibilityRole="button"
-        accessibilityLabel={copied ? "代码已复制" : "复制代码"}
+        accessibilityLabel={copied ? "Code copied" : "Copy code"}
         hitSlop={8}
       >
         <Icon

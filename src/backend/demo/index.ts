@@ -22,49 +22,56 @@ import type {
 } from "../types";
 
 /**
- * A self-contained demo backend. It exists so a new install can be explored
- * without a server: one project, a couple of files and an agent that answers
- * with canned text. Everything lives in memory and resets on reload.
+ * A self-contained sample workspace backend. It exists so a fresh install can be
+ * explored without a server: one project, a few files and an agent that answers
+ * with scripted replies. Everything lives in memory and resets on reload.
  */
 
-const CWD = "/Demo Project";
-const AGENT_ID = "demo-agent";
-const WORKSPACE_ID = "demo-workspace";
+const CWD = "/Sample Workspace";
+const AGENT_ID = "sample-agent";
+const WORKSPACE_ID = "sample-workspace";
 
-const README = `# Demo Project
+const README = `# Puff — coding & writing workspace for remote agents
 
-This is a sandbox that ships with Puff. Nothing here touches a server: edits,
-messages and files live in memory and reset when the app restarts.
+This is a live sample workspace. Puff keeps code and writing in one place, so you can brief a remote agent, review its steps, edit files, and keep momentum — all without leaving the same workspace.
+
+Nothing here touches a server: edits, messages and files live in memory and reset when the app restarts.
 
 ## What to try
 
-- **Chat** — send a message and watch the agent think, run a step and answer.
-- **Files** — open a file in the document pane; the tree below this README is real.
-- **Workspace** — this demo is one project. Add your own with *New project*.
+- **Chat** — send a message and watch the agent think, run tool steps, and answer in context.
+- **Activity** — tap the activity row to inspect each step, including shell commands and tool details.
+- **Files** — open any file in the document pane; this tree is real and editable right here.
+- **Queue** — send follow-ups while a turn is running, then edit, reorder, or send one ahead.
+- **Bring your own backend** — when you're ready, connect OpenCode or Paseo from the projects sheet.
 
-When you are ready, add a real backend from the projects sheet.
+Try asking the agent to refine this README, sketch a plan in \`ideas.md\`, or explore how code and writing can move together.
 `;
 
 const NOTES = `# Notes
 
-## Why a demo?
+## Positioning
 
-A first launch used to open a connection form, which asks people to configure a
-server before they can see anything. Starting in a working copy is a better
-introduction: the shape of the app is visible immediately.
+Puff is a coding & writing workspace for remote agents. Treat it as your command center: brief agents in natural language, track their tool use in real time, move between writing and code, and keep everything tied to the project you're working in.
 
-## What is fake
+## Why start here?
 
-- The agent's replies are canned.
-- Files are strings in memory, not on disk.
-- Nothing is persisted between launches.
+A fresh launch drops you straight into a working project. You can feel the rhythm of briefing, reviewing activity, and editing before connecting your own backend.
+
+## What's simulated
+
+- The agent's replies are scripted for this sample space.
+- Files are stored in memory, not on disk.
+- Nothing persists between launches.
 `;
 
-const IDEAS = `# Ideas
+const IDEAS = `# Ideas to explore
 
-- A session list that groups by day.
-- Offline drafts for the composer.
-- Diff view for revisions.
+- **Tight loops** — brief, review activity, edit, repeat without context switching.
+- **Shared context** — keep specs, notes, and code in one workspace so agents stay grounded.
+- **Remote-first flow** — steer long-running agents from one surface and jump in exactly where they need help.
+- **Traceable steps** — inspect shell commands and tool calls in activity to understand what happened.
+- **Queue with intent** — line up follow-ups, tweak them, and send the right one next.
 `;
 
 interface DemoFile {
@@ -82,12 +89,12 @@ function makeAgent(overrides: Partial<BackendAgent> = {}): BackendAgent {
   const now = new Date().toISOString();
   return {
     id: AGENT_ID,
-    provider: "demo",
+    provider: "sample",
     cwd: CWD,
     workspaceId: WORKSPACE_ID,
-    model: "demo-model",
+    model: "sample-model",
     status: "idle" as const,
-    title: "Welcome tour",
+    title: "Workspace kickoff",
     createdAt: now,
     updatedAt: now,
     ...overrides,
@@ -98,7 +105,7 @@ export function createDemoBackend(): WriterBackend {
   let state: ConnectionState = { status: "idle" };
   let agent = makeAgent();
   let seq = 0;
-  let epoch = "demo-epoch";
+  let epoch = "sample-epoch";
   let timers: ReturnType<typeof setTimeout>[] = [];
   const streamListeners = new Set<(message: BackendAgentStreamMessage) => void>();
   const updateListeners = new Set<(message: BackendAgentUpdateMessage) => void>();
@@ -152,12 +159,14 @@ export function createDemoBackend(): WriterBackend {
 
   // The opening exchange: something already in the transcript, so the first
   // launch does not look like an empty product.
-  push({ type: "user_message", text: "What can I do here?", messageId: "demo-user-1" });
+  push({ type: "user_message", text: "What can I do here?", messageId: "sample-user-1" });
   push({
     type: "assistant_message",
     text:
-      "This is a demo workspace. Ask me anything — the reply is canned, but everything around it is real: the transcript streams, the activity row reports steps, and the files below open in the document pane.\n\nOpen `README.md` to see the notes, or send a message to try the composer.",
-    messageId: "demo-assistant-1",
+      "Welcome to Puff — a coding & writing workspace for remote agents.\n\n" +
+      "This sample workspace runs fully on your device, but the flow is real: I can think, run tool steps (tap the activity row to see commands and details), and answer while you keep editing files in the same space.\n\n" +
+      "Try asking me to sharpen `README.md`, sketch ideas in `ideas.md`, or send a few follow-ups while I'm working to see how the queue behaves.",
+    messageId: "sample-assistant-1",
   });
 
   const directoryEntries = (path: string) => {
@@ -201,18 +210,18 @@ export function createDemoBackend(): WriterBackend {
       return () => statusListeners.delete(listener);
     },
     getLastServerInfoMessage() {
-      return { version: "demo" };
+      return { version: "sample" };
     },
     async fetchWorkspaces(): Promise<BackendWorkspacesResult> {
       return {
         entries: [
           {
             id: WORKSPACE_ID,
-            title: "Demo Project",
-            name: "Demo Project",
+            title: "Sample Workspace",
+            name: "Sample Workspace",
             workspaceDirectory: CWD,
             projectRootPath: CWD,
-            projectDisplayName: "Demo Project",
+            projectDisplayName: "Sample Workspace",
           },
         ],
         pageInfo: { hasMore: false, nextCursor: null },
@@ -246,64 +255,80 @@ export function createDemoBackend(): WriterBackend {
       publishStatus(agent.status);
     },
     createMessageId() {
-      return `demo-${Date.now().toString(36)}`;
+      return `sample-${Date.now().toString(36)}`;
     },
     async sendAgentMessage(_id: string, text: string, options?: {
       messageId?: string;
       attachments?: BackendAttachment[];
     }) {
+      const trimmed = text.trim();
       emitItem({
         type: "user_message",
         text,
-        messageId: options?.messageId ?? `demo-user-${Date.now()}`,
+        messageId: options?.messageId ?? `sample-user-${Date.now()}`,
       });
       publishStatus("running");
       emit({ type: "turn_started" });
 
+      const lower = trimmed.toLowerCase();
       const reply =
-        `You said: “${text.trim()}”.\n\n` +
-        "In a real session this would reach your own backend. Here the answer is fixed, but the pieces around it are the product: the activity row above reported this step, the composer queued and sent the message, and the project list on the left is where other workspaces would live.";
+        `Got it — “${trimmed}”.\n\n` +
+        (lower.includes("readme") || lower.includes("doc") || lower.includes("write")
+          ? "In Puff, coding and writing move together: I can help draft, reshape, or polish files while the whole workspace stays in view. This reply is scripted here, but with a connected backend I’d make the change directly in your project."
+          : lower.includes("code") || lower.includes("bug") || lower.includes("fix") || lower.includes("shell")
+            ? "That’s right in Puff’s sweet spot as a coding & writing workspace for remote agents. I can reason through the task, run commands, and keep notes or docs in sync from one place. This sample run shows the flow with scripted steps and replies."
+            : "Puff is a coding & writing workspace for remote agents: one surface to brief work, watch tool activity, and edit files. In a real session I’d pick up from here with your backend; in this sample space, you’re seeing the same rhythm with scripted responses.");
 
+      const toolCallId = `sample-shell-${Date.now().toString(36)}`;
       timers.push(
         setTimeout(() => {
-          emitItem({ type: "reasoning", text: "Reading the request and shaping a short answer." });
-        }, 350),
+          emitItem({ type: "reasoning", text: "Scoping the request and picking the next step." });
+        }, 300),
       );
       timers.push(
         setTimeout(() => {
           emitItem({
             type: "tool_call",
-            callId: `demo-tool-${seq}`,
-            name: "demo_lookup",
+            callId: toolCallId,
+            name: "shell",
             status: "running",
+            detail: "rg -n \"coding & writing workspace\" README.md notes/welcome.md",
+            input: { command: "rg -n \"coding & writing workspace\" README.md notes/welcome.md" },
           });
-        }, 700),
+        }, 650),
       );
       timers.push(
         setTimeout(() => {
           emitItem({
             type: "tool_call",
-            callId: `demo-tool-${seq}`,
-            name: "demo_lookup",
+            callId: toolCallId,
+            name: "shell",
             status: "completed",
+            detail: "rg -n \"coding & writing workspace\" README.md notes/welcome.md",
+            input: { command: "rg -n \"coding & writing workspace\" README.md notes/welcome.md" },
           });
         }, 1100),
+      );
+      timers.push(
+        setTimeout(() => {
+          emitItem({ type: "reasoning", text: "Pulling the context together for a clear answer." });
+        }, 1350),
       );
       timers.push(
         setTimeout(() => {
           emitItem({
             type: "assistant_message",
             text: reply,
-            messageId: `demo-assistant-${Date.now()}`,
+            messageId: `sample-assistant-${Date.now()}`,
             replace: true,
           });
-        }, 1500),
+        }, 1750),
       );
       timers.push(
         setTimeout(() => {
           publishStatus("idle");
           emit({ type: "turn_completed" });
-        }, 1800),
+        }, 2050),
       );
     },
     async fetchAgentTimeline(
@@ -325,7 +350,7 @@ export function createDemoBackend(): WriterBackend {
     async readFile(_cwd: string, path: string): Promise<BackendFile> {
       const normalized = path.replace(/^\/+/, "");
       const file = DEMO_FILES.find((entry) => entry.path === normalized);
-      if (!file) throw new Error(`Demo file not found: ${path}`);
+      if (!file) throw new Error(`Sample file not found: ${path}`);
       return {
         path: normalized,
         mime: "text/markdown",
@@ -339,15 +364,15 @@ export function createDemoBackend(): WriterBackend {
       return {
         entries: [
           {
-            provider: "demo",
-            label: "Demo",
+            provider: "sample",
+            label: "Sample",
             status: "ready",
             enabled: true,
             models: [
               {
-                id: "demo-model",
-                label: "Demo model",
-                provider: "demo",
+                id: "sample-model",
+                label: "Sample model",
+                provider: "sample",
                 isDefault: true,
               },
             ],
@@ -356,7 +381,7 @@ export function createDemoBackend(): WriterBackend {
       };
     },
     async respondToPermission(_agentId: string, _requestId: string, _response: BackendPermissionResponse) {
-      // The demo never asks for permission.
+      // The sample workspace never asks for permission.
     },
     onAgentStream(listener) {
       streamListeners.add(listener);

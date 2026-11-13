@@ -105,7 +105,9 @@ export function ConnectionForm({
   const [expanded, setExpanded] = useState<Transport | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
   const connectPending = useRef(false);
+  const nameInput = useRef<TextInput | null>(null);
   const isBusy = connecting;
   const addingConnection = connections.length > 0 || savedConnections.length > 0;
 
@@ -123,6 +125,15 @@ export function ConnectionForm({
 
   async function handleConnect() {
     if (connectPending.current) return;
+    // The name is the handle people recognise the server by in Workspace, so
+    // an unnamed connection is refused here rather than saved with a name the
+    // user never chose.
+    if (!alias.trim()) {
+      setNameError("Required. Type a name, or tap the dice for one.");
+      nameInput.current?.focus();
+      return;
+    }
+    setNameError(null);
     connectPending.current = true;
     setConnecting(true);
     setErrorMessage(null);
@@ -290,9 +301,13 @@ export function ConnectionForm({
                 <Text style={styles.label}>Name</Text>
                 <View style={styles.nameRow}>
                   <TextInput
-                    style={[styles.input, styles.nameInput]}
+                    ref={nameInput}
+                    style={[styles.input, styles.nameInput, nameError ? styles.inputInvalid : null]}
                     value={alias}
-                    onChangeText={setAlias}
+                    onChangeText={(text) => {
+                      setAlias(text);
+                      if (nameError && text.trim()) setNameError(null);
+                    }}
                     placeholder="Required — tap the dice"
                     autoCapitalize="words"
                     autoCorrect={false}
@@ -307,6 +322,7 @@ export function ConnectionForm({
                           savedConnections.map((entry) => entry.alias ?? ""),
                         ),
                       );
+                      setNameError(null);
                     }}
                     accessibilityRole="button"
                     accessibilityLabel="Pick a random name"
@@ -314,6 +330,7 @@ export function ConnectionForm({
                     <Icon name="dice" size={18} color={THEME.colors.textSecondary} />
                   </Pressable>
                 </View>
+                {nameError ? <Text style={styles.fieldError}>{nameError}</Text> : null}
 
                 {renderFields(transport)}
                 <TouchableOpacity
@@ -339,6 +356,30 @@ export function ConnectionForm({
           </View>
         );
       })}
+
+      <View style={styles.demoFooter}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.demoButton,
+            pressed && styles.demoButtonPressed,
+            isBusy && styles.demoButtonDisabled,
+          ]}
+          onPress={() => {
+            hapticTap("light");
+            void (async () => {
+              await useConnectionStore.getState().setDemoEnabled(true);
+              void useWriterOpeningStore.getState().open();
+              onConnected?.();
+            })();
+          }}
+          disabled={isBusy}
+          accessibilityRole="button"
+          accessibilityLabel="Try a sample workspace"
+        >
+          <Icon name="grid" size={14} color={THEME.colors.textSecondary} />
+          <Text style={styles.demoButtonText}>Try a sample workspace</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -415,6 +456,15 @@ const styles = StyleSheet.create({
   nameInput: {
     flex: 1,
   },
+  inputInvalid: {
+    borderColor: THEME.colors.error,
+  },
+  fieldError: {
+    color: THEME.colors.error,
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: -2,
+  },
   dice: {
     width: 44,
     height: 44,
@@ -475,5 +525,31 @@ const styles = StyleSheet.create({
     color: THEME.colors.error,
     fontSize: 13,
     lineHeight: 18,
+  },
+  demoFooter: {
+    marginTop: 28,
+    alignItems: "center",
+  },
+  demoButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: THEME.colors.border,
+    backgroundColor: THEME.colors.background,
+  },
+  demoButtonPressed: {
+    backgroundColor: THEME.colors.backgroundSecondary,
+  },
+  demoButtonDisabled: {
+    opacity: 0.5,
+  },
+  demoButtonText: {
+    fontSize: 13,
+    fontWeight: "500",
+    color: THEME.colors.textSecondary,
   },
 });

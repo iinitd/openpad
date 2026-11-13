@@ -1,11 +1,20 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { persistStorage } from "./persist-storage";
+import { normalizeWorkspaceCwd } from "./workspace-session-key";
 
 // Builds a stable key for per-document state (currently scroll offset) that is
 // unique across workspaces and document paths.
 export function docScrollKey(cwd: string, path: string): string {
   return `${cwd}::${path}`;
+}
+
+// Key for a project the user removed from the sidebar list. Connections are
+// keyed too, so hiding a directory on one backend leaves the same path alone on
+// another. Hiding is local: the backend keeps listing the directory and its
+// sessions stay on the server.
+export function hiddenProjectKey(connectionId: string, cwd: string): string {
+  return `${connectionId}:${normalizeWorkspaceCwd(cwd)}`;
 }
 
 // A workspace the user opened before, remembered so the picker can offer
@@ -44,9 +53,9 @@ export interface RecentSession {
   updatedAt: string;
 }
 
-/** The agent's opening instructions; editable in Settings. */
+/** The system prompt sent as the first message when a new chat session starts; editable in Settings. */
 export const DEFAULT_AGENT_PROMPT =
-  "You are a writing assistant working inside the user's workspace directory. The user is editing documents there and will send you requests, often referencing a specific file and a highlighted passage with a comment.";
+  "You are a versatile agent in this workspace for coding, writing, and creating. Help with code, documents, ideas, and files as needed, and use the available context to give clear, practical results.";
 
 /** The default template for file comments; editable in Settings. */
 export const DEFAULT_COMMENT_PROMPT = `File: {filename}
@@ -143,6 +152,9 @@ interface PreferencesStore {
   recentWorkspaces: RecentWorkspace[];
   // Sessions the user connected before, most-recent first, for one-tap restore.
   recentSessions: RecentSession[];
+  // Projects removed from the sidebar list, keyed by hiddenProjectKey(). Local
+  // only: the rows disappear here, while the backend and its sessions stay put.
+  hiddenProjects: Record<string, boolean>;
   // Previously discovered web-preview root path, keyed by workspace ID (or by
   // normalized cwd when no workspace id is available). "" means "preview lives
   // at cwd root"; "__none__" means "no preview exists" — both are legitimate
@@ -168,6 +180,8 @@ interface PreferencesStore {
   togglePinWorkspace: (workspace: RecentWorkspace) => void;
   addRecentSession: (session: RecentSession) => void;
   removeRecentSession: (agentId: string) => void;
+  hideProject: (connectionId: string, cwd: string) => void;
+  showProject: (connectionId: string, cwd: string) => void;
   webPreviewRootForKey: (key: string) => string | null;
   setWebPreviewRootForKey: (key: string, root: string | null) => void;
   _setHydrated: () => void;
@@ -201,6 +215,7 @@ export const usePreferencesStore = create<PreferencesStore>()(
       queuedMessagesByAgent: {},
       recentWorkspaces: [],
       recentSessions: [],
+      hiddenProjects: {},
       webPreviewRootCache: {},
       hasHydrated: false,
 
@@ -337,6 +352,19 @@ export const usePreferencesStore = create<PreferencesStore>()(
         set((state) => ({
           recentSessions: state.recentSessions.filter((session) => session.agentId !== agentId),
         })),
+      hideProject: (connectionId, cwd) =>
+        set((state) => {
+          const key = hiddenProjectKey(connectionId, cwd);
+          if (state.hiddenProjects[key]) return state;
+          return { hiddenProjects: { ...state.hiddenProjects, [key]: true } };
+        }),
+      showProject: (connectionId, cwd) =>
+        set((state) => {
+          const key = hiddenProjectKey(connectionId, cwd);
+          if (!state.hiddenProjects[key]) return state;
+          const { [key]: _shown, ...hiddenProjects } = state.hiddenProjects;
+          return { hiddenProjects };
+        }),
       webPreviewRootForKey: (key) => {
         const value = get().webPreviewRootCache[key];
         return typeof value === "string" ? value : null;

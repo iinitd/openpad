@@ -1,18 +1,26 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { useState } from "react";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { ConnectionsPane } from "../../src/settings/ConnectionsPane";
+import { SettingsPane } from "../../src/settings/SettingsPane";
+import { ConnectionForm } from "../../src/settings/ConnectionForm";
 import { Icon } from "../../src/components/Icon";
 import { THEME } from "../../src/styles/theme";
 
 // Dedicated Settings screen. The FileTree sidebar footer and the desktop file
-// pane gear both route here with `router.push("/writer/settings")`. The screen
-// hosts a top bar with a back affordance and the shared connection settings.
+// pane gear both route here with `router.push("/writer/settings")`. It hosts the
+// same app settings as the workspace sheet's Settings tab, plus the full-page
+// connection form so desktop has one entry for both.
 export default function WriterSettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const [addingConnection, setAddingConnection] = useState(false);
 
   function goBack() {
+    if (addingConnection) {
+      setAddingConnection(false);
+      return;
+    }
     if (router.canGoBack()) router.back();
     else router.replace("/writer/session");
   }
@@ -23,19 +31,36 @@ export default function WriterSettingsScreen() {
         <TouchableOpacity
           onPress={goBack}
           hitSlop={8}
-          accessibilityLabel="Back"
+          accessibilityLabel={addingConnection ? "Back to settings" : "Back"}
           style={styles.backBtn}
         >
           <Text style={styles.backGlyph}>‹</Text>
         </TouchableOpacity>
         <View style={styles.titleWrap}>
-          <Icon name="settings" size={16} color={THEME.colors.textSecondary} />
-          <Text style={styles.title}>Connections</Text>
+          {addingConnection ? null : (
+            <Icon name="settings" size={16} color={THEME.colors.textSecondary} />
+          )}
+          <Text style={styles.title}>{addingConnection ? "Add connection" : "Settings"}</Text>
         </View>
         <View style={styles.backBtn} />
       </View>
       <View style={[styles.body, { paddingBottom: insets.bottom }]}>
-        <ConnectionsPane />
+        {addingConnection ? (
+          <ScrollView
+            contentContainerStyle={styles.formContent}
+            keyboardShouldPersistTaps="handled"
+            automaticallyAdjustKeyboardInsets
+          >
+            <ConnectionForm
+              onConnected={() => {
+                setAddingConnection(false);
+                router.replace("/writer/session");
+              }}
+            />
+          </ScrollView>
+        ) : (
+          <SettingsPane onAddConnection={() => setAddingConnection(true)} />
+        )}
       </View>
     </View>
   );
@@ -80,5 +105,12 @@ const styles = StyleSheet.create({
   },
   body: {
     flex: 1,
+  },
+  formContent: {
+    flexGrow: 1,
+    paddingHorizontal: THEME.spacing.lg,
+    paddingTop: THEME.spacing.lg,
+    paddingBottom: THEME.spacing.xxl,
+    backgroundColor: THEME.colors.backgroundSecondary,
   },
 });

@@ -76,7 +76,7 @@ export const LarkEmbed = Node.create({
     return {
       larkBlockId: { default: null, parseHTML: (el: HTMLElement) => el.getAttribute("data-lark-block-id") },
       kind: { default: "reference", parseHTML: (el: HTMLElement) => el.classList.contains("kel-sheet") ? "sheet" : "reference" },
-      title: { default: "飞书引用文档", parseHTML: (el: HTMLElement) => el.querySelector("strong")?.textContent || "飞书引用文档" },
+      title: { default: "Referenced Feishu document", parseHTML: (el: HTMLElement) => el.querySelector("strong")?.textContent || "Referenced Feishu document" },
       subtitle: { default: "", parseHTML: (el: HTMLElement) => el.querySelector("small")?.textContent || "" },
       token: { default: null, parseHTML: (el: HTMLElement) => el.getAttribute("data-sheet-token") || el.getAttribute("data-doc-id") },
     };

@@ -1,5 +1,5 @@
 import { memo, useState } from "react";
-import { Alert, View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { Alert, View, Text, TouchableOpacity, StyleSheet, TextInput } from "react-native";
 import { useSessionStore } from "../stores/session-store";
 import { useConnectionStore } from "../stores/connection-store";
 import {
@@ -26,12 +26,17 @@ export const ChatInput = memo(function ChatInput({
   const agentId = useSessionStore((state) => state.agentId);
   const queued = useSessionStore((s) => s.queued);
   const removeQueued = useSessionStore((s) => s.removeQueued);
+  const editQueued = useSessionStore((s) => s.editQueued);
+  const sendQueuedNow = useSessionStore((s) => s.sendQueuedNow);
   const [text, setText] = useState("");
+  const [editingQueuedId, setEditingQueuedId] = useState<string | null>(null);
+  const [editingQueuedText, setEditingQueuedText] = useState("");
   const pending = usePendingImages();
   const backendKind = useConnectionStore((state) => state.client?.kind);
-  // Only the OpenCode backend accepts attachments, and the queue is text-only,
-  // so an image can only go out while the session is idle.
-  const canAttach = backendKind === "opencode" && !isStreaming && !!agentId;
+  // Only the OpenCode backend accepts attachments. A turn in flight no longer
+  // blocks picking one: the image waits in the queue with its message and goes
+  // out when the run ends.
+  const canAttach = backendKind === "opencode" && !!agentId;
 
   async function handleSend() {
     const trimmed = text.trim();
@@ -89,24 +94,110 @@ export const ChatInput = memo(function ChatInput({
     <View style={variant === "embedded" ? styles.containerEmbedded : styles.container}>
       {queued.length > 0 ? (
         <View style={styles.queueList}>
-          {queued.map((q) => (
-            <View key={q.id} style={styles.queueChip}>
-              <Text style={styles.queueChipText} numberOfLines={2}>
-                {q.text}
-              </Text>
-              <TouchableOpacity
-                style={styles.queueRemove}
-                onPress={() => {
-                  hapticTap("light");
-                  removeQueued(q.id);
-                }}
-                hitSlop={8}
-                accessibilityLabel="Remove queued message"
-              >
-                <Text style={styles.queueRemoveText}>×</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
+          <Text style={styles.queueTitle}>Queued</Text>
+          {queued.map((q, index) => {
+            const editing = editingQueuedId === q.id;
+            return (
+              <View key={q.id} style={styles.queueChip}>
+                <View style={styles.queueChipBody}>
+                  {editing ? (
+                    <TextInput
+                      style={styles.queueEditInput}
+                      value={editingQueuedText}
+                      onChangeText={setEditingQueuedText}
+                      multiline
+                      autoFocus
+                      placeholder="Edit queued message"
+                      placeholderTextColor={THEME.colors.textMuted}
+                    />
+                  ) : (
+                    <Text style={styles.queueChipText} numberOfLines={3}>
+                      {q.text.trim() ||
+                        (q.attachments?.length
+                          ? q.attachments.length === 1
+                            ? "Image"
+                            : `${q.attachments.length} images`
+                          : "")}
+                    </Text>
+                  )}
+                  <Text style={styles.queueMeta}>{index === 0 ? "Next" : `#${index + 1}`}</Text>
+                </View>
+                <View style={styles.queueActions}>
+                  {editing ? (
+                    <>
+                      <TouchableOpacity
+                        style={styles.queueAction}
+                        onPress={() => {
+                          hapticTap("light");
+                          const trimmed = editingQueuedText.trim();
+                          if (trimmed) editQueued(q.id, trimmed);
+                          setEditingQueuedId(null);
+                          setEditingQueuedText("");
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Save queued message"
+                      >
+                        <Text style={styles.queueActionText}>Save</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.queueAction}
+                        onPress={() => {
+                          hapticTap("light");
+                          setEditingQueuedId(null);
+                          setEditingQueuedText("");
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Cancel editing queued message"
+                      >
+                        <Text style={styles.queueActionText}>Cancel</Text>
+                      </TouchableOpacity>
+                    </>
+                  ) : (
+                    <>
+                      <TouchableOpacity
+                        style={styles.queueAction}
+                        onPress={() => {
+                          hapticTap("light");
+                          setEditingQueuedId(q.id);
+                          setEditingQueuedText(q.text);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Edit queued message"
+                      >
+                        <Text style={styles.queueActionText}>Edit</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.queueAction}
+                        onPress={() => {
+                          hapticTap("light");
+                          void sendQueuedNow(q.id);
+                        }}
+                        accessibilityRole="button"
+                        accessibilityLabel="Send queued message now"
+                      >
+                        <Text style={styles.queueActionText}>Send now</Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
+                  <TouchableOpacity
+                    style={styles.queueRemove}
+                    onPress={() => {
+                      hapticTap("light");
+                      if (editingQueuedId === q.id) {
+                        setEditingQueuedId(null);
+                        setEditingQueuedText("");
+                      }
+                      removeQueued(q.id);
+                    }}
+                    hitSlop={8}
+                    accessibilityLabel="Remove queued message"
+                  >
+                    <Text style={styles.queueRemoveText}>×</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            );
+          })}
         </View>
       ) : null}
       <ComposerField
@@ -141,27 +232,69 @@ const styles = StyleSheet.create({
     gap: THEME.spacing.xs,
   },
   queueList: {
-    gap: 6,
+    gap: 8,
     marginBottom: THEME.spacing.sm,
+  },
+  queueTitle: {
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 0.08,
+    textTransform: "uppercase",
+    color: THEME.colors.textMuted,
+    marginBottom: 2,
   },
   // Waiting messages echo the transcript: a bubble on your side of the
   // conversation, in grey because it has not gone out yet.
   queueChip: {
-    alignSelf: "flex-end",
-    maxWidth: "86%",
+    alignSelf: "stretch",
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: THEME.spacing.sm,
     backgroundColor: THEME.colors.surface,
-    borderRadius: 16,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: THEME.colors.border,
     paddingLeft: THEME.spacing.md,
-    paddingRight: 6,
-    paddingVertical: 7,
+    paddingRight: 8,
+    paddingVertical: 8,
+  },
+  queueChipBody: {
+    flex: 1,
+    gap: 4,
   },
   queueChipText: {
-    flex: 1,
     fontSize: 14,
     lineHeight: 20,
+    color: THEME.colors.textSecondary,
+  },
+  queueMeta: {
+    fontSize: 11,
+    color: THEME.colors.textMuted,
+  },
+  queueEditInput: {
+    minHeight: 40,
+    fontSize: 14,
+    lineHeight: 20,
+    color: THEME.colors.text,
+    padding: 0,
+  },
+  queueActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    justifyContent: "flex-end",
+    gap: 6,
+    maxWidth: 190,
+  },
+  queueAction: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: THEME.colors.backgroundSecondary,
+  },
+  queueActionText: {
+    fontSize: 12,
+    fontWeight: "500",
     color: THEME.colors.textSecondary,
   },
   queueRemove: {

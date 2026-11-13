@@ -12,7 +12,7 @@ export function WebPreviewRunBanner({ onPress }: WebPreviewRunBannerProps) {
   const running = useSessionStore((state) => state.isStreaming);
   const progress = useAgentProgressSummary();
   if (!running) return null;
-  const summary = progress || "Agent 正在处理…";
+  const summary = progress || "Agent is working…";
   const content = (
     <>
       <Icon name="chat" size={16} color={THEME.colors.text} />
@@ -30,7 +30,7 @@ export function WebPreviewRunBanner({ onPress }: WebPreviewRunBannerProps) {
       activeOpacity={0.6}
       style={styles.banner}
       onPress={onPress}
-      accessibilityLabel="打开 Agent"
+      accessibilityLabel="Open Agent"
     >
       {content}
     </TouchableOpacity>

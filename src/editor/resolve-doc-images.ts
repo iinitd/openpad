@@ -73,7 +73,7 @@ const ENCODE_CHUNK_BYTES = 65_535 * 3;
 // would run in a single synchronous burst and freeze tab switches / the file
 // drawer while a big document opens. Concatenation is bounded per chunk (then
 // joined once) so we never grow one multi-MB string via repeated `+=`.
-async function bytesToBase64(bytes: Uint8Array): Promise<string> {
+export async function bytesToBase64(bytes: Uint8Array): Promise<string> {
   const len = bytes.length;
   const fullTriplets = Math.floor(len / 3) * 3;
   const chunks: string[] = [];
