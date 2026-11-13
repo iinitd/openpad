@@ -25,8 +25,13 @@ import { PRIVACY_URL, SUPPORT_URL } from "./about-links";
 import { PressableRow } from "../components/PressableRow";
 import { THEME } from "../styles/theme";
 
+// Import replaces every connection and preference in one tap, and the exported
+// format is still settling. Keep the transfer code wired but out of the UI.
+const CONFIG_TRANSFER_VISIBLE: boolean = false;
+
 /**
- * App-level settings: connections, prompts, config, about.
+ * App-level settings: connections, prompts, about. Config transfer stays behind
+ * `CONFIG_TRANSFER_VISIBLE` until importing is safe to hand to anyone.
  */
 export function SettingsPane({
   onAddConnection,
@@ -177,48 +182,52 @@ export function SettingsPane({
         </PressableRow>
       </View>
 
-      <Text style={styles.sectionLabel}>Config</Text>
-      <View style={styles.card}>
-        <PressableRow
-          style={styles.actionRow}
-          haptic="light"
-          scale={false}
-          onPress={() => void handleExport()}
-          accessibilityRole="button"
-          accessibilityLabel="Export config"
-        >
-          <View style={styles.rowGlyph}>
-            <Icon name="copy" size={16} color={THEME.colors.textSecondary} />
+      {CONFIG_TRANSFER_VISIBLE ? (
+        <>
+          <Text style={styles.sectionLabel}>Config</Text>
+          <View style={styles.card}>
+            <PressableRow
+              style={styles.actionRow}
+              haptic="light"
+              scale={false}
+              onPress={() => void handleExport()}
+              accessibilityRole="button"
+              accessibilityLabel="Export config"
+            >
+              <View style={styles.rowGlyph}>
+                <Icon name="copy" size={16} color={THEME.colors.textSecondary} />
+              </View>
+              <View style={styles.rowBody}>
+                <Text style={styles.rowTitle}>Export config</Text>
+                <Text style={styles.rowHint}>
+                  Copy connections and settings as JSON to the clipboard (includes sensitive credentials such as passwords and tokens).
+                </Text>
+              </View>
+            </PressableRow>
+            <View style={styles.divider} />
+            <PressableRow
+              style={styles.actionRow}
+              haptic="light"
+              scale={false}
+              onPress={() => {
+                setImportError(null);
+                setImportText("");
+                setImportVisible(true);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Import config"
+            >
+              <View style={styles.rowGlyph}>
+                <Icon name="file" size={16} color={THEME.colors.textSecondary} />
+              </View>
+              <View style={styles.rowBody}>
+                <Text style={styles.rowTitle}>Import config</Text>
+                <Text style={styles.rowHint}>Paste exported JSON to replace current connections and settings.</Text>
+              </View>
+            </PressableRow>
           </View>
-          <View style={styles.rowBody}>
-            <Text style={styles.rowTitle}>Export config</Text>
-            <Text style={styles.rowHint}>
-              Copy connections and settings as JSON to the clipboard (includes sensitive credentials such as passwords and tokens).
-            </Text>
-          </View>
-        </PressableRow>
-        <View style={styles.divider} />
-        <PressableRow
-          style={styles.actionRow}
-          haptic="light"
-          scale={false}
-          onPress={() => {
-            setImportError(null);
-            setImportText("");
-            setImportVisible(true);
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Import config"
-        >
-          <View style={styles.rowGlyph}>
-            <Icon name="file" size={16} color={THEME.colors.textSecondary} />
-          </View>
-          <View style={styles.rowBody}>
-            <Text style={styles.rowTitle}>Import config</Text>
-            <Text style={styles.rowHint}>Paste exported JSON to replace current connections and settings.</Text>
-          </View>
-        </PressableRow>
-      </View>
+        </>
+      ) : null}
 
       <Text style={styles.sectionLabel}>About</Text>
       <View style={styles.card}>
@@ -261,7 +270,7 @@ export function SettingsPane({
         </PressableRow>
       </View>
 
-      <Modal visible={importVisible} transparent animationType="fade" onRequestClose={() => setImportVisible(false)}>
+      <Modal visible={CONFIG_TRANSFER_VISIBLE && importVisible} transparent animationType="fade" onRequestClose={() => setImportVisible(false)}>
         <View style={styles.modalOverlay}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setImportVisible(false)} />
           <View style={styles.modalCard}>
