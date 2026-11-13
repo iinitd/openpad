@@ -286,7 +286,13 @@ export default function WriterSessionScreen() {
       <ToastHost />
       {isCompact ? <MobileLayout screenWidth={screenWidth} topInset={insets.top} /> : (
         <View style={styles.splitContainer}>
-          <View style={styles.filesPane}><FileTree /></View>
+          <View style={styles.filesPane}>
+            <FileTree
+              onAddConnection={() =>
+                router.push({ pathname: "/writer/settings", params: { add: "1" } })
+              }
+            />
+          </View>
           <View style={styles.editorPane}><ContentPreview /></View>
           <View style={styles.divider} />
           <View style={styles.chatPane}><AgentChatPanel /></View>
@@ -678,7 +684,11 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
                   setAddConnectionOpen(false);
                 }}
                 haptic="light"
-                accessibilityLabel={addProjectOpen ? "Back to projects" : "Back to settings"}
+                accessibilityLabel={
+                  addProjectOpen || projectsTab === "projects"
+                    ? "Back to projects"
+                    : "Back to settings"
+                }
               >
                 <Icon name="chevron-left" size={20} color={THEME.colors.text} />
               </PressableRow>
@@ -754,6 +764,7 @@ function MobileLayout({ screenWidth, topInset }: { screenWidth: number; topInset
               showHeader={false}
               addProjectOpen={addProjectOpen}
               onAddProjectOpenChange={setAddProjectOpen}
+              onAddConnection={() => setAddConnectionOpen(true)}
               bottomInset={insets.bottom}
               onFileOpened={() => {
                 closeProjects();

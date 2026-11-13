@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { SettingsPane } from "../../src/settings/SettingsPane";
 import { ConnectionForm } from "../../src/settings/ConnectionForm";
 import { Icon } from "../../src/components/Icon";
@@ -14,7 +14,10 @@ import { THEME } from "../../src/styles/theme";
 export default function WriterSettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const [addingConnection, setAddingConnection] = useState(false);
+  // The empty projects list sends people straight to the form with ?add=1, so
+  // its "Add connection" button lands on the fields rather than this list.
+  const { add } = useLocalSearchParams<{ add?: string }>();
+  const [addingConnection, setAddingConnection] = useState(add === "1");
 
   function goBack() {
     if (addingConnection) {

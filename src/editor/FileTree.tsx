@@ -193,6 +193,7 @@ export const FileTree = memo(function FileTree({
   showHeader = true,
   addProjectOpen = false,
   onAddProjectOpenChange,
+  onAddConnection,
   bottomInset = 0,
   mode,
   onSelectFolder,
@@ -207,6 +208,9 @@ export const FileTree = memo(function FileTree({
   // The host draws the header for the add-project browser.
   addProjectOpen?: boolean;
   onAddProjectOpenChange?: (open: boolean) => void;
+  // Passed through to the empty projects list so a first-time setup can add a
+  // server from where it has nothing to list yet.
+  onAddConnection?: () => void;
   // Honor the safe-area bottom inset for the pinned footer.
   bottomInset?: number;
   // When set, tapping a folder selects it instead of expanding it in place —
@@ -327,6 +331,7 @@ export const FileTree = memo(function FileTree({
           onSwitched={onFileOpened}
           addProjectOpen={addProjectOpen}
           onAddProjectOpenChange={onAddProjectOpenChange}
+          onAddConnection={onAddConnection}
         />
       ) : (
         <ScrollView style={styles.tree} contentContainerStyle={styles.treeContent}>

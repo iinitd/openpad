@@ -37,6 +37,7 @@ export function WorkspacePane({
   onSwitched,
   addProjectOpen = false,
   onAddProjectOpenChange,
+  onAddConnection,
 }: {
   bottomInset?: number;
   onSwitched?: () => void;
@@ -44,6 +45,10 @@ export function WorkspacePane({
   // it, so the host owns the title and the back affordance.
   addProjectOpen?: boolean;
   onAddProjectOpenChange?: (open: boolean) => void;
+  // The projects tab is where a first-time setup lands, so its empty state is
+  // also the way to add the first server. Hosts that do not own that form (the
+  // desktop files pane) leave it out.
+  onAddConnection?: () => void;
 } = {}) {
   const opening = useWriterOpeningStore((state) => state.opening);
   const openingError = useWriterOpeningStore((state) => state.error);
@@ -527,18 +532,20 @@ export function WorkspacePane({
       {!loading && entries.length === 0 ? (
         <View style={styles.emptyState}>
           <Text style={styles.emptyText}>All quiet in here.</Text>
-          <PressableRow
-            style={styles.emptyAction}
-            haptic="light"
-            scale={false}
-            pressedStyle={styles.emptyActionPressed}
-            onPress={() => void useConnectionStore.getState().setDemoEnabled(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Add sample workspace"
-          >
-            <Icon name="plus" size={13} color={THEME.colors.textSecondary} />
-            <Text style={styles.emptyActionText}>Say hi to Puff</Text>
-          </PressableRow>
+          {onAddConnection ? (
+            <PressableRow
+              style={styles.emptyAction}
+              haptic="light"
+              scale={false}
+              pressedStyle={styles.emptyActionPressed}
+              onPress={onAddConnection}
+              accessibilityRole="button"
+              accessibilityLabel="Add connection"
+            >
+              <Icon name="plus" size={13} color={THEME.colors.textSecondary} />
+              <Text style={styles.emptyActionText}>Add connection</Text>
+            </PressableRow>
+          ) : null}
         </View>
       ) : null}
 
