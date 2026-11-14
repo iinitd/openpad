@@ -27,7 +27,7 @@ Two workflows keep it up to date, and neither rewrites the other's files:
 The public address is:
 
 ```
-https://iinitd.github.io/puff/
+https://iinitd.github.io/clacko/
 ```
 
 That is what `src/settings/about-links.ts` and the App Store Connect fields
