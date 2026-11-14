@@ -1,6 +1,6 @@
 ---
 name: puff-preview
-description: Author a `preview/` subtree that renders inside Puff's Web Preview. Use when creating or editing a Paseo project's visual preview (dashboards, canvases, mini apps) that reads data or assets from files in the project.
+description: Author a `preview/` subtree that renders inside Clacko's Web Preview. Use when creating or editing a Paseo project's visual preview (dashboards, canvases, mini apps) that reads data or assets from files in the project.
 ---
 
 # puff-preview

@@ -1,6 +1,6 @@
 {
-  "name": "Puff",
-  "short_name": "Puff",
+  "name": "Clacko",
+  "short_name": "Clacko",
   "description": "A focused writing workspace powered by Paseo, OpenClaw, and OpenCode.",
   "start_url": "/",
   "scope": "/",

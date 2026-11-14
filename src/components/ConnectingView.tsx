@@ -56,7 +56,7 @@ export function ConnectingView({
             strokeWidth={1.6}
           />
         </View>
-        <Text style={styles.brand}>Puff</Text>
+        <Text style={styles.brand}>Clacko</Text>
 
         <View style={styles.status}>
           <Text style={styles.title}>{title}</Text>

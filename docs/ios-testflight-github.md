@@ -1,6 +1,6 @@
 # GitHub Actions → TestFlight
 
-This workflow builds Puff **locally on a GitHub macOS runner** with `eas build --local`, then uploads the IPA to TestFlight. It does not consume the EAS cloud build quota; it consumes GitHub Actions minutes.
+This workflow builds Clacko **locally on a GitHub macOS runner** with `eas build --local`, then uploads the IPA to TestFlight. It does not consume the EAS cloud build quota; it consumes GitHub Actions minutes.
 
 Workflow: `.github/workflows/ios-testflight.yml`
 
@@ -73,7 +73,7 @@ once interactively, or provide an App Store Connect API key.
 
 - GitHub → Actions → **iOS TestFlight** → Run workflow, or push a `v*` tag.
 - The job checks out the repo, verifies Xcode, runs `npm ci`, builds/signs with `eas build --local`, uploads the IPA artifact, then submits it to TestFlight.
-- The IPA remains available as the `puff-ipa` artifact even if submission fails.
+- The IPA remains available as the `clacko-ipa` artifact even if submission fails.
 
 ## Xcode version
 

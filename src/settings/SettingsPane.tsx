@@ -245,7 +245,7 @@ export function SettingsPane({
           <View style={styles.rowBody}>
             <Text style={styles.rowTitle}>Privacy Policy</Text>
             <Text style={styles.rowHint}>
-              What Puff stores on this device and what it sends to the servers you connect.
+              What Clacko stores on this device and what it sends to the servers you connect.
             </Text>
           </View>
         </PressableRow>
@@ -275,7 +275,7 @@ export function SettingsPane({
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setImportVisible(false)} />
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Import config</Text>
-            <Text style={styles.rowHint}>Paste a previously exported Puff config JSON. Import replaces current connections and settings and may fully apply after restarting the app.</Text>
+            <Text style={styles.rowHint}>Paste a previously exported Clacko config JSON. Import replaces current connections and settings and may fully apply after restarting the app.</Text>
             <TextInput
               style={styles.importInput}
               value={importText}

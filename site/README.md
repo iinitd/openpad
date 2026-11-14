@@ -1,4 +1,4 @@
-# Puff site
+# Clacko site
 
 Static pages for the App Store listing's privacy policy and support URL.
 

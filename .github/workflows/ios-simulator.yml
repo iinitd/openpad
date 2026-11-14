@@ -38,7 +38,7 @@ jobs:
           rest="${version#*.}"
           minor="${rest%%.*}"
           if [ "$major" -lt 26 ] || { [ "$major" -eq 26 ] && [ "$minor" -lt 4 ]; }; then
-            echo "Puff SDK 57 requires Xcode 26.4 or newer; this runner has Xcode $version."
+            echo "Clacko SDK 57 requires Xcode 26.4 or newer; this runner has Xcode $version."
             exit 1
           fi
 
@@ -54,11 +54,11 @@ jobs:
             --platform ios \
             --profile simulator \
             --non-interactive \
-            --output build/Puff-simulator.tar.gz
+            --output build/Clacko-simulator.tar.gz
 
       - name: Upload simulator app
         uses: actions/upload-artifact@v4
         with:
           name: puff-simulator
-          path: build/Puff-simulator.tar.gz
+          path: build/Clacko-simulator.tar.gz
           if-no-files-found: error

@@ -171,7 +171,7 @@ export function importConfig(json: string): { ok: true } | { ok: false; error: s
     return { ok: false, error: "Invalid JSON." };
   }
   if (!isRecord(parsed)) return { ok: false, error: "Invalid config format." };
-  if (parsed.format !== CONFIG_FORMAT) return { ok: false, error: "Not a Puff config file (format mismatch)." };
+  if (parsed.format !== CONFIG_FORMAT) return { ok: false, error: "Not a Clacko config file (format mismatch)." };
   if (parsed.version !== CONFIG_VERSION) return { ok: false, error: `Unsupported config version: ${String(parsed.version)}.` };
 
   const connection = isRecord(parsed.connection) ? parsed.connection : null;

@@ -36,7 +36,7 @@ jobs:
           rest="${version#*.}"
           minor="${rest%%.*}"
           if [ "$major" -lt 26 ] || { [ "$major" -eq 26 ] && [ "$minor" -lt 4 ]; }; then
-            echo "Puff SDK 57 requires Xcode 26.4 or newer; this runner has Xcode $version."
+            echo "Clacko SDK 57 requires Xcode 26.4 or newer; this runner has Xcode $version."
             exit 1
           fi
 
@@ -54,13 +54,13 @@ jobs:
             --platform ios \
             --profile production \
             --non-interactive \
-            --output build/Puff.ipa
+            --output build/Clacko.ipa
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: puff-ipa
-          path: build/Puff.ipa
+          name: clacko-ipa
+          path: build/Clacko.ipa
           if-no-files-found: error
 
       - name: Submit to TestFlight
@@ -69,6 +69,6 @@ jobs:
         run: |
           npx eas-cli@latest submit \
             --platform ios \
-            --path build/Puff.ipa \
+            --path build/Clacko.ipa \
             --profile production \
             --non-interactive

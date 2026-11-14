@@ -29,7 +29,7 @@ PLIST="$(find "$WORK/Payload" -maxdepth 2 -name Info.plist | head -1)"
 BUNDLE_ID="$(plutil -extract CFBundleIdentifier raw "$PLIST")"
 BUILD_NUMBER="$(plutil -extract CFBundleVersion raw "$PLIST")"
 SHORT_VERSION="$(plutil -extract CFBundleShortVersionString raw "$PLIST")"
-DISPLAY_NAME="$(plutil -extract CFBundleDisplayName raw "$PLIST" 2>/dev/null || echo "Puff Dev")"
+DISPLAY_NAME="$(plutil -extract CFBundleDisplayName raw "$PLIST" 2>/dev/null || echo "Clacko Dev")"
 
 mkdir -p "$OUT/$SUBDIR"
 # The Pages root is the product site; this installer is published under dev/ so

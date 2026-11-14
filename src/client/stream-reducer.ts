@@ -1,5 +1,5 @@
 /**
- * Simplified head/tail stream reducer for Puff.
+ * Simplified head/tail stream reducer for Clacko.
  * Adapted from Paseo's packages/app/src/types/stream.ts
  *
  * - Tail: committed history items

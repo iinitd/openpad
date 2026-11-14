@@ -36,7 +36,7 @@ export function useComposerPlaceholder(): string {
     );
     return saved?.alias?.trim() ?? "";
   });
-  return name ? `Talk to ${name}…` : "Talk to Puff…";
+  return name ? `Talk to ${name}…` : "Talk to Clacko…";
 }
 
 export interface PendingImage {

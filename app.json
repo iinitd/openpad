@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Puff",
+    "name": "Clacko",
     "slug": "writer",
     "version": "1.0.1",
     "orientation": "default",
@@ -15,7 +15,7 @@
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
         },
-        "NSLocalNetworkUsageDescription": "Puff connects to agent servers running on your computer or local network, such as Paseo, OpenClaw, and OpenCode."
+        "NSLocalNetworkUsageDescription": "Clacko connects to agent servers running on your computer or local network, such as Paseo, OpenClaw, and OpenCode."
       },
       "supportsTablet": true
     },
@@ -31,9 +31,9 @@
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro",
-      "name": "Puff",
-      "shortName": "Puff",
-      "description": "Puff — a focused writing workspace powered by Paseo, OpenClaw, and OpenCode.",
+      "name": "Clacko",
+      "shortName": "Clacko",
+      "description": "Clacko — a writing and coding client for OpenCode, Paseo, and OpenClaw.",
       "display": "standalone",
       "startUrl": "/",
       "scope": "/",
@@ -46,7 +46,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Puff uses your photo library to attach images to a conversation."
+          "photosPermission": "Clacko uses your photo library to attach images to a conversation."
         }
       ]
     ],

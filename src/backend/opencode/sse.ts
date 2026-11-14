@@ -118,7 +118,7 @@ export function openServerSentEvents(
 
 function connectionFailure(status: number): string {
   if (status === 401) return "OpenCode rejected these credentials. Check the server password and username.";
-  if (status === 404) return "This OpenCode server does not expose /api/event. Puff requires the OpenCode v2 server.";
+  if (status === 404) return "This OpenCode server does not expose /api/event. Clacko requires the OpenCode v2 server.";
   if (status > 0) return `OpenCode event stream failed (HTTP ${status}).`;
   return "Could not reach the OpenCode event stream. Check the server URL, network, and CORS settings.";
 }

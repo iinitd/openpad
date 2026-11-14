@@ -10,7 +10,7 @@ module.exports = ({ config }) => {
 
   return {
     ...config,
-    name: "Puff Dev",
+    name: "Clacko Dev",
     scheme: "puff-dev",
     ios: {
       ...config.ios,

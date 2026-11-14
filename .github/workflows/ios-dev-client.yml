@@ -43,7 +43,7 @@ jobs:
           rest="${version#*.}"
           minor="${rest%%.*}"
           if [ "$major" -lt 26 ] || { [ "$major" -eq 26 ] && [ "$minor" -lt 4 ]; }; then
-            echo "Puff SDK 57 requires Xcode 26.4 or newer; this runner has Xcode $version."
+            echo "Clacko SDK 57 requires Xcode 26.4 or newer; this runner has Xcode $version."
             exit 1
           fi
 
@@ -60,23 +60,23 @@ jobs:
             --profile development \
             --non-interactive \
             --message "${{ inputs.message }}" \
-            --output build/PuffDev.ipa
+            --output build/ClackoDev.ipa
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
           name: puff-dev-client
-          path: build/PuffDev.ipa
+          path: build/ClackoDev.ipa
           if-no-files-found: error
 
       - name: Build install page
         id: page
         run: |
           chmod +x scripts/publish-dev-client.sh
-          scripts/publish-dev-client.sh build/PuffDev.ipa build/pages | tee publish.env
+          scripts/publish-dev-client.sh build/ClackoDev.ipa build/pages | tee publish.env
           install_url="$(sed -n 's/^install_url=//p' publish.env)"
           {
-            echo "### Puff Dev"
+            echo "### Clacko Dev"
             echo
             echo "Open this on a registered iOS device in Safari:"
             echo

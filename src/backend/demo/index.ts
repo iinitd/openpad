@@ -31,9 +31,9 @@ const CWD = "/Sample Workspace";
 const AGENT_ID = "sample-agent";
 const WORKSPACE_ID = "sample-workspace";
 
-const README = `# Puff — coding & writing workspace for remote agents
+const README = `# Clacko — coding & writing workspace for remote agents
 
-This is a live sample workspace. Puff keeps code and writing in one place, so you can brief a remote agent, review its steps, edit files, and keep momentum — all without leaving the same workspace.
+This is a live sample workspace. Clacko keeps code and writing in one place, so you can brief a remote agent, review its steps, edit files, and keep momentum — all without leaving the same workspace.
 
 Nothing here touches a server: edits, messages and files live in memory and reset when the app restarts.
 
@@ -52,7 +52,7 @@ const NOTES = `# Notes
 
 ## Positioning
 
-Puff is a coding & writing workspace for remote agents. Treat it as your command center: brief agents in natural language, track their tool use in real time, move between writing and code, and keep everything tied to the project you're working in.
+Clacko is a coding & writing workspace for remote agents. Treat it as your command center: brief agents in natural language, track their tool use in real time, move between writing and code, and keep everything tied to the project you're working in.
 
 ## Why start here?
 
@@ -163,7 +163,7 @@ export function createDemoBackend(): WriterBackend {
   push({
     type: "assistant_message",
     text:
-      "Welcome to Puff — a coding & writing workspace for remote agents.\n\n" +
+      "Welcome to Clacko — a coding & writing workspace for remote agents.\n\n" +
       "This sample workspace runs fully on your device, but the flow is real: I can think, run tool steps (tap the activity row to see commands and details), and answer while you keep editing files in the same space.\n\n" +
       "Try asking me to sharpen `README.md`, sketch ideas in `ideas.md`, or send a few follow-ups while I'm working to see how the queue behaves.",
     messageId: "sample-assistant-1",
@@ -274,10 +274,10 @@ export function createDemoBackend(): WriterBackend {
       const reply =
         `Got it — “${trimmed}”.\n\n` +
         (lower.includes("readme") || lower.includes("doc") || lower.includes("write")
-          ? "In Puff, coding and writing move together: I can help draft, reshape, or polish files while the whole workspace stays in view. This reply is scripted here, but with a connected backend I’d make the change directly in your project."
+          ? "In Clacko, coding and writing move together: I can help draft, reshape, or polish files while the whole workspace stays in view. This reply is scripted here, but with a connected backend I’d make the change directly in your project."
           : lower.includes("code") || lower.includes("bug") || lower.includes("fix") || lower.includes("shell")
-            ? "That’s right in Puff’s sweet spot as a coding & writing workspace for remote agents. I can reason through the task, run commands, and keep notes or docs in sync from one place. This sample run shows the flow with scripted steps and replies."
-            : "Puff is a coding & writing workspace for remote agents: one surface to brief work, watch tool activity, and edit files. In a real session I’d pick up from here with your backend; in this sample space, you’re seeing the same rhythm with scripted responses.");
+            ? "That’s right in Clacko’s sweet spot as a coding & writing workspace for remote agents. I can reason through the task, run commands, and keep notes or docs in sync from one place. This sample run shows the flow with scripted steps and replies."
+            : "Clacko is a coding & writing workspace for remote agents: one surface to brief work, watch tool activity, and edit files. In a real session I’d pick up from here with your backend; in this sample space, you’re seeing the same rhythm with scripted responses.");
 
       const toolCallId = `sample-shell-${Date.now().toString(36)}`;
       timers.push(
