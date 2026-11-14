@@ -12,6 +12,11 @@ on:
         description: Build message
         required: false
         default: Manual dev client build
+  # Tags keep the manual trigger, and let a build start from a terminal without
+  # a GitHub token.
+  push:
+    tags:
+      - "dev-*"
 
 permissions:
   contents: write
